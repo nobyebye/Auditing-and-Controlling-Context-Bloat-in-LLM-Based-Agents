@@ -6,37 +6,35 @@ from pathlib import Path
 
 from context_auditor import RuntimeAuditor
 
-from .custom_react import AgentConfig, CustomReactAgent
+from .config import load_experiment_config
+from .custom_react import CustomReactAgent
 from .tasks import MEMORY_TASKS, RETRIEVAL_TASKS, TOOL_TASKS
 
 
-def run_pilot(output_path: str | Path) -> None:
+def run_pilot(output_path: str | Path | None = None, config_path: str | Path = "configs/pilot.json") -> None:
+    experiment = load_experiment_config(config_path)
+    output_path = output_path or experiment.output_path
     output = Path(output_path)
     if output.exists():
         output.unlink()
     auditor = RuntimeAuditor(output)
-    agent = CustomReactAgent(auditor)
-
-    configs = [
-        AgentConfig("baseline"),
-        AgentConfig("retrieval_top1", retrieval_top_k=1),
-        AgentConfig("retrieval_top3", retrieval_top_k=3),
-        AgentConfig("retrieval_duplicate", retrieval_top_k=2, duplicate_retrieval=True),
-        AgentConfig("memory_full", include_memory=True),
-        AgentConfig("memory_duplicate", include_memory=True, duplicate_memory=True),
-        AgentConfig("tool_use", use_tools=True),
-        AgentConfig("tool_repeated_output", use_tools=True, repeat_tool_output=True),
-        AgentConfig("retrieval_memory_tool", retrieval_top_k=3, include_memory=True, use_tools=True),
-    ]
+    agent = CustomReactAgent(
+        auditor,
+        provider=experiment.provider,
+        model=experiment.model,
+        experiment_id=experiment.experiment_id,
+        run_id=experiment.run_id,
+        dataset_name=experiment.dataset_name,
+    )
 
     for task in RETRIEVAL_TASKS:
-        for config in (configs[0], configs[1], configs[2], configs[3]):
+        for config in experiment.workflow_configs["retrieval_qa"]:
             agent.run(task, config)
 
     for task in MEMORY_TASKS:
-        for config in (configs[0], configs[4], configs[5]):
+        for config in experiment.workflow_configs["memory_turns"]:
             agent.run(task, config)
 
     for task in TOOL_TASKS:
-        for config in (configs[0], configs[6], configs[7], configs[8]):
+        for config in experiment.workflow_configs["multi_step_tool"]:
             agent.run(task, config)

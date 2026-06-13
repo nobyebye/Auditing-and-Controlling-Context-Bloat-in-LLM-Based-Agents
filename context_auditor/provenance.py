@@ -83,18 +83,31 @@ def segment_messages(messages: list[Message]) -> list[Segment]:
     segments: list[Segment] = []
     for message_index, message in enumerate(messages):
         source_type = label_message_source(message)
-        text = message.content
-        segments.append(
-            Segment(
-                segment_id=f"s{message_index:03d}",
-                message_index=message_index,
-                role=message.role,
-                source_type=source_type.value,
-                text=text,
-                char_count=len(text),
-                token_count=count_tokens(text),
-                content_hash=hash_text(text),
-                normalized_hash=normalized_hash(text),
+        texts = split_message_into_segments(message.content, source_type)
+        for part_index, text in enumerate(texts):
+            segments.append(
+                Segment(
+                    segment_id=f"s{message_index:03d}_{part_index:02d}",
+                    message_index=message_index,
+                    role=message.role,
+                    source_type=source_type.value,
+                    text=text,
+                    char_count=len(text),
+                    token_count=count_tokens(text),
+                    content_hash=hash_text(text),
+                    normalized_hash=normalized_hash(text),
+                )
             )
-        )
     return segments
+
+
+def split_message_into_segments(content: str, source_type: SourceType) -> list[str]:
+    if source_type not in {SourceType.RETRIEVAL, SourceType.MEMORY}:
+        return [content]
+
+    lines = [line.strip() for line in content.splitlines() if line.strip()]
+    if len(lines) <= 1:
+        return [content]
+
+    body_lines = lines[1:] if lines[0].endswith(":") else lines
+    return body_lines or [content]

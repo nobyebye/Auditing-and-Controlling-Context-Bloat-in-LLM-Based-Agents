@@ -10,12 +10,13 @@ from ._version import __version__
 from .bloat import summarize_traces
 from .io import load_jsonl
 from .mitigation import remove_exact_duplicate_segments
+from .reporting import write_summary_tables, write_svg_bar_charts
 
 
 def run_pilot_command(args: argparse.Namespace) -> None:
     from experiments.pilot import run_pilot
 
-    run_pilot(args.out)
+    run_pilot(args.out, args.config)
     print(f"Wrote traces to {args.out}")
 
 
@@ -25,6 +26,10 @@ def analyze_command(args: argparse.Namespace) -> None:
     output = Path(args.out)
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(summary, indent=2, ensure_ascii=False), encoding="utf-8")
+    if args.tables_dir:
+        write_summary_tables(summary, args.tables_dir)
+    if args.charts_dir:
+        write_svg_bar_charts(summary, args.charts_dir)
     print(f"Wrote summary to {output}")
 
 
@@ -55,11 +60,14 @@ def build_parser() -> argparse.ArgumentParser:
 
     pilot = subparsers.add_parser("run-pilot", help="Run controlled pilot experiments.")
     pilot.add_argument("--out", default="traces/pilot.jsonl", help="Output JSONL trace path.")
+    pilot.add_argument("--config", default="configs/pilot.json", help="Experiment configuration JSON path.")
     pilot.set_defaults(func=run_pilot_command)
 
     analyze = subparsers.add_parser("analyze", help="Summarize a JSONL trace file.")
     analyze.add_argument("trace_path")
     analyze.add_argument("--out", default="results/summary.json")
+    analyze.add_argument("--tables-dir", default="results/tables")
+    analyze.add_argument("--charts-dir", default="results/charts")
     analyze.set_defaults(func=analyze_command)
 
     mitigate = subparsers.add_parser("mitigate", help="Report exact duplicate segment mitigation.")
@@ -78,4 +86,3 @@ def main(argv: list[str] | None = None) -> None:
 
 if __name__ == "__main__":
     main()
-

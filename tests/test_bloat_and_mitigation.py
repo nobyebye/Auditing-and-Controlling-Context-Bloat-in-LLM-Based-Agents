@@ -4,6 +4,7 @@ import unittest
 
 from context_auditor import Message, RuntimeAuditor, TraceMetadata
 from context_auditor.bloat import classify_bloat, summarize_traces
+from context_auditor.evaluation import keyword_success
 from context_auditor.mitigation import remove_exact_duplicate_segments
 
 
@@ -54,14 +55,23 @@ class BloatAndMitigationTests(unittest.TestCase):
     def test_summarize_traces_groups_by_configuration(self) -> None:
         auditor = RuntimeAuditor()
         first = auditor.capture(make_metadata("task-a"), [Message("user", "short")])
-        second = auditor.capture(make_metadata("task-a"), [Message("user", "short " * 20)])
+        second = auditor.capture(
+            make_metadata("task-a"),
+            [Message("user", "short " * 20)],
+            task_success=True,
+            task_output="answer",
+        )
 
         summary = summarize_traces([first, second])
         self.assertEqual(summary["trace_count"], 2)
         self.assertIn("retrieval", summary["by_configuration"])
         self.assertGreater(summary["mean_context_growth_rate"], 0)
+        self.assertEqual(summary["by_configuration"]["retrieval"]["task_success_rate"], 1.0)
+
+    def test_keyword_success(self) -> None:
+        self.assertTrue(keyword_success("Final answer contains Runtime Context Auditor", "context"))
+        self.assertFalse(keyword_success("No relevant answer", "context"))
 
 
 if __name__ == "__main__":
     unittest.main()
-

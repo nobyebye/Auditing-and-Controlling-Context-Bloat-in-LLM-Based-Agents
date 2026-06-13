@@ -18,6 +18,8 @@
 
 ## Configurations
 
+The default pilot experiment matrix is stored in `configs/pilot.json`.
+
 - `baseline`
 - `retrieval_top1`
 - `retrieval_top3`
@@ -53,6 +55,15 @@ Compare original traces against mitigated traces. Report token reduction,
 redundancy reduction, number of removed or compressed segments, and lightweight
 task performance. The mitigation goal is to reduce unnecessary context without
 significantly reducing answer usefulness.
+
+## Outputs
+
+- JSONL traces for every LLM invocation.
+- JSON summary grouped by configuration and workflow family.
+- CSV tables for thesis result tables.
+- SVG charts for first-pass thesis figures.
+- Mitigation reports with removed segments, removed tokens, source categories,
+  and token reduction ratio.
 
 ## Repetition Strategy
 

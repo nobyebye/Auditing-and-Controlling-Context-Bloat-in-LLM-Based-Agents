@@ -5,6 +5,8 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass, field
 from typing import Any
 
+SCHEMA_VERSION = "0.3.0"
+
 
 @dataclass
 class Message:
@@ -35,18 +37,25 @@ class Segment:
 
 @dataclass
 class AuditTrace:
+    schema_version: str
     trace_id: str
+    experiment_id: str
+    run_id: str
     task_id: str
     framework: str
     provider: str
     model: str
     configuration: str
+    config_hash: str
+    dataset_name: str
     workflow_family: str
     invocation_index: int
     timestamp: str
     messages: list[Message]
     segments: list[Segment]
     metrics: dict[str, Any]
+    task_success: bool | None = None
+    task_output: str | None = None
     risk_flags: list[str] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:

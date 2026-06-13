@@ -16,6 +16,9 @@ LLM-based agents.
 - `context_auditor.bloat`: offline bloat classification and grouped summaries.
 - `context_auditor.mitigation`: conservative duplicate-removal mitigation
   utilities.
+- `context_auditor.evaluation`: lightweight task success evaluation.
+- `context_auditor.reporting`: CSV and SVG reporting helpers for thesis tables
+  and figures.
 - `context_auditor.tracer`: runtime capture API used before LLM invocations.
 - `context_auditor.langchain_adapter`: optional LangChain callback adapter.
 - `context_auditor.cli`: command-line interface.
@@ -36,5 +39,4 @@ The artifact uses semantic versioning:
 - Minor version: new metrics, CLI commands, adapters, or experiment workflows.
 - Major version: incompatible trace schema or public API changes.
 
-Current version: `0.2.0`.
-
+Current version: `0.3.0`.

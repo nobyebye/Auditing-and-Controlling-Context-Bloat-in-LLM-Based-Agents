@@ -48,6 +48,10 @@ class RuntimeAuditorTests(unittest.TestCase):
             ],
         )
         self.assertEqual(trace.invocation_index, 0)
+        self.assertEqual(trace.schema_version, "0.3.0")
+        self.assertEqual(trace.experiment_id, "pilot")
+        self.assertEqual(trace.dataset_name, "controlled_synthetic")
+        self.assertTrue(trace.config_hash)
         self.assertEqual(trace.metrics["duplicate_segment_count"], 1)
         self.assertGreater(trace.metrics["redundancy_ratio"], 0)
         self.assertLess(trace.metrics["unique_information_ratio"], 1)

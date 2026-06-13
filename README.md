@@ -50,13 +50,13 @@ tests/               Unit tests
 Run the pilot experiment:
 
 ```powershell
-python scripts/run_pilot.py --out traces/pilot.jsonl
+python -m context_auditor.cli run-pilot --config configs/pilot.json --out traces/pilot.jsonl
 ```
 
 Analyze traces:
 
 ```powershell
-python scripts/analyze_traces.py traces/pilot.jsonl --out results/pilot_summary.json
+python -m context_auditor.cli analyze traces/pilot.jsonl --out results/pilot_summary.json --tables-dir results/tables --charts-dir results/charts
 ```
 
 Generate a mitigation report:
@@ -78,27 +78,39 @@ From the repository root:
 ```powershell
 pip install -e .
 context-auditor run-pilot --out traces/pilot.jsonl
-context-auditor analyze traces/pilot.jsonl --out results/pilot_summary.json
+context-auditor analyze traces/pilot.jsonl --out results/pilot_summary.json --tables-dir results/tables --charts-dir results/charts
 context-auditor mitigate traces/pilot.jsonl --out results/mitigation_report.json
 ```
+
+## Experiment Outputs
+
+The pilot produces:
+
+- `traces/pilot.jsonl`: per-invocation model-visible context traces
+- `results/pilot_summary.json`: grouped bloat metrics
+- `results/tables/*.csv`: thesis-ready summary tables
+- `results/charts/*.svg`: first-pass figures for redundancy and token counts
+- `results/mitigation_report.json`: duplicate-removal token reduction report
 
 ## Trace Schema
 
 Each JSONL row represents one LLM invocation and includes:
 
-- task metadata: `trace_id`, `task_id`, `framework`, `provider`, `model`,
-  `configuration`, `workflow_family`, `invocation_index`, `timestamp`
+- task metadata: `schema_version`, `experiment_id`, `run_id`, `trace_id`,
+  `task_id`, `framework`, `provider`, `model`, `configuration`,
+  `config_hash`, `dataset_name`, `workflow_family`, `invocation_index`,
+  `timestamp`
 - raw `messages`
 - provenance-labeled `segments`
 - aggregate `metrics`
-- `risk_flags`
+- `task_success`, `task_output`, and `risk_flags`
 
 The schema is intentionally framework-agnostic so the same analysis can be used
 for LangChain callbacks, a custom ReAct loop, or other agent implementations.
 
 ## Versioning
 
-The project uses semantic versioning. Current version: `0.2.0`.
+The project uses semantic versioning. Current version: `0.3.0`.
 
 See [CHANGELOG.md](CHANGELOG.md) for changes and
 [docs/architecture.md](docs/architecture.md) for the package structure.

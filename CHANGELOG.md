@@ -2,6 +2,15 @@
 
 All notable changes to this thesis artifact are tracked here.
 
+## 0.3.0 - 2026-06-13
+
+- Added trace schema versioning and experiment metadata fields.
+- Added configuration-driven pilot experiments through `configs/pilot.json`.
+- Added task success and task output fields for performance evaluation.
+- Added passage/item-level segmentation for retrieval and memory context.
+- Added CSV tables and SVG chart generation for thesis results.
+- Added GitHub Actions CI for automated tests.
+
 ## 0.2.0 - 2026-06-13
 
 - Reframed the project around context bloat detection, measurement, and mitigation.
@@ -15,4 +24,3 @@ All notable changes to this thesis artifact are tracked here.
 
 - Initial runtime auditing prototype.
 - Added provenance labels, runtime trace capture, pilot custom ReAct agent, and thesis planning documents.
-

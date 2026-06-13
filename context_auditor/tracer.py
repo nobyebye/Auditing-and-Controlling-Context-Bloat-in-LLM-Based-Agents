@@ -9,9 +9,10 @@ from pathlib import Path
 from uuid import uuid4
 
 from .guard import ContextGrowthGuard
+from .hashing import hash_text
 from .metrics import compute_metrics
 from .provenance import segment_messages
-from .schema import AuditTrace, Message
+from .schema import SCHEMA_VERSION, AuditTrace, Message
 
 
 @dataclass(frozen=True)
@@ -22,6 +23,15 @@ class TraceMetadata:
     model: str
     configuration: str
     workflow_family: str
+    experiment_id: str = "pilot"
+    run_id: str = "run-001"
+    dataset_name: str = "controlled_synthetic"
+    config: dict | None = None
+
+    @property
+    def config_hash(self) -> str:
+        payload = json.dumps(self.config or {"configuration": self.configuration}, sort_keys=True)
+        return hash_text(payload)[:12]
 
 
 class RuntimeAuditor:
@@ -36,25 +46,38 @@ class RuntimeAuditor:
         self.cost_per_1k_tokens = cost_per_1k_tokens
         self._invocation_by_task: dict[str, int] = {}
 
-    def capture(self, metadata: TraceMetadata, messages: list[Message]) -> AuditTrace:
+    def capture(
+        self,
+        metadata: TraceMetadata,
+        messages: list[Message],
+        task_success: bool | None = None,
+        task_output: str | None = None,
+    ) -> AuditTrace:
         invocation_index = self._invocation_by_task.get(metadata.task_id, 0)
         self._invocation_by_task[metadata.task_id] = invocation_index + 1
 
         segments = segment_messages(messages)
         metrics = compute_metrics(segments, self.cost_per_1k_tokens)
         trace = AuditTrace(
+            schema_version=SCHEMA_VERSION,
             trace_id=str(uuid4()),
+            experiment_id=metadata.experiment_id,
+            run_id=metadata.run_id,
             task_id=metadata.task_id,
             framework=metadata.framework,
             provider=metadata.provider,
             model=metadata.model,
             configuration=metadata.configuration,
+            config_hash=metadata.config_hash,
+            dataset_name=metadata.dataset_name,
             workflow_family=metadata.workflow_family,
             invocation_index=invocation_index,
             timestamp=datetime.now(UTC).isoformat(),
             messages=messages,
             segments=segments,
             metrics=metrics,
+            task_success=task_success,
+            task_output=task_output,
             risk_flags=[],
         )
         trace.risk_flags = self.guard.evaluate(trace)

@@ -73,6 +73,7 @@ def summarize_traces(traces: list[AuditTrace]) -> dict[str, Any]:
     def summarize_group(grouped: dict[str, list[AuditTrace]]) -> dict[str, Any]:
         result: dict[str, Any] = {}
         for name, items in sorted(grouped.items()):
+            scored = [trace for trace in items if trace.task_success is not None]
             result[name] = {
                 "invocations": len(items),
                 "mean_total_tokens": mean(trace.metrics.get("total_tokens", 0) for trace in items),
@@ -82,6 +83,9 @@ def summarize_traces(traces: list[AuditTrace]) -> dict[str, Any]:
                     trace.metrics.get("unique_information_ratio", 1.0) for trace in items
                 ),
                 "duplicate_segment_count": sum(trace.metrics.get("duplicate_segment_count", 0) for trace in items),
+                "task_success_rate": (
+                    sum(1 for trace in scored if trace.task_success) / len(scored) if scored else None
+                ),
             }
         return result
 
@@ -93,4 +97,3 @@ def summarize_traces(traces: list[AuditTrace]) -> dict[str, Any]:
         "risk_flags": dict(sorted(risk_flags.items())),
         "bloat_labels": dict(sorted(bloat_labels.items())),
     }
-

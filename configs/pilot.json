@@ -1,0 +1,27 @@
+{
+  "experiment_id": "pilot-context-bloat-v0.3",
+  "run_id": "run-001",
+  "dataset_name": "controlled_synthetic",
+  "provider": "mock",
+  "model": "mock-llm",
+  "output_path": "traces/pilot.jsonl",
+  "workflow_configs": {
+    "retrieval_qa": [
+      {"configuration": "baseline"},
+      {"configuration": "retrieval_top1", "retrieval_top_k": 1},
+      {"configuration": "retrieval_top3", "retrieval_top_k": 3},
+      {"configuration": "retrieval_duplicate", "retrieval_top_k": 2, "duplicate_retrieval": true}
+    ],
+    "memory_turns": [
+      {"configuration": "baseline"},
+      {"configuration": "memory_full", "include_memory": true},
+      {"configuration": "memory_duplicate", "include_memory": true, "duplicate_memory": true}
+    ],
+    "multi_step_tool": [
+      {"configuration": "baseline"},
+      {"configuration": "tool_use", "use_tools": true},
+      {"configuration": "tool_repeated_output", "use_tools": true, "repeat_tool_output": true},
+      {"configuration": "retrieval_memory_tool", "retrieval_top_k": 3, "include_memory": true, "use_tools": true}
+    ]
+  }
+}

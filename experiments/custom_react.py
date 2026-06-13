@@ -4,9 +4,10 @@ from __future__ import annotations
 
 import ast
 import operator
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 
 from context_auditor import Message, RuntimeAuditor, TraceMetadata
+from context_auditor.evaluation import keyword_success
 
 from .tasks import MEMORY_ITEMS, POLICY_DOCS, Task
 
@@ -45,10 +46,21 @@ class AgentConfig:
 
 
 class CustomReactAgent:
-    def __init__(self, auditor: RuntimeAuditor, provider: str = "mock", model: str = "mock-llm") -> None:
+    def __init__(
+        self,
+        auditor: RuntimeAuditor,
+        provider: str = "mock",
+        model: str = "mock-llm",
+        experiment_id: str = "pilot",
+        run_id: str = "run-001",
+        dataset_name: str = "controlled_synthetic",
+    ) -> None:
         self.auditor = auditor
         self.provider = provider
         self.model = model
+        self.experiment_id = experiment_id
+        self.run_id = run_id
+        self.dataset_name = dataset_name
 
     def run(self, task: Task, config: AgentConfig) -> str:
         metadata = TraceMetadata(
@@ -58,6 +70,10 @@ class CustomReactAgent:
             model=self.model,
             configuration=config.configuration,
             workflow_family=task.workflow_family,
+            experiment_id=self.experiment_id,
+            run_id=self.run_id,
+            dataset_name=self.dataset_name,
+            config=asdict(config),
         )
         messages = self._base_messages(task, config)
         self.auditor.capture(metadata, messages)
@@ -71,13 +87,24 @@ class CustomReactAgent:
             self.auditor.capture(metadata, messages)
 
             second_result = self._finish_tool_task(task.prompt, first_result)
-            messages.append(Message(role="assistant", content=f"Final answer: {second_result:g}"))
-            self.auditor.capture(metadata, messages)
-            return f"{second_result:g}"
+            answer = f"{second_result:g}"
+            messages.append(Message(role="assistant", content=f"Final answer: {answer}"))
+            self.auditor.capture(
+                metadata,
+                messages,
+                task_success=keyword_success(answer, task.expected_keyword),
+                task_output=answer,
+            )
+            return answer
 
         answer = self._answer_without_tools(task, config)
         messages.append(Message(role="assistant", content=f"Final answer: {answer}"))
-        self.auditor.capture(metadata, messages)
+        self.auditor.capture(
+            metadata,
+            messages,
+            task_success=keyword_success(answer, task.expected_keyword),
+            task_output=answer,
+        )
         return answer
 
     def _base_messages(self, task: Task, config: AgentConfig) -> list[Message]:

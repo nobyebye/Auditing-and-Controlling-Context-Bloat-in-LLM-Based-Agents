@@ -1,0 +1,25 @@
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install package
+        run: python -m pip install -e .
+      - name: Run tests
+        run: python -m unittest discover -s tests
+      - name: Run pilot smoke test
+        run: |
+          context-auditor run-pilot --out traces/pilot.jsonl --config configs/pilot.json
+          context-auditor analyze traces/pilot.jsonl --out results/pilot_summary.json
+          context-auditor mitigate traces/pilot.jsonl --out results/mitigation_report.json
