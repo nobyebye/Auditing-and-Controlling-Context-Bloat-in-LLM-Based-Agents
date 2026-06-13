@@ -11,7 +11,7 @@ from experiments.config import load_experiment_config
 class ConfigAndReportingTests(unittest.TestCase):
     def test_load_default_config(self) -> None:
         config = load_experiment_config("configs/pilot.json")
-        self.assertEqual(config.experiment_id, "pilot-context-bloat-v0.3")
+        self.assertEqual(config.experiment_id, "pilot-context-bloat-v0.5")
         self.assertIn("retrieval_qa", config.workflow_configs)
         self.assertEqual(config.workflow_configs["retrieval_qa"][0].configuration, "baseline")
 

@@ -1,5 +1,5 @@
 {
-  "experiment_id": "pilot-context-bloat-v0.3",
+  "experiment_id": "pilot-context-bloat-v0.5",
   "run_id": "run-001",
   "dataset_name": "controlled_synthetic",
   "provider": "mock",
@@ -11,17 +11,21 @@
       {"configuration": "retrieval_top1", "retrieval_top_k": 1},
       {"configuration": "retrieval_top3", "retrieval_top_k": 3},
       {"configuration": "retrieval_duplicate", "retrieval_top_k": 2, "duplicate_retrieval": true},
-      {"configuration": "retrieval_irrelevant", "retrieval_top_k": 2, "include_irrelevant_retrieval": true}
+      {"configuration": "retrieval_duplicate_mitigated", "retrieval_top_k": 2, "duplicate_retrieval": true, "mitigation_strategy": "exact_duplicate_removal"},
+      {"configuration": "retrieval_irrelevant", "retrieval_top_k": 2, "include_irrelevant_retrieval": true},
+      {"configuration": "retrieval_irrelevant_mitigated", "retrieval_top_k": 2, "include_irrelevant_retrieval": true, "mitigation_strategy": "irrelevant_context_filter", "irrelevance_min_overlap": 0.2}
     ],
     "memory_turns": [
       {"configuration": "baseline"},
       {"configuration": "memory_full", "include_memory": true},
-      {"configuration": "memory_duplicate", "include_memory": true, "duplicate_memory": true}
+      {"configuration": "memory_duplicate", "include_memory": true, "duplicate_memory": true},
+      {"configuration": "memory_duplicate_mitigated", "include_memory": true, "duplicate_memory": true, "mitigation_strategy": "exact_duplicate_removal"}
     ],
     "multi_step_tool": [
       {"configuration": "baseline"},
       {"configuration": "tool_use", "use_tools": true},
       {"configuration": "tool_repeated_output", "use_tools": true, "repeat_tool_output": true},
+      {"configuration": "tool_repeated_output_mitigated", "use_tools": true, "repeat_tool_output": true, "mitigation_strategy": "exact_duplicate_removal"},
       {"configuration": "retrieval_memory_tool", "retrieval_top_k": 3, "include_memory": true, "use_tools": true}
     ]
   }

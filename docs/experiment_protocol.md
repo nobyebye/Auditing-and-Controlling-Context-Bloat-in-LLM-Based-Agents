@@ -25,10 +25,14 @@ The default pilot experiment matrix is stored in `configs/pilot.json`.
 - `retrieval_top3`
 - `retrieval_duplicate`
 - `retrieval_irrelevant`
+- `retrieval_duplicate_mitigated`
+- `retrieval_irrelevant_mitigated`
 - `memory_full`
 - `memory_duplicate`
+- `memory_duplicate_mitigated`
 - `tool_use`
 - `tool_repeated_output`
+- `tool_repeated_output_mitigated`
 - `retrieval_memory_tool`
 - `bloat_detection`
 - `mitigation_duplicate_removal`
@@ -67,6 +71,10 @@ task invocations:
 - exact duplicate removal
 - near-duplicate removal
 - irrelevant retrieval/memory filtering
+
+In addition, the pilot includes controlled mitigated configurations where the
+agent receives a reduced model-visible context before answering. These
+configuration pairs are reported in `mitigation_pairs` inside the JSON summary.
 
 ## Outputs
 

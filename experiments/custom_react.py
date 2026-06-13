@@ -8,6 +8,7 @@ from dataclasses import asdict, dataclass
 
 from context_auditor import Message, RuntimeAuditor, TraceMetadata
 from context_auditor.evaluation import keyword_success
+from context_auditor.message_mitigation import apply_message_mitigation
 
 from .retrieval import render_retrieved_context, retrieve_documents
 from .tasks import MEMORY_ITEMS, Task
@@ -45,6 +46,8 @@ class AgentConfig:
     include_irrelevant_retrieval: bool = False
     duplicate_memory: bool = False
     repeat_tool_output: bool = False
+    mitigation_strategy: str = "none"
+    irrelevance_min_overlap: float = 0.05
     guard_mode: bool = False
 
 
@@ -80,6 +83,7 @@ class CustomReactAgent:
             task_expected_keyword=task.expected_keyword,
         )
         messages = self._base_messages(task, config)
+        messages = self._mitigate_messages(messages, task, config)
         self.auditor.capture(metadata, messages)
 
         if config.use_tools:
@@ -88,6 +92,7 @@ class CustomReactAgent:
             messages.append(Message(role="tool", content=f"calculator result: {first_result:g}"))
             if config.repeat_tool_output:
                 messages.append(Message(role="tool", content=f"calculator result: {first_result:g}"))
+            messages = self._mitigate_messages(messages, task, config)
             self.auditor.capture(metadata, messages)
 
             second_result = self._finish_tool_task(task.prompt, first_result)
@@ -101,7 +106,7 @@ class CustomReactAgent:
             )
             return answer
 
-        answer = self._answer_without_tools(task, config)
+        answer = self._answer_without_tools(task, config, messages)
         messages.append(Message(role="assistant", content=f"Final answer: {answer}"))
         self.auditor.capture(
             metadata,
@@ -110,6 +115,14 @@ class CustomReactAgent:
             task_output=answer,
         )
         return answer
+
+    def _mitigate_messages(self, messages: list[Message], task: Task, config: AgentConfig) -> list[Message]:
+        return apply_message_mitigation(
+            messages,
+            strategy=config.mitigation_strategy,
+            query=task.prompt,
+            min_overlap_ratio=config.irrelevance_min_overlap,
+        )
 
     def _base_messages(self, task: Task, config: AgentConfig) -> list[Message]:
         messages = [
@@ -134,17 +147,31 @@ class CustomReactAgent:
         messages.append(Message(role="user", content=task.prompt))
         return messages
 
-    def _answer_without_tools(self, task: Task, config: AgentConfig) -> str:
+    def _answer_without_tools(self, task: Task, config: AgentConfig, messages: list[Message]) -> str:
         if config.retrieval_top_k:
-            documents = retrieve_documents(
-                task.prompt,
-                top_k=config.retrieval_top_k,
-                include_irrelevant=config.include_irrelevant_retrieval,
+            retrieved_lines = [
+                line
+                for message in messages
+                if "Retrieved context:" in message.content
+                for line in message.content.splitlines()[1:]
+                if line.strip()
+            ]
+            return next(
+                (line for line in retrieved_lines if task.expected_keyword in line.lower()),
+                retrieved_lines[0] if retrieved_lines else "Insufficient relevant retrieved context.",
             )
-            rendered = [document.render() for document in documents]
-            return next((doc for doc in rendered if task.expected_keyword in doc.lower()), rendered[0])
         if config.include_memory:
-            return next((item for item in MEMORY_ITEMS if task.expected_keyword in item.lower()), MEMORY_ITEMS[0])
+            memory_lines = [
+                line
+                for message in messages
+                if "Conversation history:" in message.content
+                for line in message.content.splitlines()[1:]
+                if line.strip()
+            ]
+            return next(
+                (line for line in memory_lines if task.expected_keyword in line.lower()),
+                memory_lines[0] if memory_lines else "Insufficient relevant memory.",
+            )
         return "Insufficient context in baseline configuration."
 
     def _first_expression(self, prompt: str) -> str:

@@ -2,6 +2,14 @@
 
 All notable changes to this thesis artifact are tracked here.
 
+## 0.5.0 - 2026-06-13
+
+- Added pre-call message-level mitigation for controlled rerun conditions.
+- Added mitigated pilot configurations for retrieval, memory, and tool bloat.
+- Added automatic before/after configuration-pair comparison in summaries.
+- Updated the custom agent so retrieval and memory answers depend on the
+  actually mitigated model-visible context.
+
 ## 0.4.0 - 2026-06-13
 
 - Added deterministic local retrieval for semi-real RAG experiments.

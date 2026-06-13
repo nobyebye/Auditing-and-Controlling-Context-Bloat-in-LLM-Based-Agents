@@ -68,6 +68,39 @@ class BloatAndMitigationTests(unittest.TestCase):
         self.assertGreater(summary["mean_context_growth_rate"], 0)
         self.assertEqual(summary["by_configuration"]["retrieval"]["task_success_rate"], 1.0)
 
+    def test_mitigated_configuration_pairs(self) -> None:
+        auditor = RuntimeAuditor()
+        original = auditor.capture(
+            make_metadata("task-b"),
+            [
+                Message("system", "Retrieved context:\nSame doc"),
+                Message("system", "Retrieved context:\nSame doc"),
+                Message("user", "Question"),
+            ],
+            task_success=True,
+            task_output="answer",
+        )
+        mitigated_metadata = TraceMetadata(
+            task_id="task-b-mitigated",
+            framework="custom-react",
+            provider="mock",
+            model="mock-llm",
+            configuration="retrieval_mitigated",
+            workflow_family="retrieval_qa",
+        )
+        mitigated = auditor.capture(
+            mitigated_metadata,
+            [
+                Message("system", "Retrieved context:\nSame doc"),
+                Message("user", "Question"),
+            ],
+            task_success=True,
+            task_output="answer",
+        )
+
+        summary = summarize_traces([original, mitigated])
+        self.assertIn("retrieval -> retrieval_mitigated", summary["mitigation_pairs"])
+
     def test_keyword_success(self) -> None:
         self.assertTrue(keyword_success("Final answer contains Runtime Context Auditor", "context"))
         self.assertFalse(keyword_success("No relevant answer", "context"))

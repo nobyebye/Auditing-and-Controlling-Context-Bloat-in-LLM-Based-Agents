@@ -29,6 +29,8 @@ debug.
   - Estimated Cost Proxy
 - Deterministic local retrieval for reproducible RAG-style experiments.
 - Near-duplicate and irrelevant-context mitigation strategies.
+- Pre-call message-level mitigation for controlled before/after rerun
+  configurations.
 - Online guard flags for growth spikes, duplicate segments, and source
   dominance.
 - Conservative mitigation report for exact duplicate retrieval, memory, and
@@ -113,7 +115,7 @@ for LangChain callbacks, a custom ReAct loop, or other agent implementations.
 
 ## Versioning
 
-The project uses semantic versioning. Current version: `0.4.0`.
+The project uses semantic versioning. Current version: `0.5.0`.
 
 See [CHANGELOG.md](CHANGELOG.md) for changes and
 [docs/architecture.md](docs/architecture.md) for the package structure.

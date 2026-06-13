@@ -107,9 +107,32 @@ def summarize_traces(traces: list[AuditTrace]) -> dict[str, Any]:
 
     return {
         "trace_count": len(traces),
-        "by_configuration": summarize_group(by_config),
+        "by_configuration": (by_configuration_summary := summarize_group(by_config)),
         "by_workflow_family": summarize_group(by_workflow),
+        "mitigation_pairs": compare_mitigated_configurations(by_configuration_summary),
         "mean_context_growth_rate": mean(growth_rates) if growth_rates else 0.0,
         "risk_flags": dict(sorted(risk_flags.items())),
         "bloat_labels": dict(sorted(bloat_labels.items())),
     }
+
+
+def compare_mitigated_configurations(by_configuration: dict[str, dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    pairs: dict[str, dict[str, Any]] = {}
+    for config_name, mitigated in by_configuration.items():
+        if not config_name.endswith("_mitigated"):
+            continue
+        original_name = config_name.removesuffix("_mitigated")
+        original = by_configuration.get(original_name)
+        if not original:
+            continue
+        pairs[f"{original_name} -> {config_name}"] = {
+            "mean_total_tokens_before": original["mean_total_tokens"],
+            "mean_total_tokens_after": mitigated["mean_total_tokens"],
+            "mean_token_delta": mitigated["mean_total_tokens"] - original["mean_total_tokens"],
+            "mean_redundancy_ratio_before": original["mean_redundancy_ratio"],
+            "mean_redundancy_ratio_after": mitigated["mean_redundancy_ratio"],
+            "redundancy_ratio_delta": mitigated["mean_redundancy_ratio"] - original["mean_redundancy_ratio"],
+            "task_success_rate_before": original["task_success_rate"],
+            "task_success_rate_after": mitigated["task_success_rate"],
+        }
+    return pairs
