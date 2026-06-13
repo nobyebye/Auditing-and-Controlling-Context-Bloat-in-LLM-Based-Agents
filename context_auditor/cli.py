@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import csv
 import json
 from pathlib import Path
 
@@ -10,6 +11,7 @@ from ._version import __version__
 from .bloat import summarize_traces
 from .io import load_jsonl
 from .mitigation import remove_exact_duplicate_segments
+from .mitigation_eval import evaluate_mitigation_strategies, summarize_mitigation_rows
 from .reporting import write_summary_tables, write_svg_bar_charts
 
 
@@ -35,22 +37,39 @@ def analyze_command(args: argparse.Namespace) -> None:
 
 def mitigate_command(args: argparse.Namespace) -> None:
     traces = load_jsonl(args.trace_path)
-    reports = []
-    for trace in traces:
-        _, report = remove_exact_duplicate_segments(trace)
-        reports.append(
-            {
-                "trace_id": trace.trace_id,
-                "task_id": trace.task_id,
-                "configuration": trace.configuration,
-                **report.to_dict(),
-            }
-        )
+    reports = evaluate_mitigation_strategies(traces)
+    summary = summarize_mitigation_rows(reports)
 
     output = Path(args.out)
     output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_text(json.dumps(reports, indent=2, ensure_ascii=False), encoding="utf-8")
+    output.write_text(json.dumps({"summary": summary, "rows": reports}, indent=2, ensure_ascii=False), encoding="utf-8")
+    if args.csv_out:
+        _write_mitigation_csv(reports, Path(args.csv_out))
     print(f"Wrote mitigation report to {output}")
+
+
+def _write_mitigation_csv(rows: list[dict], path: Path) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fieldnames = [
+        "strategy",
+        "trace_id",
+        "task_id",
+        "configuration",
+        "workflow_family",
+        "task_success",
+        "post_mitigation_success_proxy",
+        "original_tokens",
+        "mitigated_tokens",
+        "removed_segments",
+        "removed_tokens",
+        "removed_by_source",
+        "token_reduction_ratio",
+    ]
+    with path.open("w", newline="", encoding="utf-8") as handle:
+        writer = csv.DictWriter(handle, fieldnames=fieldnames)
+        writer.writeheader()
+        for row in rows:
+            writer.writerow(row)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -70,9 +89,10 @@ def build_parser() -> argparse.ArgumentParser:
     analyze.add_argument("--charts-dir", default="results/charts")
     analyze.set_defaults(func=analyze_command)
 
-    mitigate = subparsers.add_parser("mitigate", help="Report exact duplicate segment mitigation.")
+    mitigate = subparsers.add_parser("mitigate", help="Evaluate mitigation strategies on final task invocations.")
     mitigate.add_argument("trace_path")
     mitigate.add_argument("--out", default="results/mitigation_report.json")
+    mitigate.add_argument("--csv-out", default="results/tables/mitigation_report.csv")
     mitigate.set_defaults(func=mitigate_command)
 
     return parser

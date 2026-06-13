@@ -27,6 +27,7 @@ class TraceMetadata:
     run_id: str = "run-001"
     dataset_name: str = "controlled_synthetic"
     config: dict | None = None
+    task_expected_keyword: str | None = None
 
     @property
     def config_hash(self) -> str:
@@ -78,6 +79,7 @@ class RuntimeAuditor:
             metrics=metrics,
             task_success=task_success,
             task_output=task_output,
+            task_expected_keyword=metadata.task_expected_keyword,
             risk_flags=[],
         )
         trace.risk_flags = self.guard.evaluate(trace)

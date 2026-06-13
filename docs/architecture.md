@@ -16,6 +16,10 @@ LLM-based agents.
 - `context_auditor.bloat`: offline bloat classification and grouped summaries.
 - `context_auditor.mitigation`: conservative duplicate-removal mitigation
   utilities.
+- `context_auditor.mitigation_eval`: before/after mitigation evaluation over
+  final task invocations.
+- `context_auditor.text_similarity`: deterministic token overlap and Jaccard
+  helpers.
 - `context_auditor.evaluation`: lightweight task success evaluation.
 - `context_auditor.reporting`: CSV and SVG reporting helpers for thesis tables
   and figures.
@@ -39,4 +43,4 @@ The artifact uses semantic versioning:
 - Minor version: new metrics, CLI commands, adapters, or experiment workflows.
 - Major version: incompatible trace schema or public API changes.
 
-Current version: `0.3.0`.
+Current version: `0.4.0`.

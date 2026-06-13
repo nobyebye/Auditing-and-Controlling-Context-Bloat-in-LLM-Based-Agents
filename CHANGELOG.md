@@ -2,6 +2,15 @@
 
 All notable changes to this thesis artifact are tracked here.
 
+## 0.4.0 - 2026-06-13
+
+- Added deterministic local retrieval for semi-real RAG experiments.
+- Added retrieval bloat configuration for irrelevant retrieved context.
+- Added near-duplicate metrics based on token-set Jaccard similarity.
+- Added irrelevant retrieval/memory filtering based on query overlap.
+- Added before/after mitigation evaluation over final task invocations.
+- Added CSV mitigation reports for thesis RQ4 analysis.
+
 ## 0.3.0 - 2026-06-13
 
 - Added trace schema versioning and experiment metadata fields.

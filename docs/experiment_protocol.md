@@ -24,6 +24,7 @@ The default pilot experiment matrix is stored in `configs/pilot.json`.
 - `retrieval_top1`
 - `retrieval_top3`
 - `retrieval_duplicate`
+- `retrieval_irrelevant`
 - `memory_full`
 - `memory_duplicate`
 - `tool_use`
@@ -47,6 +48,10 @@ The default pilot experiment matrix is stored in `configs/pilot.json`.
   hashes.
 - Source Dominance: flag for cases where one automatic source dominates the
   prompt.
+- Near-Duplicate Segment Count: repeated or highly overlapping segments based
+  on deterministic token-set similarity.
+- Irrelevant Context Filter: retrieval or memory segments with low overlap
+  against the current user query.
 - Estimated Cost Proxy: token-based approximation of request cost impact.
 
 ## Mitigation Evaluation
@@ -56,6 +61,13 @@ redundancy reduction, number of removed or compressed segments, and lightweight
 task performance. The mitigation goal is to reduce unnecessary context without
 significantly reducing answer usefulness.
 
+The current implementation evaluates three conservative strategies over final
+task invocations:
+
+- exact duplicate removal
+- near-duplicate removal
+- irrelevant retrieval/memory filtering
+
 ## Outputs
 
 - JSONL traces for every LLM invocation.
@@ -64,6 +76,9 @@ significantly reducing answer usefulness.
 - SVG charts for first-pass thesis figures.
 - Mitigation reports with removed segments, removed tokens, source categories,
   and token reduction ratio.
+- Mitigation summary includes original task success rate, post-mitigation
+  success proxy rate, and success-preservation proxy rate among originally
+  successful tasks.
 
 ## Repetition Strategy
 

@@ -22,4 +22,4 @@ jobs:
         run: |
           context-auditor run-pilot --out traces/pilot.jsonl --config configs/pilot.json
           context-auditor analyze traces/pilot.jsonl --out results/pilot_summary.json
-          context-auditor mitigate traces/pilot.jsonl --out results/mitigation_report.json
+          context-auditor mitigate traces/pilot.jsonl --out results/mitigation_report.json --csv-out results/tables/mitigation_report.csv

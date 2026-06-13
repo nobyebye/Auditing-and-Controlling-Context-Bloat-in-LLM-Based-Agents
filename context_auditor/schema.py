@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass, field
 from typing import Any
 
-SCHEMA_VERSION = "0.3.0"
+SCHEMA_VERSION = "0.4.0"
 
 
 @dataclass
@@ -56,6 +56,7 @@ class AuditTrace:
     metrics: dict[str, Any]
     task_success: bool | None = None
     task_output: str | None = None
+    task_expected_keyword: str | None = None
     risk_flags: list[str] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:

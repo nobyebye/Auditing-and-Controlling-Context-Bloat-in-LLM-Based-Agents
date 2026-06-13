@@ -32,6 +32,7 @@ def trace_from_dict(data: dict) -> AuditTrace:
         metrics=data.get("metrics", {}),
         task_success=data.get("task_success"),
         task_output=data.get("task_output"),
+        task_expected_keyword=data.get("task_expected_keyword"),
         risk_flags=data.get("risk_flags", []),
     )
 

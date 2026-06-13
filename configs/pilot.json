@@ -10,7 +10,8 @@
       {"configuration": "baseline"},
       {"configuration": "retrieval_top1", "retrieval_top_k": 1},
       {"configuration": "retrieval_top3", "retrieval_top_k": 3},
-      {"configuration": "retrieval_duplicate", "retrieval_top_k": 2, "duplicate_retrieval": true}
+      {"configuration": "retrieval_duplicate", "retrieval_top_k": 2, "duplicate_retrieval": true},
+      {"configuration": "retrieval_irrelevant", "retrieval_top_k": 2, "include_irrelevant_retrieval": true}
     ],
     "memory_turns": [
       {"configuration": "baseline"},

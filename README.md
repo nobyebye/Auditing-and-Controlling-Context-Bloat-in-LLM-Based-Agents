@@ -27,6 +27,8 @@ debug.
   - Duplicate Segment Count
   - Source Dominance
   - Estimated Cost Proxy
+- Deterministic local retrieval for reproducible RAG-style experiments.
+- Near-duplicate and irrelevant-context mitigation strategies.
 - Online guard flags for growth spikes, duplicate segments, and source
   dominance.
 - Conservative mitigation report for exact duplicate retrieval, memory, and
@@ -62,7 +64,7 @@ python -m context_auditor.cli analyze traces/pilot.jsonl --out results/pilot_sum
 Generate a mitigation report:
 
 ```powershell
-python -m context_auditor.cli mitigate traces/pilot.jsonl --out results/mitigation_report.json
+python -m context_auditor.cli mitigate traces/pilot.jsonl --out results/mitigation_report.json --csv-out results/tables/mitigation_report.csv
 ```
 
 Run tests:
@@ -79,7 +81,7 @@ From the repository root:
 pip install -e .
 context-auditor run-pilot --out traces/pilot.jsonl
 context-auditor analyze traces/pilot.jsonl --out results/pilot_summary.json --tables-dir results/tables --charts-dir results/charts
-context-auditor mitigate traces/pilot.jsonl --out results/mitigation_report.json
+context-auditor mitigate traces/pilot.jsonl --out results/mitigation_report.json --csv-out results/tables/mitigation_report.csv
 ```
 
 ## Experiment Outputs
@@ -90,7 +92,8 @@ The pilot produces:
 - `results/pilot_summary.json`: grouped bloat metrics
 - `results/tables/*.csv`: thesis-ready summary tables
 - `results/charts/*.svg`: first-pass figures for redundancy and token counts
-- `results/mitigation_report.json`: duplicate-removal token reduction report
+- `results/mitigation_report.json`: before/after mitigation evaluation report
+- `results/tables/mitigation_report.csv`: thesis-ready mitigation table
 
 ## Trace Schema
 
@@ -110,7 +113,7 @@ for LangChain callbacks, a custom ReAct loop, or other agent implementations.
 
 ## Versioning
 
-The project uses semantic versioning. Current version: `0.3.0`.
+The project uses semantic versioning. Current version: `0.4.0`.
 
 See [CHANGELOG.md](CHANGELOG.md) for changes and
 [docs/architecture.md](docs/architecture.md) for the package structure.

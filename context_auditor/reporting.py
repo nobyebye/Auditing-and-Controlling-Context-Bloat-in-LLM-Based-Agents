@@ -21,8 +21,10 @@ def _write_group_csv(group: dict[str, dict[str, Any]], path: Path) -> None:
         "mean_total_tokens",
         "mean_total_chars",
         "mean_redundancy_ratio",
+        "mean_near_redundancy_ratio",
         "mean_unique_information_ratio",
         "duplicate_segment_count",
+        "near_duplicate_segment_count",
         "task_success_rate",
     ]
     with path.open("w", newline="", encoding="utf-8") as handle:

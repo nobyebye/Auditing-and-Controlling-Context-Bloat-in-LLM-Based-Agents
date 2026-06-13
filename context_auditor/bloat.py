@@ -8,6 +8,7 @@ from statistics import mean
 from typing import Any
 
 from .schema import AuditTrace, Segment
+from .text_similarity import query_overlap_ratio
 
 
 @dataclass(frozen=True)
@@ -46,7 +47,18 @@ def classify_bloat(trace: AuditTrace, thresholds: BloatThresholds | None = None)
         if tokens > 0:
             labels.append(f"redundant_source:{source}")
 
+    if trace.metrics.get("near_duplicate_segment_count", 0) > trace.metrics.get("duplicate_segment_count", 0):
+        labels.append("near_duplicate_context")
+
     return sorted(set(labels))
+
+
+def irrelevant_segments(trace: AuditTrace, query: str, threshold: float = 0.05) -> list[Segment]:
+    return [
+        segment
+        for segment in trace.segments
+        if segment.source_type in {"retrieval", "memory"} and query_overlap_ratio(segment.text, query) <= threshold
+    ]
 
 
 def summarize_traces(traces: list[AuditTrace]) -> dict[str, Any]:
@@ -79,10 +91,14 @@ def summarize_traces(traces: list[AuditTrace]) -> dict[str, Any]:
                 "mean_total_tokens": mean(trace.metrics.get("total_tokens", 0) for trace in items),
                 "mean_total_chars": mean(trace.metrics.get("total_chars", 0) for trace in items),
                 "mean_redundancy_ratio": mean(trace.metrics.get("redundancy_ratio", 0.0) for trace in items),
+                "mean_near_redundancy_ratio": mean(trace.metrics.get("near_redundancy_ratio", 0.0) for trace in items),
                 "mean_unique_information_ratio": mean(
                     trace.metrics.get("unique_information_ratio", 1.0) for trace in items
                 ),
                 "duplicate_segment_count": sum(trace.metrics.get("duplicate_segment_count", 0) for trace in items),
+                "near_duplicate_segment_count": sum(
+                    trace.metrics.get("near_duplicate_segment_count", 0) for trace in items
+                ),
                 "task_success_rate": (
                     sum(1 for trace in scored if trace.task_success) / len(scored) if scored else None
                 ),

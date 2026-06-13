@@ -9,7 +9,8 @@ from dataclasses import asdict, dataclass
 from context_auditor import Message, RuntimeAuditor, TraceMetadata
 from context_auditor.evaluation import keyword_success
 
-from .tasks import MEMORY_ITEMS, POLICY_DOCS, Task
+from .retrieval import render_retrieved_context, retrieve_documents
+from .tasks import MEMORY_ITEMS, Task
 
 
 OPERATORS = {
@@ -37,9 +38,11 @@ def safe_calculate(expression: str) -> float:
 class AgentConfig:
     configuration: str
     retrieval_top_k: int = 0
+    retrieval_strategy: str = "local_overlap"
     include_memory: bool = False
     use_tools: bool = False
     duplicate_retrieval: bool = False
+    include_irrelevant_retrieval: bool = False
     duplicate_memory: bool = False
     repeat_tool_output: bool = False
     guard_mode: bool = False
@@ -74,6 +77,7 @@ class CustomReactAgent:
             run_id=self.run_id,
             dataset_name=self.dataset_name,
             config=asdict(config),
+            task_expected_keyword=task.expected_keyword,
         )
         messages = self._base_messages(task, config)
         self.auditor.capture(metadata, messages)
@@ -113,7 +117,12 @@ class CustomReactAgent:
             Message(role="system", content="Available tools: calculator. Agent scratchpad is appended after tool use."),
         ]
         if config.retrieval_top_k:
-            retrieved = "\n".join(POLICY_DOCS[: config.retrieval_top_k])
+            retrieved_documents = retrieve_documents(
+                task.prompt,
+                top_k=config.retrieval_top_k,
+                include_irrelevant=config.include_irrelevant_retrieval,
+            )
+            retrieved = render_retrieved_context(retrieved_documents)
             messages.append(Message(role="system", content=f"Retrieved context:\n{retrieved}"))
             if config.duplicate_retrieval:
                 messages.append(Message(role="system", content=f"Retrieved context:\n{retrieved}"))
@@ -127,7 +136,13 @@ class CustomReactAgent:
 
     def _answer_without_tools(self, task: Task, config: AgentConfig) -> str:
         if config.retrieval_top_k:
-            return next((doc for doc in POLICY_DOCS if task.expected_keyword in doc.lower()), POLICY_DOCS[0])
+            documents = retrieve_documents(
+                task.prompt,
+                top_k=config.retrieval_top_k,
+                include_irrelevant=config.include_irrelevant_retrieval,
+            )
+            rendered = [document.render() for document in documents]
+            return next((doc for doc in rendered if task.expected_keyword in doc.lower()), rendered[0])
         if config.include_memory:
             return next((item for item in MEMORY_ITEMS if task.expected_keyword in item.lower()), MEMORY_ITEMS[0])
         return "Insufficient context in baseline configuration."

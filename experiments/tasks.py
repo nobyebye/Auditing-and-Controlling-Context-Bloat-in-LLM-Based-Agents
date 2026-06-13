@@ -34,12 +34,6 @@ MEMORY_TASKS = [
 ALL_TASKS = RETRIEVAL_TASKS + TOOL_TASKS + MEMORY_TASKS
 
 
-POLICY_DOCS = [
-    "Remote work eligibility is covered by the Flexible Work Policy. Employees need manager approval.",
-    "External AI tools require project owner approval before confidential data may be entered.",
-    "Incident records are retained for two years after closure unless legal review requires longer retention.",
-]
-
 MEMORY_ITEMS = [
     "Project name: Runtime Context Auditor.",
     "Supervisor preference: keep the thesis centered on auditing, not broad optimization.",
