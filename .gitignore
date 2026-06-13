@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+build/
+dist/
+*.egg-info/
+.venv/
+venv/
+
+# Experiment outputs
+traces/
+results/
+rendered_action_plan/
+rendered_context_bloat_action_plan/
+rendered_context_bloat_action_plan*/
+
+# Local/editor files
+.env
+.env.*
+*.log
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Keep source documents tracked only when intentionally added.
+~$*.docx
+
