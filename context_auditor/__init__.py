@@ -2,6 +2,7 @@
 
 from ._version import __version__
 from .bloat import BloatThresholds, classify_bloat, summarize_traces
+from .framework_compare import compare_framework_summaries, write_framework_comparison_csv
 from .guard import GuardConfig, ContextGrowthGuard
 from .io import load_jsonl, write_jsonl
 from .mitigation import MitigationReport, remove_exact_duplicate_segments
@@ -27,6 +28,7 @@ __all__ = [
     "TraceMetadata",
     "__version__",
     "classify_bloat",
+    "compare_framework_summaries",
     "label_message_source",
     "load_jsonl",
     "evaluate_mitigation_strategies",
@@ -36,5 +38,6 @@ __all__ = [
     "segment_messages",
     "summarize_mitigation_rows",
     "summarize_traces",
+    "write_framework_comparison_csv",
     "write_jsonl",
 ]

@@ -14,6 +14,8 @@ LLM-based agents.
 - `context_auditor.guard`: online risk flags for growth spikes, source
   dominance, and duplicate segments.
 - `context_auditor.bloat`: offline bloat classification and grouped summaries.
+- `context_auditor.framework_compare`: cross-framework summary comparison and
+  CSV export helpers.
 - `context_auditor.mitigation`: conservative duplicate-removal mitigation
   utilities.
 - `context_auditor.message_mitigation`: pre-call message-level mitigation for
@@ -44,6 +46,8 @@ LLM-based agents.
   `langchain_core` is not installed.
 - `experiments.retrieval`: deterministic local retrieval utilities.
 - `experiments.pilot`: custom ReAct orchestration entry point used by the CLI.
+- `experiments.suite`: end-to-end orchestration for custom ReAct,
+  LangChain-compatible, summary, chart, and framework comparison outputs.
 
 ## Data Flow
 
@@ -61,4 +65,4 @@ The artifact uses semantic versioning:
 - Minor version: new metrics, CLI commands, adapters, or experiment workflows.
 - Major version: incompatible trace schema or public API changes.
 
-Current version: `0.7.0`.
+Current version: `0.8.0`.

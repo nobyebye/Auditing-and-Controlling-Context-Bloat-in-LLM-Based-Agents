@@ -30,14 +30,7 @@ def run_pilot(output_path: str | Path | None = None, config_path: str | Path = "
         memory_items=dataset.memory_items,
     )
 
-    for task in dataset.tasks_by_workflow("retrieval_qa"):
-        for config in experiment.workflow_configs["retrieval_qa"]:
-            agent.run(task, config)
-
-    for task in dataset.tasks_by_workflow("memory_turns"):
-        for config in experiment.workflow_configs["memory_turns"]:
-            agent.run(task, config)
-
-    for task in dataset.tasks_by_workflow("multi_step_tool"):
-        for config in experiment.workflow_configs["multi_step_tool"]:
-            agent.run(task, config)
+    for workflow_family, configs in experiment.workflow_configs.items():
+        for task in dataset.tasks_by_workflow(workflow_family):
+            for config in configs:
+                agent.run(task, config)

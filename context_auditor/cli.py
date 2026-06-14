@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import argparse
-import csv
 import json
 from pathlib import Path
 
@@ -12,7 +11,7 @@ from .bloat import summarize_traces
 from .io import load_jsonl
 from .mitigation import remove_exact_duplicate_segments
 from .mitigation_eval import evaluate_mitigation_strategies, summarize_mitigation_rows
-from .reporting import write_summary_tables, write_svg_bar_charts
+from .reporting import write_mitigation_csv, write_summary_tables, write_svg_bar_charts
 
 
 def run_pilot_command(args: argparse.Namespace) -> None:
@@ -27,6 +26,14 @@ def run_langchain_pilot_command(args: argparse.Namespace) -> None:
 
     run_langchain_pilot(args.out, args.config)
     print(f"Wrote LangChain-compatible traces to {args.out}")
+
+
+def run_suite_command(args: argparse.Namespace) -> None:
+    from experiments.suite import run_experiment_suite
+
+    outputs = run_experiment_suite(args.out_dir, args.custom_config, args.langchain_config)
+    print(f"Wrote experiment suite outputs to {args.out_dir}")
+    print(f"Wrote framework comparison to {outputs['framework_comparison_csv_path']}")
 
 
 def analyze_command(args: argparse.Namespace) -> None:
@@ -51,32 +58,8 @@ def mitigate_command(args: argparse.Namespace) -> None:
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps({"summary": summary, "rows": reports}, indent=2, ensure_ascii=False), encoding="utf-8")
     if args.csv_out:
-        _write_mitigation_csv(reports, Path(args.csv_out))
+        write_mitigation_csv(reports, Path(args.csv_out))
     print(f"Wrote mitigation report to {output}")
-
-
-def _write_mitigation_csv(rows: list[dict], path: Path) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    fieldnames = [
-        "strategy",
-        "trace_id",
-        "task_id",
-        "configuration",
-        "workflow_family",
-        "task_success",
-        "post_mitigation_success_proxy",
-        "original_tokens",
-        "mitigated_tokens",
-        "removed_segments",
-        "removed_tokens",
-        "removed_by_source",
-        "token_reduction_ratio",
-    ]
-    with path.open("w", newline="", encoding="utf-8") as handle:
-        writer = csv.DictWriter(handle, fieldnames=fieldnames)
-        writer.writeheader()
-        for row in rows:
-            writer.writerow(row)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -100,6 +83,19 @@ def build_parser() -> argparse.ArgumentParser:
         help="Experiment configuration JSON path.",
     )
     langchain_pilot.set_defaults(func=run_langchain_pilot_command)
+
+    suite = subparsers.add_parser(
+        "run-suite",
+        help="Run custom and LangChain-compatible pilots and write cross-framework comparison outputs.",
+    )
+    suite.add_argument("--out-dir", default="artifacts", help="Output directory for traces, summaries, tables, and comparison files.")
+    suite.add_argument("--custom-config", default="configs/pilot.json", help="Custom ReAct experiment configuration JSON path.")
+    suite.add_argument(
+        "--langchain-config",
+        default="configs/langchain_pilot.json",
+        help="LangChain-compatible experiment configuration JSON path.",
+    )
+    suite.set_defaults(func=run_suite_command)
 
     analyze = subparsers.add_parser("analyze", help="Summarize a JSONL trace file.")
     analyze.add_argument("trace_path")

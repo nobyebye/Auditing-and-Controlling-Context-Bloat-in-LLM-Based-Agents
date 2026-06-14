@@ -91,6 +91,8 @@ configuration pairs are reported in `mitigation_pairs` inside the JSON summary.
 - JSON summary grouped by configuration and workflow family.
 - CSV tables for thesis result tables.
 - SVG charts for first-pass thesis figures.
+- Cross-framework comparison JSON and CSV outputs from `run-suite`, comparing
+  token counts, redundancy ratios, and task success rates by configuration.
 - Mitigation reports with removed segments, removed tokens, source categories,
   and token reduction ratio.
 - Mitigation summary includes original task success rate, post-mitigation
@@ -103,3 +105,15 @@ Use 8-12 tasks per workflow family in the full thesis study and at least three
 repetitions per configuration. The included pilot can remain smaller and should
 validate the trace format, bloat metrics, localization logic, and mitigation
 pipeline before the full experiment.
+
+## Recommended Reproducibility Command
+
+Run the complete controlled experiment artifact with:
+
+```powershell
+python -m context_auditor.cli run-suite --out-dir artifacts
+```
+
+This produces custom ReAct traces, LangChain-compatible traces, per-framework
+summaries, CSV tables, SVG charts, and cross-framework comparison files under
+`artifacts/`.

@@ -1,5 +1,5 @@
 {
-  "experiment_id": "langchain-context-bloat-v0.7",
+  "experiment_id": "langchain-context-bloat-v0.8",
   "run_id": "run-001",
   "dataset_name": "controlled_synthetic",
   "provider": "mock",

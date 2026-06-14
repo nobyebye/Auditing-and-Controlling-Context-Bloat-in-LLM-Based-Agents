@@ -2,6 +2,18 @@
 
 All notable changes to this thesis artifact are tracked here.
 
+## 0.8.0 - 2026-06-14
+
+- Added a full experiment suite runner that executes custom ReAct and
+  LangChain-compatible pilots from one command.
+- Added cross-framework comparison JSON and CSV outputs for configuration-level
+  token, redundancy, and task-success comparison.
+- Added suite-level mitigation reports for both custom ReAct and
+  LangChain-compatible runs.
+- Added `run-suite` to the CLI as the recommended reproducibility command.
+- Made the custom pilot loop configuration-driven so subset experiment configs
+  can be used for fast tests and pilot studies.
+
 ## 0.7.0 - 2026-06-14
 
 - Added a LangChain-compatible pilot runner that exercises the callback

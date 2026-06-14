@@ -39,6 +39,8 @@ debug.
   tool-use experiments.
 - LangChain-compatible pilot workflows that exercise the callback
   instrumentation boundary.
+- One-command experiment suite that runs both implementations and writes
+  cross-framework comparison tables.
 - File-backed controlled datasets for reproducible thesis experiments.
 - Minimal provider abstraction for mock and OpenAI-compatible chat providers.
 - Optional LangChain callback adapter.
@@ -73,6 +75,12 @@ Analyze traces:
 ```powershell
 python -m context_auditor.cli analyze traces/pilot.jsonl --out results/pilot_summary.json --tables-dir results/tables --charts-dir results/charts
 python -m context_auditor.cli analyze traces/langchain_pilot.jsonl --out results/langchain_pilot_summary.json --tables-dir results/langchain_tables --charts-dir results/langchain_charts
+```
+
+Run the full thesis experiment suite:
+
+```powershell
+python -m context_auditor.cli run-suite --out-dir artifacts
 ```
 
 Generate a mitigation report:
@@ -117,6 +125,7 @@ From the repository root:
 pip install -e .
 context-auditor run-pilot --out traces/pilot.jsonl
 context-auditor run-langchain-pilot --out traces/langchain_pilot.jsonl
+context-auditor run-suite --out-dir artifacts
 context-auditor analyze traces/pilot.jsonl --out results/pilot_summary.json --tables-dir results/tables --charts-dir results/charts
 context-auditor analyze traces/langchain_pilot.jsonl --out results/langchain_pilot_summary.json --tables-dir results/langchain_tables --charts-dir results/langchain_charts
 context-auditor mitigate traces/pilot.jsonl --out results/mitigation_report.json --csv-out results/tables/mitigation_report.csv
@@ -124,7 +133,7 @@ context-auditor mitigate traces/pilot.jsonl --out results/mitigation_report.json
 
 ## Experiment Outputs
 
-The pilot produces:
+The commands produce:
 
 - `traces/pilot.jsonl`: per-invocation model-visible context traces
 - `traces/langchain_pilot.jsonl`: LangChain-compatible pilot traces
@@ -133,6 +142,13 @@ The pilot produces:
 - `results/charts/*.svg`: first-pass figures for redundancy and token counts
 - `results/mitigation_report.json`: before/after mitigation evaluation report
 - `results/tables/mitigation_report.csv`: thesis-ready mitigation table
+- `artifacts/results/framework_comparison.json`: cross-framework comparison
+  data for custom ReAct and LangChain-compatible runs
+- `artifacts/results/framework_comparison.csv`: thesis-ready cross-framework
+  comparison table
+- `artifacts/results/mitigation_report.json` and
+  `artifacts/results/langchain_mitigation_report.json`: mitigation reports for
+  both framework runs
 
 ## Trace Schema
 
@@ -152,7 +168,7 @@ for LangChain callbacks, a custom ReAct loop, or other agent implementations.
 
 ## Versioning
 
-The project uses semantic versioning. Current version: `0.7.0`.
+The project uses semantic versioning. Current version: `0.8.0`.
 
 See [CHANGELOG.md](CHANGELOG.md) for changes and
 [docs/architecture.md](docs/architecture.md) for the package structure.

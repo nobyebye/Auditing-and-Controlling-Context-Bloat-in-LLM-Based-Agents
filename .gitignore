@@ -18,6 +18,7 @@ venv/
 # Experiment outputs
 traces/
 results/
+artifacts/
 rendered_action_plan/
 rendered_context_bloat_action_plan/
 rendered_context_bloat_action_plan*/
@@ -33,4 +34,3 @@ Thumbs.db
 
 # Keep source documents tracked only when intentionally added.
 ~$*.docx
-

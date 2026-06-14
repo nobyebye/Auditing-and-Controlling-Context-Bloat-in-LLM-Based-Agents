@@ -14,6 +14,31 @@ def write_summary_tables(summary: dict[str, Any], output_dir: str | Path) -> Non
     _write_group_csv(summary["by_workflow_family"], directory / "by_workflow_family.csv")
 
 
+def write_mitigation_csv(rows: list[dict[str, Any]], path: str | Path) -> None:
+    output = Path(path)
+    output.parent.mkdir(parents=True, exist_ok=True)
+    fieldnames = [
+        "strategy",
+        "trace_id",
+        "task_id",
+        "configuration",
+        "workflow_family",
+        "task_success",
+        "post_mitigation_success_proxy",
+        "original_tokens",
+        "mitigated_tokens",
+        "removed_segments",
+        "removed_tokens",
+        "removed_by_source",
+        "token_reduction_ratio",
+    ]
+    with output.open("w", newline="", encoding="utf-8") as handle:
+        writer = csv.DictWriter(handle, fieldnames=fieldnames)
+        writer.writeheader()
+        for row in rows:
+            writer.writerow(row)
+
+
 def _write_group_csv(group: dict[str, dict[str, Any]], path: Path) -> None:
     fieldnames = [
         "name",
