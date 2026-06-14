@@ -6,14 +6,22 @@ from pathlib import Path
 
 from context_auditor.reporting import write_summary_tables, write_svg_bar_charts
 from experiments.config import load_experiment_config
+from experiments.datasets import load_controlled_dataset
 
 
 class ConfigAndReportingTests(unittest.TestCase):
     def test_load_default_config(self) -> None:
         config = load_experiment_config("configs/pilot.json")
-        self.assertEqual(config.experiment_id, "pilot-context-bloat-v0.5")
+        self.assertEqual(config.experiment_id, "pilot-context-bloat-v0.6")
         self.assertIn("retrieval_qa", config.workflow_configs)
         self.assertEqual(config.workflow_configs["retrieval_qa"][0].configuration, "baseline")
+
+    def test_load_controlled_dataset(self) -> None:
+        dataset = load_controlled_dataset()
+        self.assertEqual(dataset.name, "controlled_synthetic")
+        self.assertEqual(len(dataset.tasks_by_workflow("retrieval_qa")), 3)
+        self.assertGreaterEqual(len(dataset.policy_docs), 5)
+        self.assertGreaterEqual(len(dataset.memory_items), 3)
 
     def test_reporting_writes_tables_and_charts(self) -> None:
         summary = {

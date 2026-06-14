@@ -63,6 +63,10 @@ class BloatAndMitigationTests(unittest.TestCase):
         )
 
         summary = summarize_traces([first, second])
+        self.assertEqual(summary["schema_version"], "0.6.0")
+        self.assertEqual(summary["experiment_id"], "pilot")
+        self.assertEqual(summary["dataset_name"], "controlled_synthetic")
+        self.assertEqual(summary["providers"], ["mock"])
         self.assertEqual(summary["trace_count"], 2)
         self.assertIn("retrieval", summary["by_configuration"])
         self.assertGreater(summary["mean_context_growth_rate"], 0)

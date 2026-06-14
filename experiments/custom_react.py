@@ -10,8 +10,8 @@ from context_auditor import Message, RuntimeAuditor, TraceMetadata
 from context_auditor.evaluation import keyword_success
 from context_auditor.message_mitigation import apply_message_mitigation
 
-from .retrieval import render_retrieved_context, retrieve_documents
-from .tasks import MEMORY_ITEMS, Task
+from .retrieval import Document, render_retrieved_context, retrieve_documents
+from .tasks import Task
 
 
 OPERATORS = {
@@ -60,6 +60,8 @@ class CustomReactAgent:
         experiment_id: str = "pilot",
         run_id: str = "run-001",
         dataset_name: str = "controlled_synthetic",
+        policy_docs: list[Document] | None = None,
+        memory_items: list[str] | None = None,
     ) -> None:
         self.auditor = auditor
         self.provider = provider
@@ -67,6 +69,8 @@ class CustomReactAgent:
         self.experiment_id = experiment_id
         self.run_id = run_id
         self.dataset_name = dataset_name
+        self.policy_docs = policy_docs or []
+        self.memory_items = memory_items or []
 
     def run(self, task: Task, config: AgentConfig) -> str:
         metadata = TraceMetadata(
@@ -133,6 +137,7 @@ class CustomReactAgent:
             retrieved_documents = retrieve_documents(
                 task.prompt,
                 top_k=config.retrieval_top_k,
+                corpus=self.policy_docs,
                 include_irrelevant=config.include_irrelevant_retrieval,
             )
             retrieved = render_retrieved_context(retrieved_documents)
@@ -140,7 +145,7 @@ class CustomReactAgent:
             if config.duplicate_retrieval:
                 messages.append(Message(role="system", content=f"Retrieved context:\n{retrieved}"))
         if config.include_memory:
-            memory = "Conversation history:\n" + "\n".join(MEMORY_ITEMS)
+            memory = "Conversation history:\n" + "\n".join(self.memory_items)
             messages.append(Message(role="system", content=memory))
             if config.duplicate_memory:
                 messages.append(Message(role="system", content=memory))

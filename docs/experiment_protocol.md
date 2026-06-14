@@ -18,7 +18,12 @@
 
 ## Configurations
 
-The default pilot experiment matrix is stored in `configs/pilot.json`.
+The default pilot experiment matrix is stored in `configs/pilot.json`. The
+controlled input material is stored in `datasets/controlled_synthetic/`:
+
+- `tasks.json` defines retrieval, memory, and tool-use tasks.
+- `policy_docs.json` defines the local retrieval corpus.
+- `memory_items.json` defines the controlled conversation history/memory input.
 
 - `baseline`
 - `retrieval_top1`

@@ -37,12 +37,15 @@ debug.
   tool segments.
 - Controlled custom ReAct-style pilot workflows for retrieval, memory, and
   tool-use experiments.
+- File-backed controlled datasets for reproducible thesis experiments.
+- Minimal provider abstraction for mock and OpenAI-compatible chat providers.
 - Optional LangChain callback adapter.
 
 ## Repository Layout
 
 ```text
 context_auditor/     Core package
+datasets/           Controlled JSON datasets used by the pilot experiments
 experiments/         Controlled pilot workflows and tasks
 scripts/             Backward-compatible helper scripts and DOCX builders
 docs/                Thesis proposal, chapter outline, protocol, architecture
@@ -73,6 +76,28 @@ Run tests:
 
 ```powershell
 python -m unittest discover -s tests
+```
+
+## Controlled Dataset
+
+The default pilot uses `datasets/controlled_synthetic/`, which contains:
+
+- `tasks.json`: retrieval, memory, and tool-use tasks with expected keywords
+- `policy_docs.json`: local policy documents for deterministic retrieval
+- `memory_items.json`: controlled memory/history items
+
+Keeping the dataset in JSON makes the experimental material easy to inspect,
+version, and replace for the full thesis study.
+
+## Provider Abstraction
+
+The pilot defaults to the deterministic `mock` provider so experiments can be
+run without API cost. A minimal OpenAI-compatible provider is available for
+future real-model runs through:
+
+```powershell
+$env:OPENAI_COMPATIBLE_API_KEY="..."
+$env:OPENAI_COMPATIBLE_BASE_URL="https://api.openai.com/v1"
 ```
 
 ## Installable CLI
@@ -115,7 +140,7 @@ for LangChain callbacks, a custom ReAct loop, or other agent implementations.
 
 ## Versioning
 
-The project uses semantic versioning. Current version: `0.5.0`.
+The project uses semantic versioning. Current version: `0.6.0`.
 
 See [CHANGELOG.md](CHANGELOG.md) for changes and
 [docs/architecture.md](docs/architecture.md) for the package structure.

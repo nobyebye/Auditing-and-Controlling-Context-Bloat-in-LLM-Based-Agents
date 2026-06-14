@@ -1,0 +1,27 @@
+[
+  {
+    "doc_id": "policy-remote",
+    "title": "Flexible Work Policy",
+    "text": "Remote work eligibility is covered by the Flexible Work Policy. Employees need manager approval."
+  },
+  {
+    "doc_id": "policy-ai-tools",
+    "title": "External AI Tool Use",
+    "text": "External AI tools require project owner approval before confidential data may be entered."
+  },
+  {
+    "doc_id": "policy-incidents",
+    "title": "Incident Retention",
+    "text": "Incident records are retained for two years after closure unless legal review requires longer retention."
+  },
+  {
+    "doc_id": "policy-travel",
+    "title": "Travel Reimbursement",
+    "text": "Travel receipts must be submitted within thirty days and are unrelated to AI tool approval."
+  },
+  {
+    "doc_id": "policy-hardware",
+    "title": "Hardware Support",
+    "text": "Hardware replacement requests are handled by the support desk and do not affect incident retention."
+  }
+]

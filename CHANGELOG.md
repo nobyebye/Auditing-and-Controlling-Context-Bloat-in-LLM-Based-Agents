@@ -2,6 +2,16 @@
 
 All notable changes to this thesis artifact are tracked here.
 
+## 0.6.0 - 2026-06-14
+
+- Externalized the controlled pilot tasks, policy documents, and memory items
+  into versioned JSON dataset files.
+- Added a dataset loading layer so pilot runs use reproducible experiment
+  material instead of hard-coded task constants.
+- Added a minimal chat provider abstraction with deterministic mock and
+  OpenAI-compatible provider implementations.
+- Updated documentation and schema metadata for the v0.6.0 experiment artifact.
+
 ## 0.5.0 - 2026-06-13
 
 - Added pre-call message-level mitigation for controlled rerun conditions.

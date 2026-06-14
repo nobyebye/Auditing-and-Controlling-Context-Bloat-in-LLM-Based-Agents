@@ -20,6 +20,8 @@ LLM-based agents.
   controlled rerun configurations.
 - `context_auditor.mitigation_eval`: before/after mitigation evaluation over
   final task invocations.
+- `context_auditor.providers`: mock and OpenAI-compatible chat provider
+  abstraction for future real-model experiment runs.
 - `context_auditor.text_similarity`: deterministic token overlap and Jaccard
   helpers.
 - `context_auditor.evaluation`: lightweight task success evaluation.
@@ -28,6 +30,17 @@ LLM-based agents.
 - `context_auditor.tracer`: runtime capture API used before LLM invocations.
 - `context_auditor.langchain_adapter`: optional LangChain callback adapter.
 - `context_auditor.cli`: command-line interface.
+
+## Experiment Layer
+
+- `datasets/controlled_synthetic`: JSON task, retrieval corpus, and memory
+  inputs for reproducible pilot runs.
+- `experiments.datasets`: dataset loader that materializes JSON files into
+  task, document, and memory objects.
+- `experiments.config`: JSON experiment matrix loader.
+- `experiments.custom_react`: controlled ReAct-style workflow implementation.
+- `experiments.retrieval`: deterministic local retrieval utilities.
+- `experiments.pilot`: orchestration entry point used by the CLI.
 
 ## Data Flow
 
@@ -45,4 +58,4 @@ The artifact uses semantic versioning:
 - Minor version: new metrics, CLI commands, adapters, or experiment workflows.
 - Major version: incompatible trace schema or public API changes.
 
-Current version: `0.5.0`.
+Current version: `0.6.0`.

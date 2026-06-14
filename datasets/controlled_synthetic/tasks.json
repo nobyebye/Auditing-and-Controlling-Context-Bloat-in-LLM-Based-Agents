@@ -1,0 +1,56 @@
+[
+  {
+    "task_id": "retrieval-001",
+    "workflow_family": "retrieval_qa",
+    "prompt": "Which policy covers remote work eligibility?",
+    "expected_keyword": "remote"
+  },
+  {
+    "task_id": "retrieval-002",
+    "workflow_family": "retrieval_qa",
+    "prompt": "What must employees do before using external AI tools?",
+    "expected_keyword": "approval"
+  },
+  {
+    "task_id": "retrieval-003",
+    "workflow_family": "retrieval_qa",
+    "prompt": "How long are incident records retained?",
+    "expected_keyword": "retained"
+  },
+  {
+    "task_id": "tool-001",
+    "workflow_family": "multi_step_tool",
+    "prompt": "Calculate 18 * 7, then add 42.",
+    "expected_keyword": "168"
+  },
+  {
+    "task_id": "tool-002",
+    "workflow_family": "multi_step_tool",
+    "prompt": "Calculate 125 / 5, then subtract 9.",
+    "expected_keyword": "16"
+  },
+  {
+    "task_id": "tool-003",
+    "workflow_family": "multi_step_tool",
+    "prompt": "Calculate 14 * 14, then add 4.",
+    "expected_keyword": "200"
+  },
+  {
+    "task_id": "memory-001",
+    "workflow_family": "memory_turns",
+    "prompt": "Use the remembered project name in the answer.",
+    "expected_keyword": "context"
+  },
+  {
+    "task_id": "memory-002",
+    "workflow_family": "memory_turns",
+    "prompt": "Use the remembered supervisor preference in the answer.",
+    "expected_keyword": "auditing"
+  },
+  {
+    "task_id": "memory-003",
+    "workflow_family": "memory_turns",
+    "prompt": "Use the remembered thesis constraint in the answer.",
+    "expected_keyword": "lightweight"
+  }
+]

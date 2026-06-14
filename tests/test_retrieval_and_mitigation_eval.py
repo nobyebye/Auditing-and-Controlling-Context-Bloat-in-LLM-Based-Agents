@@ -5,6 +5,7 @@ import unittest
 from context_auditor import Message, RuntimeAuditor, TraceMetadata
 from context_auditor.mitigation import filter_irrelevant_segments, remove_near_duplicate_segments
 from context_auditor.mitigation_eval import evaluate_mitigation_strategies, final_invocations, summarize_mitigation_rows
+from experiments.datasets import load_controlled_dataset
 from experiments.retrieval import retrieve_documents
 
 
@@ -21,7 +22,8 @@ def metadata(task_id: str = "task") -> TraceMetadata:
 
 class RetrievalAndMitigationEvalTests(unittest.TestCase):
     def test_local_retrieval_ranks_relevant_document(self) -> None:
-        docs = retrieve_documents("Which policy covers remote work eligibility?", top_k=1)
+        dataset = load_controlled_dataset()
+        docs = retrieve_documents("Which policy covers remote work eligibility?", top_k=1, corpus=dataset.policy_docs)
         self.assertEqual(docs[0].doc_id, "policy-remote")
 
     def test_near_duplicate_metrics_and_removal(self) -> None:

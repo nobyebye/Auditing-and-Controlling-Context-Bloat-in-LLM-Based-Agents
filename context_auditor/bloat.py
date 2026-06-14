@@ -105,7 +105,15 @@ def summarize_traces(traces: list[AuditTrace]) -> dict[str, Any]:
             }
         return result
 
+    first_trace = traces[0] if traces else None
     return {
+        "schema_version": first_trace.schema_version if first_trace else None,
+        "experiment_id": first_trace.experiment_id if first_trace else None,
+        "run_id": first_trace.run_id if first_trace else None,
+        "dataset_name": first_trace.dataset_name if first_trace else None,
+        "frameworks": sorted({trace.framework for trace in traces}),
+        "providers": sorted({trace.provider for trace in traces}),
+        "models": sorted({trace.model for trace in traces}),
         "trace_count": len(traces),
         "by_configuration": (by_configuration_summary := summarize_group(by_config)),
         "by_workflow_family": summarize_group(by_workflow),
