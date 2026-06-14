@@ -2,6 +2,16 @@
 
 All notable changes to this thesis artifact are tracked here.
 
+## 0.10.0 - 2026-06-14
+
+- Added DeepSeek provider support through the OpenAI-compatible chat
+  completions API.
+- Added `check-provider` to report provider environment variable status without
+  printing secret values.
+- Added `run-real-model-smoke` and `configs/deepseek_smoke.json` for a small
+  optional real-model connectivity experiment.
+- Hid provider API keys from dataclass repr output.
+
 ## 0.9.0 - 2026-06-14
 
 - Added a suite-level `manifest.json` that records artifact version, schema

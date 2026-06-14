@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass, field
 from typing import Any
 
-SCHEMA_VERSION = "0.9.0"
+SCHEMA_VERSION = "0.10.0"
 
 
 @dataclass

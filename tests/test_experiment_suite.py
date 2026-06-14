@@ -60,8 +60,8 @@ class ExperimentSuiteTests(unittest.TestCase):
             self.assertEqual(comparison["rows"][0]["configuration"], "retrieval_top1")
 
             manifest = json.loads(outputs["manifest_path"].read_text(encoding="utf-8"))
-            self.assertEqual(manifest["artifact_version"], "0.9.0")
-            self.assertEqual(manifest["schema_version"], "0.9.0")
+            self.assertEqual(manifest["artifact_version"], "0.10.0")
+            self.assertEqual(manifest["schema_version"], "0.10.0")
             self.assertEqual(manifest["configs"]["custom"], str(custom_config))
             self.assertEqual(manifest["configs"]["langchain"], str(langchain_config))
             self.assertEqual(manifest["trace_counts"]["custom-react"], 6)

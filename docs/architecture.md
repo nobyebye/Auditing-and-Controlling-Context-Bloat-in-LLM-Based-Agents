@@ -22,8 +22,8 @@ LLM-based agents.
   controlled rerun configurations.
 - `context_auditor.mitigation_eval`: before/after mitigation evaluation over
   final task invocations.
-- `context_auditor.providers`: mock and OpenAI-compatible chat provider
-  abstraction for future real-model experiment runs.
+- `context_auditor.providers`: mock, OpenAI-compatible, and DeepSeek chat
+  provider abstraction for future real-model experiment runs.
 - `context_auditor.text_similarity`: deterministic token overlap and Jaccard
   helpers.
 - `context_auditor.evaluation`: lightweight task success evaluation.
@@ -49,6 +49,8 @@ LLM-based agents.
 - `experiments.suite`: end-to-end orchestration for custom ReAct,
   LangChain-compatible, summary, chart, framework comparison, mitigation, and
   run-manifest outputs.
+- `experiments.real_model_smoke`: small real-provider connectivity check that
+  writes a pre-call trace and separate response report.
 
 ## Data Flow
 
@@ -66,4 +68,4 @@ The artifact uses semantic versioning:
 - Minor version: new metrics, CLI commands, adapters, or experiment workflows.
 - Major version: incompatible trace schema or public API changes.
 
-Current version: `0.9.0`.
+Current version: `0.10.0`.

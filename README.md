@@ -45,6 +45,7 @@ debug.
   schema version, configs, output paths, trace counts, and comparison rows.
 - File-backed controlled datasets for reproducible thesis experiments.
 - Minimal provider abstraction for mock and OpenAI-compatible chat providers.
+- DeepSeek provider support for a small real-model smoke test.
 - Optional LangChain callback adapter.
 
 ## Repository Layout
@@ -85,6 +86,19 @@ Run the full thesis experiment suite:
 python -m context_auditor.cli run-suite --out-dir artifacts
 ```
 
+Check a real provider environment without printing secrets:
+
+```powershell
+python -m context_auditor.cli check-provider --provider deepseek --model deepseek-v4-flash
+```
+
+Run a small DeepSeek smoke test after setting `DEEPSEEK_API_KEY` locally:
+
+```powershell
+$env:DEEPSEEK_API_KEY="..."
+python -m context_auditor.cli run-real-model-smoke --config configs/deepseek_smoke.json
+```
+
 Generate a mitigation report:
 
 ```powershell
@@ -119,6 +133,11 @@ $env:OPENAI_COMPATIBLE_API_KEY="..."
 $env:OPENAI_COMPATIBLE_BASE_URL="https://api.openai.com/v1"
 ```
 
+DeepSeek uses an OpenAI-compatible chat completions API. The default smoke-test
+configuration uses `https://api.deepseek.com`, `DEEPSEEK_API_KEY`, and
+`deepseek-v4-flash`. Do not commit API keys; `check-provider` reports only
+`SET` or `UNSET`.
+
 ## Installable CLI
 
 From the repository root:
@@ -128,6 +147,8 @@ pip install -e .
 context-auditor run-pilot --out traces/pilot.jsonl
 context-auditor run-langchain-pilot --out traces/langchain_pilot.jsonl
 context-auditor run-suite --out-dir artifacts
+context-auditor check-provider --provider deepseek --model deepseek-v4-flash
+context-auditor run-real-model-smoke --config configs/deepseek_smoke.json
 context-auditor analyze traces/pilot.jsonl --out results/pilot_summary.json --tables-dir results/tables --charts-dir results/charts
 context-auditor analyze traces/langchain_pilot.jsonl --out results/langchain_pilot_summary.json --tables-dir results/langchain_tables --charts-dir results/langchain_charts
 context-auditor mitigate traces/pilot.jsonl --out results/mitigation_report.json --csv-out results/tables/mitigation_report.csv
@@ -152,6 +173,8 @@ The commands produce:
 - `artifacts/results/mitigation_report.json` and
   `artifacts/results/langchain_mitigation_report.json`: mitigation reports for
   both framework runs
+- `traces/deepseek_smoke.jsonl` and `results/deepseek_smoke_report.json`:
+  optional real-model smoke-test artifacts
 
 ## Trace Schema
 
@@ -171,7 +194,7 @@ for LangChain callbacks, a custom ReAct loop, or other agent implementations.
 
 ## Versioning
 
-The project uses semantic versioning. Current version: `0.9.0`.
+The project uses semantic versioning. Current version: `0.10.0`.
 
 See [CHANGELOG.md](CHANGELOG.md) for changes and
 [docs/architecture.md](docs/architecture.md) for the package structure.

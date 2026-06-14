@@ -120,3 +120,18 @@ This produces custom ReAct traces, LangChain-compatible traces, per-framework
 summaries, CSV tables, SVG charts, and cross-framework comparison files under
 `artifacts/`. The top-level `artifacts/manifest.json` file records the run
 metadata needed to cite or repeat the experiment.
+
+## Optional Real-Model Smoke Test
+
+The default experiments use `mock` to keep the full suite deterministic and
+cost-free. To validate real provider connectivity, set `DEEPSEEK_API_KEY`
+locally and run:
+
+```powershell
+python -m context_auditor.cli check-provider --provider deepseek --model deepseek-v4-flash
+python -m context_auditor.cli run-real-model-smoke --config configs/deepseek_smoke.json
+```
+
+The smoke test captures the model-visible context before the call and writes the
+model response to a separate report. API keys are read from environment
+variables and are never written to traces, reports, or manifests.

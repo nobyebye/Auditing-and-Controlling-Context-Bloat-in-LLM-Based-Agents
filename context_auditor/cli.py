@@ -11,6 +11,7 @@ from .bloat import summarize_traces
 from .io import load_jsonl
 from .mitigation import remove_exact_duplicate_segments
 from .mitigation_eval import evaluate_mitigation_strategies, summarize_mitigation_rows
+from .providers import provider_environment_status
 from .reporting import write_mitigation_csv, write_summary_tables, write_svg_bar_charts
 
 
@@ -35,6 +36,36 @@ def run_suite_command(args: argparse.Namespace) -> None:
     print(f"Wrote experiment suite outputs to {args.out_dir}")
     print(f"Wrote run manifest to {outputs['manifest_path']}")
     print(f"Wrote framework comparison to {outputs['framework_comparison_csv_path']}")
+
+
+def check_provider_command(args: argparse.Namespace) -> None:
+    status = provider_environment_status(args.provider)
+    status["model"] = args.model
+    print(json.dumps(status, indent=2, ensure_ascii=False))
+
+
+def run_real_model_smoke_command(args: argparse.Namespace) -> None:
+    from experiments.real_model_smoke import run_real_model_smoke
+
+    config = _load_optional_json(args.config)
+    provider = args.provider or config.get("provider", "deepseek")
+    model = args.model or config.get("model", "deepseek-v4-flash")
+    trace_out = args.trace_out or config.get("trace_out", "traces/real_model_smoke.jsonl")
+    report_out = args.report_out or config.get("report_out", "results/real_model_smoke_report.json")
+    prompt = args.prompt or config.get(
+        "prompt",
+        "Answer in one short sentence: what is context bloat in an LLM agent?",
+    )
+    report = run_real_model_smoke(
+        trace_path=trace_out,
+        report_path=report_out,
+        provider_name=provider,
+        model=model,
+        prompt=prompt,
+    )
+    print(f"Wrote real-model smoke trace to {trace_out}")
+    print(f"Wrote real-model smoke report to {report_out}")
+    print(f"Response characters: {report['response_char_count']}")
 
 
 def analyze_command(args: argparse.Namespace) -> None:
@@ -98,6 +129,30 @@ def build_parser() -> argparse.ArgumentParser:
     )
     suite.set_defaults(func=run_suite_command)
 
+    check_provider = subparsers.add_parser(
+        "check-provider",
+        help="Check provider environment variables without printing secret values.",
+    )
+    check_provider.add_argument("--provider", default="deepseek", help="Provider name: mock, deepseek, or openai-compatible.")
+    check_provider.add_argument("--model", default="deepseek-v4-flash", help="Model name for the provider check.")
+    check_provider.set_defaults(func=check_provider_command)
+
+    real_smoke = subparsers.add_parser(
+        "run-real-model-smoke",
+        help="Run one real provider call and write a pre-call trace plus response report.",
+    )
+    real_smoke.add_argument("--config", default=None, help="Optional smoke-test configuration JSON path.")
+    real_smoke.add_argument("--provider", default=None, help="Provider name: deepseek, openai-compatible, or mock.")
+    real_smoke.add_argument("--model", default=None, help="Model name.")
+    real_smoke.add_argument("--trace-out", default=None, help="Output JSONL trace path.")
+    real_smoke.add_argument("--report-out", default=None, help="Output JSON report path.")
+    real_smoke.add_argument(
+        "--prompt",
+        default=None,
+        help="Smoke-test prompt.",
+    )
+    real_smoke.set_defaults(func=run_real_model_smoke_command)
+
     analyze = subparsers.add_parser("analyze", help="Summarize a JSONL trace file.")
     analyze.add_argument("trace_path")
     analyze.add_argument("--out", default="results/summary.json")
@@ -112,6 +167,12 @@ def build_parser() -> argparse.ArgumentParser:
     mitigate.set_defaults(func=mitigate_command)
 
     return parser
+
+
+def _load_optional_json(path: str | None) -> dict:
+    if not path:
+        return {}
+    return json.loads(Path(path).read_text(encoding="utf-8"))
 
 
 def main(argv: list[str] | None = None) -> None:

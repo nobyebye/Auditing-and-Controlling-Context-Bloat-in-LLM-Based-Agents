@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Protocol
 from urllib import request
 
@@ -33,7 +33,7 @@ class MockChatProvider:
 class OpenAICompatibleChatProvider:
     model: str
     base_url: str
-    api_key: str
+    api_key: str = field(repr=False)
     provider_name: str = "openai-compatible"
     timeout_seconds: int = 60
 
@@ -60,6 +60,11 @@ class OpenAICompatibleChatProvider:
         return body["choices"][0]["message"]["content"]
 
 
+@dataclass(frozen=True)
+class DeepSeekChatProvider(OpenAICompatibleChatProvider):
+    provider_name: str = "deepseek"
+
+
 def provider_from_environment(provider_name: str, model: str) -> ChatProvider:
     if provider_name == "mock":
         return MockChatProvider(model=model)
@@ -67,7 +72,35 @@ def provider_from_environment(provider_name: str, model: str) -> ChatProvider:
         api_key = os.environ["OPENAI_COMPATIBLE_API_KEY"]
         base_url = os.environ.get("OPENAI_COMPATIBLE_BASE_URL", "https://api.openai.com/v1")
         return OpenAICompatibleChatProvider(model=model, base_url=base_url, api_key=api_key)
+    if provider_name == "deepseek":
+        api_key = os.environ["DEEPSEEK_API_KEY"]
+        base_url = os.environ.get("DEEPSEEK_BASE_URL", "https://api.deepseek.com")
+        return DeepSeekChatProvider(model=model, base_url=base_url, api_key=api_key)
     raise ValueError(f"Unsupported provider: {provider_name}")
+
+
+def provider_environment_status(provider_name: str) -> dict[str, object]:
+    required = {
+        "mock": [],
+        "openai-compatible": ["OPENAI_COMPATIBLE_API_KEY"],
+        "deepseek": ["DEEPSEEK_API_KEY"],
+    }
+    optional = {
+        "mock": [],
+        "openai-compatible": ["OPENAI_COMPATIBLE_BASE_URL"],
+        "deepseek": ["DEEPSEEK_BASE_URL"],
+    }
+    if provider_name not in required:
+        raise ValueError(f"Unsupported provider: {provider_name}")
+    return {
+        "provider": provider_name,
+        "required_environment": {name: _env_state(name) for name in required[provider_name]},
+        "optional_environment": {name: _env_state(name) for name in optional[provider_name]},
+    }
+
+
+def _env_state(name: str) -> str:
+    return "SET" if os.environ.get(name) else "UNSET"
 
 
 def _normalize_role(role: str) -> str:

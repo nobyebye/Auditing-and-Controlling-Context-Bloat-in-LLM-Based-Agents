@@ -1,0 +1,7 @@
+{
+  "provider": "deepseek",
+  "model": "deepseek-v4-flash",
+  "trace_out": "traces/deepseek_smoke.jsonl",
+  "report_out": "results/deepseek_smoke_report.json",
+  "prompt": "Answer in one short sentence: what is context bloat in an LLM agent?"
+}

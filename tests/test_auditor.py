@@ -48,7 +48,7 @@ class RuntimeAuditorTests(unittest.TestCase):
             ],
         )
         self.assertEqual(trace.invocation_index, 0)
-        self.assertEqual(trace.schema_version, "0.9.0")
+        self.assertEqual(trace.schema_version, "0.10.0")
         self.assertEqual(trace.experiment_id, "pilot")
         self.assertEqual(trace.dataset_name, "controlled_synthetic")
         self.assertTrue(trace.config_hash)
