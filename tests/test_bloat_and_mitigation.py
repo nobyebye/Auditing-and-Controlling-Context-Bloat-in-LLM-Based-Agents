@@ -63,7 +63,7 @@ class BloatAndMitigationTests(unittest.TestCase):
         )
 
         summary = summarize_traces([first, second])
-        self.assertEqual(summary["schema_version"], "0.8.0")
+        self.assertEqual(summary["schema_version"], "0.9.0")
         self.assertEqual(summary["experiment_id"], "pilot")
         self.assertEqual(summary["dataset_name"], "controlled_synthetic")
         self.assertEqual(summary["providers"], ["mock"])

@@ -52,11 +52,22 @@ class ExperimentSuiteTests(unittest.TestCase):
             self.assertTrue(outputs["custom_mitigation_csv_path"].exists())
             self.assertTrue(outputs["langchain_mitigation_json_path"].exists())
             self.assertTrue(outputs["langchain_mitigation_csv_path"].exists())
+            self.assertTrue(outputs["manifest_path"].exists())
 
             comparison = json.loads(outputs["framework_comparison_json_path"].read_text(encoding="utf-8"))
             self.assertEqual(comparison["frameworks"], ["custom-react", "langchain"])
             self.assertEqual(comparison["configuration_count"], 1)
             self.assertEqual(comparison["rows"][0]["configuration"], "retrieval_top1")
+
+            manifest = json.loads(outputs["manifest_path"].read_text(encoding="utf-8"))
+            self.assertEqual(manifest["artifact_version"], "0.9.0")
+            self.assertEqual(manifest["schema_version"], "0.9.0")
+            self.assertEqual(manifest["configs"]["custom"], str(custom_config))
+            self.assertEqual(manifest["configs"]["langchain"], str(langchain_config))
+            self.assertEqual(manifest["trace_counts"]["custom-react"], 6)
+            self.assertEqual(manifest["trace_counts"]["langchain"], 6)
+            self.assertEqual(manifest["framework_comparison_rows"], 1)
+            self.assertIn("generated_at", manifest)
 
 
 def _write_minimal_config(path: Path, experiment_id: str, output_path: str) -> None:

@@ -2,6 +2,15 @@
 
 All notable changes to this thesis artifact are tracked here.
 
+## 0.9.0 - 2026-06-14
+
+- Added a suite-level `manifest.json` that records artifact version, schema
+  version, config paths, output paths, trace counts, and framework comparison
+  row counts.
+- Updated `run-suite` to print the manifest path after a successful run.
+- Documented the manifest as the reproducibility index for thesis experiment
+  artifacts.
+
 ## 0.8.0 - 2026-06-14
 
 - Added a full experiment suite runner that executes custom ReAct and

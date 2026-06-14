@@ -33,6 +33,7 @@ def run_suite_command(args: argparse.Namespace) -> None:
 
     outputs = run_experiment_suite(args.out_dir, args.custom_config, args.langchain_config)
     print(f"Wrote experiment suite outputs to {args.out_dir}")
+    print(f"Wrote run manifest to {outputs['manifest_path']}")
     print(f"Wrote framework comparison to {outputs['framework_comparison_csv_path']}")
 
 

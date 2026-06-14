@@ -47,7 +47,8 @@ LLM-based agents.
 - `experiments.retrieval`: deterministic local retrieval utilities.
 - `experiments.pilot`: custom ReAct orchestration entry point used by the CLI.
 - `experiments.suite`: end-to-end orchestration for custom ReAct,
-  LangChain-compatible, summary, chart, and framework comparison outputs.
+  LangChain-compatible, summary, chart, framework comparison, mitigation, and
+  run-manifest outputs.
 
 ## Data Flow
 
@@ -65,4 +66,4 @@ The artifact uses semantic versioning:
 - Minor version: new metrics, CLI commands, adapters, or experiment workflows.
 - Major version: incompatible trace schema or public API changes.
 
-Current version: `0.8.0`.
+Current version: `0.9.0`.

@@ -93,6 +93,8 @@ configuration pairs are reported in `mitigation_pairs` inside the JSON summary.
 - SVG charts for first-pass thesis figures.
 - Cross-framework comparison JSON and CSV outputs from `run-suite`, comparing
   token counts, redundancy ratios, and task success rates by configuration.
+- A run manifest that records artifact version, schema version, config paths,
+  output paths, trace counts, and comparison row counts for reproducibility.
 - Mitigation reports with removed segments, removed tokens, source categories,
   and token reduction ratio.
 - Mitigation summary includes original task success rate, post-mitigation
@@ -116,4 +118,5 @@ python -m context_auditor.cli run-suite --out-dir artifacts
 
 This produces custom ReAct traces, LangChain-compatible traces, per-framework
 summaries, CSV tables, SVG charts, and cross-framework comparison files under
-`artifacts/`.
+`artifacts/`. The top-level `artifacts/manifest.json` file records the run
+metadata needed to cite or repeat the experiment.

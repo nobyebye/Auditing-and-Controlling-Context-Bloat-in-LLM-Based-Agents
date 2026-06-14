@@ -41,6 +41,8 @@ debug.
   instrumentation boundary.
 - One-command experiment suite that runs both implementations and writes
   cross-framework comparison tables.
+- Suite-level run manifest for reproducibility, including artifact version,
+  schema version, configs, output paths, trace counts, and comparison rows.
 - File-backed controlled datasets for reproducible thesis experiments.
 - Minimal provider abstraction for mock and OpenAI-compatible chat providers.
 - Optional LangChain callback adapter.
@@ -146,6 +148,7 @@ The commands produce:
   data for custom ReAct and LangChain-compatible runs
 - `artifacts/results/framework_comparison.csv`: thesis-ready cross-framework
   comparison table
+- `artifacts/manifest.json`: reproducibility manifest for the full suite run
 - `artifacts/results/mitigation_report.json` and
   `artifacts/results/langchain_mitigation_report.json`: mitigation reports for
   both framework runs
@@ -168,7 +171,7 @@ for LangChain callbacks, a custom ReAct loop, or other agent implementations.
 
 ## Versioning
 
-The project uses semantic versioning. Current version: `0.8.0`.
+The project uses semantic versioning. Current version: `0.9.0`.
 
 See [CHANGELOG.md](CHANGELOG.md) for changes and
 [docs/architecture.md](docs/architecture.md) for the package structure.
