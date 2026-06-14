@@ -12,9 +12,17 @@ from experiments.datasets import load_controlled_dataset
 class ConfigAndReportingTests(unittest.TestCase):
     def test_load_default_config(self) -> None:
         config = load_experiment_config("configs/pilot.json")
-        self.assertEqual(config.experiment_id, "pilot-context-bloat-v0.6")
+        self.assertEqual(config.experiment_id, "pilot-context-bloat-v0.7")
         self.assertIn("retrieval_qa", config.workflow_configs)
         self.assertEqual(config.workflow_configs["retrieval_qa"][0].configuration, "baseline")
+
+    def test_load_langchain_config(self) -> None:
+        config = load_experiment_config("configs/langchain_pilot.json")
+        self.assertEqual(config.experiment_id, "langchain-context-bloat-v0.7")
+        self.assertEqual(config.output_path, "traces/langchain_pilot.jsonl")
+        self.assertIn("retrieval_qa", config.workflow_configs)
+        self.assertIn("memory_turns", config.workflow_configs)
+        self.assertIn("multi_step_tool", config.workflow_configs)
 
     def test_load_controlled_dataset(self) -> None:
         dataset = load_controlled_dataset()

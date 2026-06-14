@@ -18,8 +18,10 @@
 
 ## Configurations
 
-The default pilot experiment matrix is stored in `configs/pilot.json`. The
-controlled input material is stored in `datasets/controlled_synthetic/`:
+The custom ReAct pilot experiment matrix is stored in `configs/pilot.json`.
+The LangChain-compatible pilot matrix is stored in
+`configs/langchain_pilot.json`. Both use the same controlled input material in
+`datasets/controlled_synthetic/`:
 
 - `tasks.json` defines retrieval, memory, and tool-use tasks.
 - `policy_docs.json` defines the local retrieval corpus.
@@ -84,6 +86,8 @@ configuration pairs are reported in `mitigation_pairs` inside the JSON summary.
 ## Outputs
 
 - JSONL traces for every LLM invocation.
+- Framework-specific pilot trace files for custom ReAct and
+  LangChain-compatible implementations.
 - JSON summary grouped by configuration and workflow family.
 - CSV tables for thesis result tables.
 - SVG charts for first-pass thesis figures.

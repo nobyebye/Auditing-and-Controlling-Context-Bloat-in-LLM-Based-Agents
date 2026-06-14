@@ -15,7 +15,15 @@ from .tracer import RuntimeAuditor, TraceMetadata
 def convert_langchain_message(message: Any) -> Message:
     role = getattr(message, "type", None) or getattr(message, "role", "unknown")
     content = getattr(message, "content", "")
-    return Message(role=str(role), content=str(content), metadata={"raw_type": type(message).__name__})
+    return Message(role=_normalize_langchain_role(str(role)), content=str(content), metadata={"raw_type": type(message).__name__})
+
+
+def _normalize_langchain_role(role: str) -> str:
+    if role == "human":
+        return "user"
+    if role == "ai":
+        return "assistant"
+    return role
 
 
 class AuditingLangChainCallback:

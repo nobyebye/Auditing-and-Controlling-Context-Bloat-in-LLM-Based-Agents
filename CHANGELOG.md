@@ -2,6 +2,16 @@
 
 All notable changes to this thesis artifact are tracked here.
 
+## 0.7.0 - 2026-06-14
+
+- Added a LangChain-compatible pilot runner that exercises the callback
+  instrumentation boundary while remaining runnable without optional
+  dependencies.
+- Added `configs/langchain_pilot.json` so custom ReAct and LangChain-compatible
+  traces can be generated from aligned experiment matrices.
+- Added a `run-langchain-pilot` CLI command.
+- Updated tests and documentation for cross-framework pilot experiments.
+
 ## 0.6.0 - 2026-06-14
 
 - Externalized the controlled pilot tasks, policy documents, and memory items

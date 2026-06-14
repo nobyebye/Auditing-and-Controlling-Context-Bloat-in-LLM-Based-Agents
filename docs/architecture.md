@@ -39,8 +39,11 @@ LLM-based agents.
   task, document, and memory objects.
 - `experiments.config`: JSON experiment matrix loader.
 - `experiments.custom_react`: controlled ReAct-style workflow implementation.
+- `experiments.langchain_pilot`: LangChain-compatible workflow implementation
+  that uses the callback adapter and falls back to local message objects when
+  `langchain_core` is not installed.
 - `experiments.retrieval`: deterministic local retrieval utilities.
-- `experiments.pilot`: orchestration entry point used by the CLI.
+- `experiments.pilot`: custom ReAct orchestration entry point used by the CLI.
 
 ## Data Flow
 
@@ -58,4 +61,4 @@ The artifact uses semantic versioning:
 - Minor version: new metrics, CLI commands, adapters, or experiment workflows.
 - Major version: incompatible trace schema or public API changes.
 
-Current version: `0.6.0`.
+Current version: `0.7.0`.

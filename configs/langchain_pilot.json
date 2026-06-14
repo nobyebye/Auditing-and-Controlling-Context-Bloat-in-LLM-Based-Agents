@@ -1,10 +1,10 @@
 {
-  "experiment_id": "pilot-context-bloat-v0.7",
+  "experiment_id": "langchain-context-bloat-v0.7",
   "run_id": "run-001",
   "dataset_name": "controlled_synthetic",
   "provider": "mock",
   "model": "mock-llm",
-  "output_path": "traces/pilot.jsonl",
+  "output_path": "traces/langchain_pilot.jsonl",
   "workflow_configs": {
     "retrieval_qa": [
       {"configuration": "baseline"},

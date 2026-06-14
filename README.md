@@ -37,6 +37,8 @@ debug.
   tool segments.
 - Controlled custom ReAct-style pilot workflows for retrieval, memory, and
   tool-use experiments.
+- LangChain-compatible pilot workflows that exercise the callback
+  instrumentation boundary.
 - File-backed controlled datasets for reproducible thesis experiments.
 - Minimal provider abstraction for mock and OpenAI-compatible chat providers.
 - Optional LangChain callback adapter.
@@ -60,10 +62,17 @@ Run the pilot experiment:
 python -m context_auditor.cli run-pilot --config configs/pilot.json --out traces/pilot.jsonl
 ```
 
+Run the LangChain-compatible pilot experiment:
+
+```powershell
+python -m context_auditor.cli run-langchain-pilot --config configs/langchain_pilot.json --out traces/langchain_pilot.jsonl
+```
+
 Analyze traces:
 
 ```powershell
 python -m context_auditor.cli analyze traces/pilot.jsonl --out results/pilot_summary.json --tables-dir results/tables --charts-dir results/charts
+python -m context_auditor.cli analyze traces/langchain_pilot.jsonl --out results/langchain_pilot_summary.json --tables-dir results/langchain_tables --charts-dir results/langchain_charts
 ```
 
 Generate a mitigation report:
@@ -107,7 +116,9 @@ From the repository root:
 ```powershell
 pip install -e .
 context-auditor run-pilot --out traces/pilot.jsonl
+context-auditor run-langchain-pilot --out traces/langchain_pilot.jsonl
 context-auditor analyze traces/pilot.jsonl --out results/pilot_summary.json --tables-dir results/tables --charts-dir results/charts
+context-auditor analyze traces/langchain_pilot.jsonl --out results/langchain_pilot_summary.json --tables-dir results/langchain_tables --charts-dir results/langchain_charts
 context-auditor mitigate traces/pilot.jsonl --out results/mitigation_report.json --csv-out results/tables/mitigation_report.csv
 ```
 
@@ -116,6 +127,7 @@ context-auditor mitigate traces/pilot.jsonl --out results/mitigation_report.json
 The pilot produces:
 
 - `traces/pilot.jsonl`: per-invocation model-visible context traces
+- `traces/langchain_pilot.jsonl`: LangChain-compatible pilot traces
 - `results/pilot_summary.json`: grouped bloat metrics
 - `results/tables/*.csv`: thesis-ready summary tables
 - `results/charts/*.svg`: first-pass figures for redundancy and token counts
@@ -140,7 +152,7 @@ for LangChain callbacks, a custom ReAct loop, or other agent implementations.
 
 ## Versioning
 
-The project uses semantic versioning. Current version: `0.6.0`.
+The project uses semantic versioning. Current version: `0.7.0`.
 
 See [CHANGELOG.md](CHANGELOG.md) for changes and
 [docs/architecture.md](docs/architecture.md) for the package structure.

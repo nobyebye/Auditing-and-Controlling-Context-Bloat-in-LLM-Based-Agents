@@ -22,6 +22,13 @@ def run_pilot_command(args: argparse.Namespace) -> None:
     print(f"Wrote traces to {args.out}")
 
 
+def run_langchain_pilot_command(args: argparse.Namespace) -> None:
+    from experiments.langchain_pilot import run_langchain_pilot
+
+    run_langchain_pilot(args.out, args.config)
+    print(f"Wrote LangChain-compatible traces to {args.out}")
+
+
 def analyze_command(args: argparse.Namespace) -> None:
     traces = load_jsonl(args.trace_path)
     summary = summarize_traces(traces)
@@ -81,6 +88,18 @@ def build_parser() -> argparse.ArgumentParser:
     pilot.add_argument("--out", default="traces/pilot.jsonl", help="Output JSONL trace path.")
     pilot.add_argument("--config", default="configs/pilot.json", help="Experiment configuration JSON path.")
     pilot.set_defaults(func=run_pilot_command)
+
+    langchain_pilot = subparsers.add_parser(
+        "run-langchain-pilot",
+        help="Run controlled LangChain-compatible pilot experiments.",
+    )
+    langchain_pilot.add_argument("--out", default="traces/langchain_pilot.jsonl", help="Output JSONL trace path.")
+    langchain_pilot.add_argument(
+        "--config",
+        default="configs/langchain_pilot.json",
+        help="Experiment configuration JSON path.",
+    )
+    langchain_pilot.set_defaults(func=run_langchain_pilot_command)
 
     analyze = subparsers.add_parser("analyze", help="Summarize a JSONL trace file.")
     analyze.add_argument("trace_path")
