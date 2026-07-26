@@ -67,6 +67,24 @@ runs/<experiment_id>/<utc>__<framework>__<model>__<dataset-version>__<git-sha>/
 
 Existing run directories are never overwritten.
 
+## Formal Study
+
+The frozen benchmark contains 6 calibration tasks and 30 held-out test tasks.
+Run the primary DeepSeek matrix only from a clean Git worktree:
+
+```powershell
+python -m context_auditor.cli run-formal-suite `
+  --custom-config configs/experiments/formal_custom_react_deepseek_v1.json `
+  --langchain-config configs/experiments/formal_langchain_deepseek_v1.json `
+  --project-root . `
+  --confirm-real-cost
+```
+
+The runner refuses a real-provider formal run when tracked or untracked source
+changes are present. See
+[the frozen protocol](thesis/plans/experiment_protocol.md) and
+[the 2026-07-26 run record](thesis/releases/v1.1.0-formal-study-run.md).
+
 ## Run Artifacts
 
 Every run uses fixed artifact names:
@@ -78,6 +96,7 @@ traces/invocations.jsonl
 metrics/invocations.csv
 metrics/tasks.csv
 reports/summary.json
+reports/rq_evidence.json
 reports/tables/
 reports/figures/
 ```
@@ -111,7 +130,7 @@ The smoke run stores provider token usage and latency in its named run.
 ## Tests
 
 ```powershell
-python -m unittest discover -s tests -p "test_*.py"
+python -m pytest -q
 ```
 
 The suite covers domain policies, privacy, provenance, bloat metrics,
@@ -120,7 +139,7 @@ LangChain messages, named artifacts, and end-to-end experiment execution.
 
 ## Versioning
 
-Current project and trace schema version: `1.0.0`.
+Current project and trace schema version: `1.1.0`.
 
 The original pilot is preserved by the `v0.10.0-pilot-archive` Git tag and
 [archived experiment package](thesis/releases/v0.10.0-pilot-artifacts.zip).

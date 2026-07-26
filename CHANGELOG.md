@@ -2,6 +2,25 @@
 
 All notable changes to this thesis artifact are tracked here.
 
+## 1.1.0 - 2026-07-26
+
+- Added the 36-task context-bloat benchmark with frozen calibration/test splits.
+- Added full DeepSeek execution paths for Custom ReAct and actual LangChain
+  `BaseChatModel.invoke()` workflows.
+- Added versioned ground-truth labels, detected labels, scoring details,
+  generation parameters, and primary/stress analysis cohorts to trace schema
+  1.1.0.
+- Added deterministic detection, localization, measurement, mitigation, and RQ
+  evidence reports.
+- Added 10,000-sample task-cluster bootstrap intervals and paired McNemar
+  diagnostics.
+- Added validated study-bundle export with component and analysis Git commits,
+  checksums, tables, figures, and immutable trace data.
+- Added deterministic condition-blind human-review exports for 72 primary and
+  36 second-reviewer outputs.
+- Added a clean-worktree gate for paid formal runs.
+- Completed and documented the 1596-trace DeepSeek formal study.
+
 ## 1.0.0 - 2026-07-26
 
 - Rebuilt the package using a `src/` layout and domain, application, ports,

@@ -1,137 +1,172 @@
-# Experiment Protocol
+# Formal Context Bloat Experiment Protocol
 
-## Implementations
+## Scope
 
-- LangChain-based agent: primary implementation, continuing the seminar work.
-- Custom ReAct-style agent: controlled second implementation with retrieval,
-  memory, conversation history, and tool-use behavior.
+This protocol evaluates detection, localization, measurement, and mitigation of
+context bloat in LLM-based agents. Runtime tracing and provenance labeling are
+the measurement infrastructure; context bloat is the primary research problem.
 
-## Workflow Families
+The primary hypothesis analysis uses only the held-out `test` split. Calibration
+tasks are used to freeze thresholds and are never included in primary RQ
+evidence. Cross-source stress cases are labeled `analysis_cohort=stress` and are
+reported separately.
 
-- Retrieval QA: controlled policy questions over a small local document set.
-- Multi-step tool use: deterministic calculator or structured lookup tasks with
-  repeated tool traces.
-- Memory turns: prompts that require restored conversation history or memory
-  summaries.
-- Combined workflows: retrieval plus memory plus tool traces to test compound
-  bloat.
+## Frozen Dataset
 
-## Configurations
+Dataset: `data/datasets/context_bloat_benchmark/v1/`
 
-The custom ReAct pilot experiment matrix is stored in `configs/pilot.json`.
-The LangChain-compatible pilot matrix is stored in
-`configs/langchain_pilot.json`. Both use the same controlled input material in
-`datasets/controlled_synthetic/`:
+- 36 tasks in total.
+- 6 calibration tasks.
+- 30 held-out test tasks.
+- 12 retrieval QA, 12 memory-turn, and 12 multi-step tool tasks.
+- Four ground-truth labels: `exact_duplicate`, `near_duplicate`,
+  `low_query_relevance`, and `verbose_tool_output`.
+- Six predeclared test tasks are reused for the separate cross-source stress
+  analysis.
 
-- `tasks.json` defines retrieval, memory, and tool-use tasks.
-- `policy_docs.json` defines the local retrieval corpus.
-- `memory_items.json` defines the controlled conversation history/memory input.
+Any content change requires a new dataset version. The run manifest records the
+dataset content hash.
 
-- `baseline`
-- `retrieval_top1`
-- `retrieval_top3`
-- `retrieval_duplicate`
-- `retrieval_irrelevant`
-- `retrieval_duplicate_mitigated`
-- `retrieval_irrelevant_mitigated`
-- `memory_full`
-- `memory_duplicate`
-- `memory_duplicate_mitigated`
-- `tool_use`
-- `tool_repeated_output`
-- `tool_repeated_output_mitigated`
-- `retrieval_memory_tool`
-- `bloat_detection`
-- `mitigation_duplicate_removal`
-- optional `mitigation_memory_filtering`
-- optional `mitigation_tool_compression`
+## Implementations And Model
 
-## Bloat Metrics
+- `custom-react`: controlled ReAct-style loop using the shared provider port.
+- `langchain`: actual `BaseChatModel.invoke()` execution with callback capture.
+- Provider: DeepSeek.
+- Model identifier: `deepseek-v4-flash`.
+- Temperature: `0.0`.
+- Maximum output tokens: `256`.
+- Repetitions: `3`.
+- Privacy mode: `redacted`.
 
-- Redundancy Ratio: proportion of context tokens belonging to repeated or
-  near-duplicate segments.
-- Unique Information Ratio: proportion of context tokens that remain after
-  duplicate or redundant segments are collapsed.
-- Context Growth Rate: relative token increase across successive invocations.
-- Source Contribution Ratio: share of total or redundant tokens contributed by
-  each source type.
-- Duplicate Segment Count: number of repeated segments detected by normalized
-  hashes.
-- Source Dominance: flag for cases where one automatic source dominates the
-  prompt.
-- Near-Duplicate Segment Count: repeated or highly overlapping segments based
-  on deterministic token-set similarity.
-- Irrelevant Context Filter: retrieval or memory segments with low overlap
-  against the current user query.
-- Estimated Cost Proxy: token-based approximation of request cost impact.
+Every real-provider formal run requires a clean Git worktree. The runner refuses
+to start otherwise, ensuring that the manifest commit identifies the executed
+code.
 
-## Mitigation Evaluation
+## Primary Conditions
 
-Compare original traces against mitigated traces. Report token reduction,
-redundancy reduction, number of removed or compressed segments, and lightweight
-task performance. The mitigation goal is to reduce unnecessary context without
-significantly reducing answer usefulness.
+Each workflow has six conditions:
 
-The current implementation evaluates three conservative strategies over final
-task invocations:
+1. `baseline`
+2. `sufficient`
+3. `exact_bloat`
+4. `source_specific_bloat`
+5. `combined_bloat`
+6. `mitigated`
 
-- exact duplicate removal
-- near-duplicate removal
-- irrelevant retrieval/memory filtering
+Primary matrix:
 
-In addition, the pilot includes controlled mitigated configurations where the
-agent receives a reduced model-visible context before answering. These
-configuration pairs are reported in `mitigation_pairs` inside the JSON summary.
-
-## Outputs
-
-- JSONL traces for every LLM invocation.
-- Framework-specific pilot trace files for custom ReAct and
-  LangChain-compatible implementations.
-- JSON summary grouped by configuration and workflow family.
-- CSV tables for thesis result tables.
-- SVG charts for first-pass thesis figures.
-- Cross-framework comparison JSON and CSV outputs from `run-suite`, comparing
-  token counts, redundancy ratios, and task success rates by configuration.
-- A run manifest that records artifact version, schema version, config paths,
-  output paths, trace counts, and comparison row counts for reproducibility.
-- Mitigation reports with removed segments, removed tokens, source categories,
-  and token reduction ratio.
-- Mitigation summary includes original task success rate, post-mitigation
-  success proxy rate, and success-preservation proxy rate among originally
-  successful tasks.
-
-## Repetition Strategy
-
-Use 8-12 tasks per workflow family in the full thesis study and at least three
-repetitions per configuration. The included pilot can remain smaller and should
-validate the trace format, bloat metrics, localization logic, and mitigation
-pipeline before the full experiment.
-
-## Recommended Reproducibility Command
-
-Run the complete controlled experiment artifact with:
-
-```powershell
-python -m context_auditor.cli run-suite --out-dir artifacts
+```text
+30 tasks x 6 conditions x 3 repetitions x 2 frameworks
+= 1080 final task executions
 ```
 
-This produces custom ReAct traces, LangChain-compatible traces, per-framework
-summaries, CSV tables, SVG charts, and cross-framework comparison files under
-`artifacts/`. The top-level `artifacts/manifest.json` file records the run
-metadata needed to cite or repeat the experiment.
+Tool tasks use one planning invocation and one final invocation. The resulting
+primary trace count is 1380, while only the 1080 final invocations are used for
+task-success and measurement evaluation.
 
-## Optional Real-Model Smoke Test
+## Cross-Source Stress Cohort
 
-The default experiments use `mock` to keep the full suite deterministic and
-cost-free. To validate real provider connectivity, set `DEEPSEEK_API_KEY`
-locally and run:
+Six fixed held-out tasks receive retrieval, memory, and tool context together.
+The conditions are `sufficient`, `combined_bloat`, and `mitigated`.
 
-```powershell
-python -m context_auditor.cli check-provider --provider deepseek --model deepseek-v4-flash
-python -m context_auditor.cli run-real-model-smoke --config configs/deepseek_smoke.json
+```text
+6 tasks x 3 conditions x 3 repetitions x 2 frameworks
+= 108 final task executions
+= 216 model invocations
 ```
 
-The smoke test captures the model-visible context before the call and writes the
-model response to a separate report. API keys are read from environment
-variables and are never written to traces, reports, or manifests.
+Stress traces are packaged with the study but excluded from primary RQ
+inference.
+
+## Metrics And Inference
+
+- Exact and near redundancy ratios.
+- Ground-truth and detected bloat-token ratios.
+- Context growth rate.
+- Source contribution and source-specific bloat ratio.
+- Detection precision, recall, macro-F1, and localization accuracy.
+- Spearman correlation between measured and ground-truth bloat.
+- Input/output tokens, latency, and estimated API cost.
+- Rule-based task success.
+- Paired mitigation token reduction and task-success difference.
+
+Confidence intervals use 10,000 deterministic bootstrap samples. The
+mitigation analysis clusters repetitions by `framework x task`, producing 60
+independent task clusters from 180 paired observations. RQ4 uses a frozen
+non-inferiority margin of `-5%` for task-success difference.
+
+## Human Review
+
+The final bundle exports:
+
+- `reviewer_a.csv`: 72 condition-blind outputs.
+- `reviewer_b.csv`: a 36-output reliability subset.
+- `answer_key.csv`: hidden condition, framework, reference, and automatic score.
+- `annotation_manifest.json`: source bundle hash and deterministic sample seed.
+
+Reviewers must not receive `answer_key.csv` until both review forms are frozen.
+Human labels are not yet part of RQ evidence until the completed forms are
+validated and inter-rater agreement is calculated.
+
+## Reproducibility Commands
+
+Validate the dataset:
+
+```powershell
+python -m context_auditor.cli validate-dataset --project-root .
+```
+
+Run primary real-provider experiments:
+
+```powershell
+python -m context_auditor.cli run-formal-suite `
+  --custom-config configs/experiments/formal_custom_react_deepseek_v1.json `
+  --langchain-config configs/experiments/formal_langchain_deepseek_v1.json `
+  --project-root . `
+  --confirm-real-cost
+```
+
+Run cross-source stress experiments:
+
+```powershell
+python -m context_auditor.cli run-formal-suite `
+  --custom-config configs/experiments/formal_stress_custom_react_deepseek_v1.json `
+  --langchain-config configs/experiments/formal_stress_langchain_deepseek_v1.json `
+  --project-root . `
+  --confirm-real-cost
+```
+
+Export and validate the study using the four completed run directories:
+
+```powershell
+python -m context_auditor.cli export-study `
+  --project-root . `
+  --run <primary-custom-run> `
+  --run <primary-langchain-run> `
+  --run <stress-custom-run> `
+  --run <stress-langchain-run> `
+  --output runs/studies/formal-deepseek-v1-final.zip
+
+python -m context_auditor.cli validate-study `
+  --bundle runs/studies/formal-deepseek-v1-final.zip
+```
+
+Export blind review forms:
+
+```powershell
+python -m context_auditor.cli export-annotations `
+  --bundle runs/studies/formal-deepseek-v1-final.zip `
+  --output runs/studies/formal-deepseek-v1-final-annotations `
+  --seed 20260726
+```
+
+## Acceptance Checks
+
+- Four selected component manifests have status `completed`.
+- Every component artifact matches its manifest SHA-256.
+- Study schema is `1.1.0`.
+- Bundle contains 1596 traces: 1380 primary and 216 stress.
+- Primary measurement sample contains 1080 final invocations.
+- Primary inference uses 30 tasks; stress uses six reused tasks separately.
+- Bundle records both component execution commits and the analysis commit.
+- Reviewer A/B sample counts are 72/36.
