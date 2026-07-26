@@ -29,28 +29,50 @@ class BuildRQEvidence:
     def _rq1(values: Mapping[str, Any], rule: Mapping[str, Any]) -> dict:
         macro_f1 = values.get("macro_f1")
         localization = values.get("localization_accuracy")
+        macro_ci = values.get("macro_f1_ci95")
+        localization_ci = values.get("localization_accuracy_ci95")
         if macro_f1 is None or localization is None:
             return evidence("Insufficient data", "Detection ground truth is unavailable.", values)
-        supported = (
-            macro_f1 >= rule["minimum_macro_f1"]
-            and localization >= rule["minimum_localization_accuracy"]
+        macro_low, macro_high = macro_ci or (macro_f1, macro_f1)
+        localization_low, localization_high = localization_ci or (
+            localization,
+            localization,
         )
-        status = "Supported" if supported else "Not supported"
+        if (
+            macro_low >= rule["minimum_macro_f1"]
+            and localization_low >= rule["minimum_localization_accuracy"]
+        ):
+            status = "Supported"
+        elif (
+            macro_high < rule["minimum_macro_f1"]
+            or localization_high < rule["minimum_localization_accuracy"]
+        ):
+            status = "Not supported"
+        else:
+            status = "Inconclusive"
         text = (
             f"Detection macro-F1 is {macro_f1:.3f} and localization accuracy is "
-            f"{localization:.3f}."
+            f"{localization:.3f}; status uses task-cluster bootstrap intervals."
         )
         return evidence(status, text, values)
 
     @staticmethod
     def _rq2(values: Mapping[str, Any], rule: Mapping[str, Any]) -> dict:
         rho = values.get("spearman_rho")
+        rho_ci = values.get("spearman_rho_ci95")
         if rho is None:
             return evidence("Insufficient data", "Measurement pairs are unavailable.", values)
-        status = "Supported" if rho >= rule["minimum_spearman_rho"] else "Not supported"
+        rho_low, rho_high = rho_ci or (rho, rho)
+        if rho_low >= rule["minimum_spearman_rho"]:
+            status = "Supported"
+        elif rho_high < rule["minimum_spearman_rho"]:
+            status = "Not supported"
+        else:
+            status = "Inconclusive"
         return evidence(
             status,
-            f"Measured bloat and ground truth have Spearman rho {rho:.3f}.",
+            f"Measured bloat and ground truth have Spearman rho {rho:.3f}; "
+            "status uses the task-cluster bootstrap interval.",
             values,
         )
 

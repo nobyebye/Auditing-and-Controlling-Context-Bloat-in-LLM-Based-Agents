@@ -11,7 +11,7 @@ from typing import Iterable
 
 from context_auditor.adapters.common import UtcClock
 from context_auditor.adapters.storage import JsonlTraceRepository
-from context_auditor.adapters.storage.runs import file_hash
+from context_auditor.adapters.storage.runs import current_git_commit, file_hash
 from context_auditor.adapters.storage.serialization import dumps, write_json_atomic
 from context_auditor.application.analysis import AnalyzeBloat
 from context_auditor.application.reporting import BuildReport
@@ -102,6 +102,7 @@ class ExportStudyBundle:
                 "schema_version": "1.1.0",
                 "study_id": destination.stem,
                 "created_at": UtcClock().now_iso(),
+                "analysis_git_commit": current_git_commit(self.project_root),
                 "public_demo": public_demo,
                 "component_runs": [
                     {

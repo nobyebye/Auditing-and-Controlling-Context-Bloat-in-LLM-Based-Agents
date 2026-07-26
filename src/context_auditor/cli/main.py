@@ -13,6 +13,7 @@ from context_auditor.adapters.providers import DeepSeekProvider
 from context_auditor.adapters.storage import FileDatasetRepository, JsonlTraceRepository, RunRegistry
 from context_auditor.adapters.storage.serialization import write_json_atomic
 from context_auditor.application import CaptureContext
+from context_auditor.application.annotations import export_blind_review_package
 from context_auditor.application.comparison import CompareFrameworks
 from context_auditor.application.reporting import write_csv
 from context_auditor.application.study_bundle import ExportStudyBundle, validate_study_bundle
@@ -107,6 +108,13 @@ def build_parser() -> argparse.ArgumentParser:
         help="Validate a study bundle without extracting it.",
     )
     validate.add_argument("--bundle", required=True)
+    annotations = subparsers.add_parser(
+        "export-annotations",
+        help="Export deterministic condition-blind review forms from a study bundle.",
+    )
+    annotations.add_argument("--bundle", required=True)
+    annotations.add_argument("--output", required=True)
+    annotations.add_argument("--seed", type=int, default=20260726)
     return parser
 
 
@@ -193,6 +201,15 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if args.command == "validate-study":
         print(json.dumps(validate_study_bundle(args.bundle), indent=2))
+        return 0
+    if args.command == "export-annotations":
+        print(
+            export_blind_review_package(
+                args.bundle,
+                args.output,
+                seed=args.seed,
+            )
+        )
         return 0
     return 1
 
