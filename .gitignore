@@ -15,6 +15,9 @@ dist/
 .venv/
 venv/
 .pnpm-store/
+dashboard/node_modules/
+dashboard/dist/
+dashboard/test-results/
 
 # Generated experiment and thesis outputs
 runs/
