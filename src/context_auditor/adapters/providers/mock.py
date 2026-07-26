@@ -13,7 +13,16 @@ class MockProvider:
 
     def invoke(self, messages: tuple[Message, ...]) -> ProviderResponse:
         user = next((item.content for item in reversed(messages) if item.role == "user"), "")
-        content = f"mock response to: {user}"
+        useful = next(
+            (
+                item.content
+                for item in reversed(messages)
+                if item.metadata.get("source_type") in {"tool", "retrieval", "memory"}
+                and not item.metadata.get("bloat_labels")
+            ),
+            "",
+        )
+        content = useful or f"mock response to: {user}"
         input_tokens = sum(len(item.content.split()) for item in messages)
         output_tokens = len(content.split())
         return ProviderResponse(

@@ -8,7 +8,12 @@ import time
 from dataclasses import dataclass, field
 from urllib import request
 
-from context_auditor.domain.models import Message, ProviderResponse, ProviderUsage
+from context_auditor.domain.models import (
+    GenerationParameters,
+    Message,
+    ProviderResponse,
+    ProviderUsage,
+)
 
 
 @dataclass(frozen=True)
@@ -17,14 +22,24 @@ class DeepSeekProvider:
     api_key: str = field(repr=False)
     base_url: str = "https://api.deepseek.com"
     timeout_seconds: int = 90
+    temperature: float = 0.0
+    max_output_tokens: int = 256
     provider_name: str = "deepseek"
 
     @classmethod
-    def from_environment(cls, model: str) -> "DeepSeekProvider":
+    def from_environment(
+        cls,
+        model: str,
+        generation: GenerationParameters | None = None,
+    ) -> "DeepSeekProvider":
+        selected = generation or GenerationParameters()
         return cls(
             model=model,
             api_key=os.environ["DEEPSEEK_API_KEY"],
             base_url=os.environ.get("DEEPSEEK_BASE_URL", "https://api.deepseek.com"),
+            timeout_seconds=selected.timeout_seconds,
+            temperature=selected.temperature,
+            max_output_tokens=selected.max_output_tokens,
         )
 
     def invoke(self, messages: tuple[Message, ...]) -> ProviderResponse:
@@ -35,6 +50,8 @@ class DeepSeekProvider:
                 for item in messages
             ],
             "stream": False,
+            "temperature": self.temperature,
+            "max_tokens": self.max_output_tokens,
         }
         api_request = request.Request(
             self.base_url.rstrip("/") + "/chat/completions",

@@ -14,16 +14,35 @@
     "workflows"
   ],
   "properties": {
-    "schema_version": {"const": "1.0.0"},
+    "schema_version": {"const": "1.1.0"},
     "experiment_id": {"type": "string", "pattern": "^[a-z0-9._-]+$"},
     "dataset_name": {"type": "string", "pattern": "^[a-z0-9._-]+$"},
     "dataset_version": {"type": "string", "pattern": "^v[0-9]+$"},
     "framework": {"enum": ["custom-react", "langchain"]},
     "provider": {"enum": ["mock", "deepseek"]},
     "model": {"type": "string"},
+    "dataset_split": {"enum": ["all", "calibration", "test", "stress"]},
+    "analysis_cohort": {"enum": ["primary", "stress"]},
     "repetitions": {"type": "integer", "minimum": 1},
     "seed": {"type": "integer"},
     "privacy_mode": {"enum": ["redacted", "full", "hash-only"]},
+    "generation": {
+      "type": "object",
+      "properties": {
+        "temperature": {"type": "number", "minimum": 0},
+        "max_output_tokens": {"type": "integer", "minimum": 1},
+        "timeout_seconds": {"type": "integer", "minimum": 1},
+        "max_retries": {"type": "integer", "minimum": 0}
+      },
+      "additionalProperties": false
+    },
+    "near_duplicate_threshold": {"type": "number", "minimum": 0, "maximum": 1},
+    "relevance_threshold": {"type": "number", "minimum": 0, "maximum": 1},
+    "task_ids": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1},
+      "uniqueItems": true
+    },
     "workflows": {"type": "object", "minProperties": 1}
   },
   "additionalProperties": false

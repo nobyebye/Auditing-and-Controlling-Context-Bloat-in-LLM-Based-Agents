@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.0.0",
+  "schema_version": "1.1.0",
   "suite_id": "framework-comparison-v1",
   "experiments": [
     "pilot_custom_react_v1.json",

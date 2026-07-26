@@ -66,6 +66,16 @@ def segment_messages(
                     content_hash=hash_text(raw_text),
                     normalized_hash=normalized_hash(raw_text),
                     privacy_mode=privacy_mode.value,
+                    source_id=(
+                        str(message.metadata["source_id"])
+                        if message.metadata.get("source_id") is not None
+                        else None
+                    ),
+                    relevance_score=(
+                        float(message.metadata["relevance_score"])
+                        if message.metadata.get("relevance_score") is not None
+                        else None
+                    ),
                 )
             )
     return tuple(segments)

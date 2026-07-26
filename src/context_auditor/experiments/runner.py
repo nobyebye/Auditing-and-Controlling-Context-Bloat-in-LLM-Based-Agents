@@ -11,6 +11,7 @@ from context_auditor.adapters.storage import FileDatasetRepository, JsonlTraceRe
 from context_auditor.application import ApplyMitigation, CaptureContext
 from context_auditor.application.analysis import AnalyzeBloat
 from context_auditor.application.reporting import BuildReport
+import json
 from context_auditor.domain.models import CaptureRequest
 
 from .config import ExperimentConfig
@@ -56,6 +57,15 @@ class RunExperiment:
                 invocation_csv=paths.invocation_metrics,
                 task_csv=paths.task_metrics,
                 summary_json=paths.summary,
+                rq_evidence_json=paths.rq_evidence,
+                rq_rules=json.loads(
+                    (
+                        self.project_root
+                        / "configs"
+                        / "conclusions"
+                        / "rq_rules_v1.json"
+                    ).read_text(encoding="utf-8")
+                ),
                 tables_dir=paths.tables,
                 figures_dir=paths.figures,
             )

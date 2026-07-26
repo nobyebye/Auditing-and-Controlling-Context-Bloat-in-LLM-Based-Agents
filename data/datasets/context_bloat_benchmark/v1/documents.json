@@ -1,0 +1,128 @@
+[
+  {
+    "doc_id": "nist-core-functions",
+    "text": "The AI RMF Core organizes risk management into four functions: Govern, Map, Measure, and Manage.",
+    "near_duplicate_text": "The AI RMF Core organizes AI risk management into four functions: Govern, Map, Measure, and Manage.",
+    "relevant_task_ids": ["retrieval-cal-001"],
+    "source_url": "https://airc.nist.gov/airmf-resources/airmf/5-sec-core/"
+  },
+  {
+    "doc_id": "nist-voluntary",
+    "text": "NIST describes AI RMF 1.0 as voluntary guidance rather than a mandatory compliance standard.",
+    "near_duplicate_text": "NIST describes the AI RMF 1.0 as voluntary guidance rather than a mandatory compliance standard.",
+    "relevant_task_ids": ["retrieval-cal-002"],
+    "source_url": "https://www.nist.gov/publications/artificial-intelligence-risk-management-framework-ai-rmf-10"
+  },
+  {
+    "doc_id": "nist-govern",
+    "text": "Govern is a cross-cutting function that informs and is infused throughout Map, Measure, and Manage.",
+    "near_duplicate_text": "Govern is the cross-cutting function that informs and is infused throughout Map, Measure, and Manage.",
+    "relevant_task_ids": ["retrieval-test-001"],
+    "source_url": "https://airc.nist.gov/airmf-resources/airmf/5-sec-core/"
+  },
+  {
+    "doc_id": "nist-trustworthy",
+    "text": "Trustworthy AI characteristics include valid and reliable, safe, secure and resilient, accountable and transparent, explainable and interpretable, privacy enhanced, and fair with harmful bias managed.",
+    "near_duplicate_text": "Trustworthy AI characteristics include valid and reliable, safe, secure and resilient, accountable and transparent, explainable and interpretable, privacy-enhanced, and fair with harmful bias managed.",
+    "relevant_task_ids": ["retrieval-test-002"],
+    "source_url": "https://airc.nist.gov/airmf-resources/airmf/0-ai-rmf-1-0/"
+  },
+  {
+    "doc_id": "nist-audience",
+    "text": "The AI RMF is use-case agnostic and can be applied by organizations of all sizes and sectors.",
+    "near_duplicate_text": "The AI RMF is use-case agnostic and may be applied by organizations of all sizes and sectors.",
+    "relevant_task_ids": ["retrieval-test-003"],
+    "source_url": "https://www.nist.gov/publications/artificial-intelligence-risk-management-framework-ai-rmf-10"
+  },
+  {
+    "doc_id": "nist-continuous",
+    "text": "AI risk management should be continuous, timely, and performed throughout the AI system lifecycle.",
+    "near_duplicate_text": "AI risk management should remain continuous, timely, and be performed throughout the AI system lifecycle.",
+    "relevant_task_ids": ["retrieval-test-004"],
+    "source_url": "https://airc.nist.gov/airmf-resources/airmf/5-sec-core/"
+  },
+  {
+    "doc_id": "nist-not-checklist",
+    "text": "Core actions do not constitute a checklist and are not necessarily an ordered set of steps.",
+    "near_duplicate_text": "The Core actions do not constitute a checklist and are not necessarily an ordered sequence of steps.",
+    "relevant_task_ids": ["retrieval-test-005"],
+    "source_url": "https://airc.nist.gov/airmf-resources/airmf/5-sec-core/"
+  },
+  {
+    "doc_id": "nist-manage",
+    "text": "Within Manage, AI risks identified from Map and Measure outputs are prioritized, responded to, and managed.",
+    "near_duplicate_text": "Within Manage, AI risks identified from the Map and Measure outputs are prioritized, responded to, and managed.",
+    "relevant_task_ids": ["retrieval-test-006"],
+    "source_url": "https://airc.nist.gov/airmf-resources/playbook/manage/"
+  },
+  {
+    "doc_id": "nist-playbook",
+    "text": "The AI RMF Playbook suggests actions that organizations can use to achieve outcomes in the four Core functions.",
+    "near_duplicate_text": "The AI RMF Playbook provides suggested actions organizations can use to achieve outcomes in the four Core functions.",
+    "relevant_task_ids": ["retrieval-test-007"],
+    "source_url": "https://airc.nist.gov/airmf-resources/playbook/"
+  },
+  {
+    "doc_id": "nist-release",
+    "text": "NIST released AI RMF 1.0 on January 26, 2023.",
+    "near_duplicate_text": "NIST officially released the AI RMF 1.0 on January 26, 2023.",
+    "relevant_task_ids": ["retrieval-test-008"],
+    "source_url": "https://www.nist.gov/news-events/news/2023/01/nist-risk-management-framework-aims-improve-trustworthiness-artificial"
+  },
+  {
+    "doc_id": "nist-system-specific",
+    "text": "Map, Measure, and Manage can be applied in AI-system-specific contexts and at particular lifecycle stages.",
+    "near_duplicate_text": "Map, Measure, and Manage can be applied in AI system-specific contexts and at particular lifecycle stages.",
+    "relevant_task_ids": ["retrieval-test-009"],
+    "source_url": "https://airc.nist.gov/airmf-resources/airmf/0-ai-rmf-1-0/"
+  },
+  {
+    "doc_id": "nist-purpose",
+    "text": "The framework aims to promote trustworthy and responsible development and use of AI while helping organizations manage risk.",
+    "near_duplicate_text": "The framework aims to promote trustworthy and responsible AI development and use while helping organizations manage risk.",
+    "relevant_task_ids": ["retrieval-test-010"],
+    "source_url": "https://www.nist.gov/publications/artificial-intelligence-risk-management-framework-ai-rmf-10"
+  },
+  {
+    "doc_id": "distractor-weather",
+    "text": "A weather station records temperature, wind speed, rainfall, and atmospheric pressure every hour.",
+    "near_duplicate_text": "A weather station records temperature, wind, rainfall, and pressure each hour.",
+    "relevant_task_ids": [],
+    "source_url": "synthetic://distractor/weather"
+  },
+  {
+    "doc_id": "distractor-library",
+    "text": "The library circulation desk renews borrowed books and manages replacement cards.",
+    "near_duplicate_text": "The library desk renews books and manages replacement cards.",
+    "relevant_task_ids": [],
+    "source_url": "synthetic://distractor/library"
+  },
+  {
+    "doc_id": "stress-thesis-title",
+    "text": "The recorded thesis title is Auditing and Controlling Context Bloat in LLM-Based Agents.",
+    "near_duplicate_text": "The recorded working thesis title is Auditing and Controlling Context Bloat in LLM-Based Agents.",
+    "relevant_task_ids": ["memory-test-001"],
+    "source_url": "local://context-bloat-benchmark/stress/title"
+  },
+  {
+    "doc_id": "stress-framework",
+    "text": "The primary framework selected for the study is LangChain.",
+    "near_duplicate_text": "The primary agent framework selected for the study is LangChain.",
+    "relevant_task_ids": ["memory-test-002"],
+    "source_url": "local://context-bloat-benchmark/stress/framework"
+  },
+  {
+    "doc_id": "stress-tool-200",
+    "text": "The verified structured result for this calculation is 200.",
+    "near_duplicate_text": "The verified structured calculation result for this task is 200.",
+    "relevant_task_ids": ["tool-test-001"],
+    "source_url": "local://context-bloat-benchmark/stress/tool-200"
+  },
+  {
+    "doc_id": "stress-tool-175",
+    "text": "The verified structured result for this calculation is 175.",
+    "near_duplicate_text": "The verified structured calculation result for this task is 175.",
+    "relevant_task_ids": ["tool-test-002"],
+    "source_url": "local://context-bloat-benchmark/stress/tool-175"
+  }
+]

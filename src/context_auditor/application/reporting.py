@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any, Iterable
 
 from context_auditor.adapters.storage.serialization import write_json_atomic
+from context_auditor.application.conclusions import BuildRQEvidence
 from context_auditor.domain.models import AuditTrace
 
 
@@ -20,6 +21,8 @@ class BuildReport:
         invocation_csv: Path,
         task_csv: Path,
         summary_json: Path,
+        rq_evidence_json: Path | None = None,
+        rq_rules: dict[str, Any] | None = None,
         tables_dir: Path,
         figures_dir: Path,
     ) -> None:
@@ -27,11 +30,28 @@ class BuildReport:
         self._write_invocations(items, invocation_csv)
         self._write_tasks(items, task_csv)
         write_json_atomic(summary_json, summary)
+        if rq_evidence_json is not None and rq_rules is not None:
+            write_json_atomic(
+                rq_evidence_json,
+                BuildRQEvidence().execute(summary, rq_rules),
+            )
         self._write_group_table(summary["by_configuration"], tables_dir / "by_configuration.csv")
         self._write_group_table(summary["by_workflow_family"], tables_dir / "by_workflow_family.csv")
+        self._write_group_table(
+            summary.get("by_analysis_cohort", {}),
+            tables_dir / "by_analysis_cohort.csv",
+        )
         self._write_mitigation_table(
             summary.get("mitigation", {}),
             tables_dir / "mitigation_by_configuration.csv",
+        )
+        self._write_detection_table(
+            summary.get("detection", {}).get("by_label", {}),
+            tables_dir / "detection_by_label.csv",
+        )
+        self._write_source_bloat_table(
+            summary.get("source_bloat", {}),
+            tables_dir / "source_bloat.csv",
         )
         self._write_bar_chart(
             {
@@ -56,6 +76,7 @@ class BuildReport:
             "trace_id",
             "task_id",
             "workflow_family",
+            "analysis_cohort",
             "configuration",
             "repetition_id",
             "invocation_index",
@@ -64,12 +85,26 @@ class BuildReport:
             "duplicate_segment_count",
             "task_success",
             "latency_ms",
+            "ground_truth_bloat_ratio",
+            "detected_bloat_ratio",
+            "nonredundant_token_ratio",
+            "input_tokens",
+            "output_tokens",
+            "cost_usd",
+            "system_tokens",
+            "user_tokens",
+            "framework_tokens",
+            "retrieval_tokens",
+            "memory_tokens",
+            "tool_tokens",
+            "generated_trace_tokens",
         )
         rows = [
             {
                 "trace_id": trace.trace_id,
                 "task_id": trace.task_id,
                 "workflow_family": trace.workflow_family,
+                "analysis_cohort": trace.analysis_cohort,
                 "configuration": trace.configuration,
                 "repetition_id": trace.repetition_id,
                 "invocation_index": trace.invocation_index,
@@ -78,6 +113,36 @@ class BuildReport:
                 "duplicate_segment_count": trace.metrics.get("duplicate_segment_count", 0),
                 "task_success": trace.task_success,
                 "latency_ms": trace.latency_ms,
+                "ground_truth_bloat_ratio": trace.metrics.get(
+                    "ground_truth_bloat_ratio", 0.0
+                ),
+                "detected_bloat_ratio": trace.metrics.get(
+                    "detected_bloat_ratio", 0.0
+                ),
+                "nonredundant_token_ratio": trace.metrics.get(
+                    "nonredundant_token_ratio", 0.0
+                ),
+                "input_tokens": (
+                    trace.provider_usage.input_tokens if trace.provider_usage else None
+                ),
+                "output_tokens": (
+                    trace.provider_usage.output_tokens if trace.provider_usage else None
+                ),
+                "cost_usd": trace.provider_usage.cost_usd if trace.provider_usage else None,
+                **{
+                    f"{source}_tokens": trace.metrics.get("tokens_by_source", {}).get(
+                        source, 0
+                    )
+                    for source in (
+                        "system",
+                        "user",
+                        "framework",
+                        "retrieval",
+                        "memory",
+                        "tool",
+                        "generated_trace",
+                    )
+                },
             }
             for trace in traces
         ]
@@ -89,10 +154,15 @@ class BuildReport:
         fields = (
             "task_id",
             "workflow_family",
+            "analysis_cohort",
             "configuration",
             "repetition_id",
             "task_success",
             "task_output",
+            "expected_answer",
+            "score",
+            "scoring_method",
+            "framework",
         )
         write_csv(
             path,
@@ -101,10 +171,15 @@ class BuildReport:
                 {
                     "task_id": trace.task_id,
                     "workflow_family": trace.workflow_family,
+                    "analysis_cohort": trace.analysis_cohort,
                     "configuration": trace.configuration,
                     "repetition_id": trace.repetition_id,
                     "task_success": trace.task_success,
                     "task_output": trace.task_output,
+                    "expected_answer": trace.expected_answer,
+                    "score": trace.scoring.score if trace.scoring else None,
+                    "scoring_method": trace.scoring.method if trace.scoring else None,
+                    "framework": trace.framework,
                 }
                 for trace in final
             ],
@@ -134,6 +209,36 @@ class BuildReport:
             path,
             ("configuration", "decisions", "removed_tokens", "affected_traces"),
             [{"configuration": name, **values} for name, values in groups.items()],
+        )
+
+    @staticmethod
+    def _write_detection_table(groups: dict[str, dict[str, Any]], path: Path) -> None:
+        write_csv(
+            path,
+            (
+                "label",
+                "true_positive",
+                "false_positive",
+                "false_negative",
+                "precision",
+                "recall",
+                "f1",
+            ),
+            [{"label": label, **values} for label, values in groups.items()],
+        )
+
+    @staticmethod
+    def _write_source_bloat_table(groups: dict[str, dict[str, Any]], path: Path) -> None:
+        write_csv(
+            path,
+            (
+                "source",
+                "total_tokens",
+                "bloat_tokens",
+                "bloat_ratio",
+                "mean_bloat_ratio",
+            ),
+            [{"source": source, **values} for source, values in groups.items()],
         )
 
     @staticmethod

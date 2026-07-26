@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from dataclasses import replace
 
 from context_auditor.analytics import jaccard_similarity, query_overlap_ratio
 from context_auditor.application.segmentation import label_source
@@ -31,6 +32,7 @@ class ApplyMitigation:
         strategy: str,
         relevance_threshold: float = 0.05,
         near_duplicate_threshold: float = 0.8,
+        verbose_tool_token_threshold: int = 80,
     ) -> MitigationResult:
         if strategy == "none":
             return MitigationResult(messages, ())
@@ -46,6 +48,7 @@ class ApplyMitigation:
             source = label_source(message)
             prior = seen.setdefault(source, [])
             reason: str | None = None
+            replacement: Message | None = None
             if source in self.MANAGED_SOURCES:
                 if any(normalized_hash(item.content) == normalized_hash(message.content) for item in prior):
                     reason = "exact_duplicate"
@@ -59,11 +62,54 @@ class ApplyMitigation:
                     and query_overlap_ratio(message.content, query) < relevance_threshold
                 ):
                     reason = "low_query_relevance"
+                elif (
+                    strategy == "source-aware"
+                    and source == SourceType.TOOL
+                    and self.tokenizer.count(message.content) >= verbose_tool_token_threshold
+                ):
+                    compressed = compress_tool_output(message.content)
+                    replacement = replace(
+                        message,
+                        content=compressed,
+                        metadata={
+                            key: value
+                            for key, value in message.metadata.items()
+                            if key != "bloat_labels"
+                        },
+                    )
+                    decisions.append(
+                        self._decision(
+                            index,
+                            message,
+                            source,
+                            "verbose_tool_output",
+                            action="compress",
+                            removed_tokens=max(
+                                0,
+                                self.tokenizer.count(message.content)
+                                - self.tokenizer.count(compressed),
+                            ),
+                        )
+                    )
             if reason:
                 decisions.append(self._decision(index, message, source, reason))
                 continue
-            kept.append(message)
-            prior.append(message)
+            selected = replacement or message
+            if source in self.MANAGED_SOURCES and any(
+                normalized_hash(item.content) == normalized_hash(selected.content)
+                for item in prior
+            ):
+                decisions.append(
+                    self._decision(
+                        index,
+                        message,
+                        source,
+                        "exact_duplicate_after_transform",
+                    )
+                )
+                continue
+            kept.append(selected)
+            prior.append(selected)
         return MitigationResult(tuple(kept), tuple(decisions))
 
     def _last_n(self, messages: tuple[Message, ...], keep: int) -> MitigationResult:
@@ -91,11 +137,22 @@ class ApplyMitigation:
         message: Message,
         source: SourceType,
         reason: str,
+        action: str = "remove",
+        removed_tokens: int | None = None,
     ) -> MitigationDecision:
         return MitigationDecision(
             segment_id=f"m{index:04d}",
-            action="remove",
+            action=action,
             reason=reason,
             source_type=source.value,
-            removed_tokens=self.tokenizer.count(message.content),
+            removed_tokens=(
+                self.tokenizer.count(message.content)
+                if removed_tokens is None
+                else removed_tokens
+            ),
         )
+
+
+def compress_tool_output(text: str) -> str:
+    first_line = next((line.strip() for line in text.splitlines() if line.strip()), "")
+    return f"{first_line}\n[verbose tool details removed]"

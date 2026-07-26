@@ -1,0 +1,42 @@
+{
+  "schema_version": "1.1.0",
+  "dataset_name": "context_bloat_benchmark",
+  "dataset_version": "v1",
+  "language": "en",
+  "encoding": "utf-8",
+  "immutable": true,
+  "task_count": 36,
+  "split_counts": {
+    "calibration": 6,
+    "test": 30
+  },
+  "workflow_counts": {
+    "retrieval_qa": 12,
+    "memory_turns": 12,
+    "multi_step_tool": 12
+  },
+  "ground_truth_labels": [
+    "exact_duplicate",
+    "near_duplicate",
+    "low_query_relevance",
+    "verbose_tool_output"
+  ],
+  "sources": [
+    {
+      "name": "NIST AI Risk Management Framework 1.0",
+      "url": "https://doi.org/10.6028/NIST.AI.100-1",
+      "use": "Short factual paraphrases for retrieval QA."
+    },
+    {
+      "name": "Controlled memory and tool fixtures",
+      "url": "local://context-bloat-benchmark/v1",
+      "use": "Synthetic reproducible tasks with deterministic scoring."
+    }
+  ],
+  "notes": [
+    "Calibration tasks are excluded from formal hypothesis tests.",
+    "Thresholds must be frozen before the test split is run.",
+    "NIST-derived text is stored as short paraphrases with source URLs.",
+    "Six predeclared test tasks are reused for a cross-source stress analysis."
+  ]
+}

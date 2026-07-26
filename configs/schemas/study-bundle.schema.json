@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/context-auditor/study-bundle.schema.json",
+  "title": "Context Bloat Study Manifest",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "study_id",
+    "created_at",
+    "public_demo",
+    "component_runs",
+    "frameworks",
+    "providers",
+    "models",
+    "datasets",
+    "privacy_modes",
+    "trace_count",
+    "task_count"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.1.0"},
+    "study_id": {"type": "string", "minLength": 1},
+    "created_at": {"type": "string", "format": "date-time"},
+    "public_demo": {"type": "boolean"},
+    "component_runs": {"type": "array", "minItems": 1},
+    "frameworks": {"type": "array", "items": {"type": "string"}},
+    "providers": {"type": "array", "items": {"type": "string"}},
+    "models": {"type": "array", "items": {"type": "string"}},
+    "datasets": {"type": "array", "items": {"type": "string"}},
+    "privacy_modes": {
+      "type": "array",
+      "items": {"enum": ["redacted", "hash-only", "full"]}
+    },
+    "trace_count": {"type": "integer", "minimum": 1},
+    "task_count": {"type": "integer", "minimum": 1}
+  },
+  "additionalProperties": true
+}

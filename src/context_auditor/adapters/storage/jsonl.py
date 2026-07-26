@@ -8,9 +8,11 @@ from typing import Iterable
 
 from context_auditor.domain.models import (
     AuditTrace,
+    GenerationParameters,
     Message,
     MitigationDecision,
     ProviderUsage,
+    ScoringResult,
     TextSegment,
 )
 
@@ -37,6 +39,8 @@ class JsonlTraceRepository:
 
 def trace_from_dict(data: dict) -> AuditTrace:
     usage = data.get("provider_usage")
+    generation = data.get("generation_parameters")
+    scoring = data.get("scoring")
     return AuditTrace(
         schema_version=data["schema_version"],
         trace_id=data["trace_id"],
@@ -49,6 +53,8 @@ def trace_from_dict(data: dict) -> AuditTrace:
         model=data["model"],
         configuration=data["configuration"],
         workflow_family=data["workflow_family"],
+        dataset_split=data.get("dataset_split", "all"),
+        analysis_cohort=data.get("analysis_cohort", "primary"),
         dataset_name=data["dataset_name"],
         dataset_version=data["dataset_version"],
         repetition_id=int(data["repetition_id"]),
@@ -68,4 +74,17 @@ def trace_from_dict(data: dict) -> AuditTrace:
         expected_answer=data.get("expected_answer"),
         provider_usage=ProviderUsage(**usage) if usage else None,
         latency_ms=data.get("latency_ms"),
+        attempt_index=int(data.get("attempt_index", 0)),
+        generation_parameters=(
+            GenerationParameters(**generation) if generation else GenerationParameters()
+        ),
+        ground_truth_labels={
+            key: tuple(labels)
+            for key, labels in data.get("ground_truth_labels", {}).items()
+        },
+        detected_labels={
+            key: tuple(labels)
+            for key, labels in data.get("detected_labels", {}).items()
+        },
+        scoring=ScoringResult(**scoring) if scoring else None,
     )

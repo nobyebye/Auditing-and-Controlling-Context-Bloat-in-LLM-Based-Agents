@@ -15,10 +15,16 @@ from context_auditor.adapters.storage.serialization import write_json_atomic
 from context_auditor.application import CaptureContext
 from context_auditor.application.comparison import CompareFrameworks
 from context_auditor.application.reporting import write_csv
+from context_auditor.application.study_bundle import ExportStudyBundle, validate_study_bundle
 from context_auditor.domain.enums import PrivacyMode
 from context_auditor.domain.models import CaptureRequest, Message
 from context_auditor.domain.text import hash_text
-from context_auditor.experiments import RunExperiment, load_experiment_config
+from context_auditor.experiments import (
+    RunExperiment,
+    RunFormalExperiment,
+    load_experiment_config,
+)
+from context_auditor.experiments.dataset_validation import validate_dataset
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -30,6 +36,30 @@ def build_parser() -> argparse.ArgumentParser:
     run.add_argument("--config", required=True)
     run.add_argument("--project-root", default=".")
     run.add_argument("--run-id")
+
+    formal = subparsers.add_parser(
+        "run-formal",
+        help="Run one formal provider-backed experiment config.",
+    )
+    formal.add_argument("--config", required=True)
+    formal.add_argument("--project-root", default=".")
+    formal.add_argument("--run-id")
+    formal.add_argument("--confirm-real-cost", action="store_true")
+
+    formal_suite = subparsers.add_parser(
+        "run-formal-suite",
+        help="Run the formal Custom ReAct and LangChain configs.",
+    )
+    formal_suite.add_argument(
+        "--custom-config",
+        default="configs/experiments/formal_custom_react_deepseek_v1.json",
+    )
+    formal_suite.add_argument(
+        "--langchain-config",
+        default="configs/experiments/formal_langchain_deepseek_v1.json",
+    )
+    formal_suite.add_argument("--project-root", default=".")
+    formal_suite.add_argument("--confirm-real-cost", action="store_true")
 
     suite = subparsers.add_parser("run-suite", help="Run custom ReAct and LangChain configs.")
     suite.add_argument(
@@ -54,6 +84,29 @@ def build_parser() -> argparse.ArgumentParser:
         default="Answer in one short sentence: what is context bloat in an LLM agent?",
     )
     smoke.add_argument("--privacy-mode", choices=[item.value for item in PrivacyMode], default="redacted")
+
+    dataset = subparsers.add_parser(
+        "validate-dataset",
+        help="Validate a versioned formal-study dataset.",
+    )
+    dataset.add_argument("--project-root", default=".")
+    dataset.add_argument("--dataset-name", default="context_bloat_benchmark")
+    dataset.add_argument("--dataset-version", default="v1")
+
+    export = subparsers.add_parser(
+        "export-study",
+        help="Export completed component runs as a validated study ZIP.",
+    )
+    export.add_argument("--project-root", default=".")
+    export.add_argument("--run", action="append", required=True)
+    export.add_argument("--output", required=True)
+    export.add_argument("--public-demo", action="store_true")
+
+    validate = subparsers.add_parser(
+        "validate-study",
+        help="Validate a study bundle without extracting it.",
+    )
+    validate.add_argument("--bundle", required=True)
     return parser
 
 
@@ -64,6 +117,32 @@ def main(argv: list[str] | None = None) -> int:
         config = load_experiment_config(root / args.config)
         run_path = RunExperiment(root).execute(config, run_id=args.run_id)
         print(run_path)
+        return 0
+    if args.command == "run-formal":
+        root = Path(args.project_root).resolve()
+        config = load_experiment_config(root / args.config)
+        if config.provider != "mock" and not args.confirm_real_cost:
+            print(
+                "Real-provider formal runs require --confirm-real-cost because "
+                "they can issue many paid API calls."
+            )
+            return 2
+        print(RunFormalExperiment(root).execute(config, run_id=args.run_id))
+        return 0
+    if args.command == "run-formal-suite":
+        root = Path(args.project_root).resolve()
+        configs = [
+            load_experiment_config(root / args.custom_config),
+            load_experiment_config(root / args.langchain_config),
+        ]
+        if any(config.provider != "mock" for config in configs) and not args.confirm_real_cost:
+            print(
+                "Real-provider formal suites require --confirm-real-cost because "
+                "they can issue many paid API calls."
+            )
+            return 2
+        for config in configs:
+            print(RunFormalExperiment(root).execute(config))
         return 0
     if args.command == "run-suite":
         root = Path(args.project_root).resolve()
@@ -95,6 +174,26 @@ def main(argv: list[str] | None = None) -> int:
         return 0 if all(value == "SET" for value in status["required_environment"].values()) else 2
     if args.command == "run-real-model-smoke":
         return run_real_model_smoke(Path(args.project_root).resolve(), args)
+    if args.command == "validate-dataset":
+        root = Path(args.project_root).resolve()
+        repository = FileDatasetRepository(root / "data")
+        result = validate_dataset(
+            repository.load(args.dataset_name, args.dataset_version)
+        )
+        print(json.dumps(result, indent=2))
+        return 0
+    if args.command == "export-study":
+        root = Path(args.project_root).resolve()
+        output = ExportStudyBundle(root).execute(
+            [root / path for path in args.run],
+            root / args.output,
+            public_demo=args.public_demo,
+        )
+        print(output)
+        return 0
+    if args.command == "validate-study":
+        print(json.dumps(validate_study_bundle(args.bundle), indent=2))
+        return 0
     return 1
 
 
@@ -154,7 +253,7 @@ def run_real_model_smoke(project_root: Path, args: argparse.Namespace) -> int:
         write_json_atomic(
             paths.summary,
             {
-                "schema_version": "1.0.0",
+                "schema_version": "1.1.0",
                 "trace_id": trace.trace_id,
                 "provider": args.model,
                 "response_chars": len(response.content),

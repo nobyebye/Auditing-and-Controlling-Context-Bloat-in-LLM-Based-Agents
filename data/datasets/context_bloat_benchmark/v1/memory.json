@@ -1,0 +1,110 @@
+[
+  {
+    "memory_id": "memory-python",
+    "text": "Earlier decision: the runtime auditor will be implemented primarily in Python.",
+    "near_duplicate_text": "Earlier project decision: the runtime auditor will be implemented primarily using Python.",
+    "relevant_task_ids": ["memory-cal-001"]
+  },
+  {
+    "memory_id": "memory-retention",
+    "text": "Calibration logs should be retained for 30 days.",
+    "near_duplicate_text": "Calibration logs should be retained for exactly 30 days.",
+    "relevant_task_ids": ["memory-cal-002"]
+  },
+  {
+    "memory_id": "memory-title",
+    "text": "Working title: Auditing and Controlling Context Bloat in LLM-Based Agents.",
+    "near_duplicate_text": "The working title is Auditing and Controlling Context Bloat in LLM-Based Agents.",
+    "relevant_task_ids": ["memory-test-001"]
+  },
+  {
+    "memory_id": "memory-framework",
+    "text": "LangChain was selected as the primary framework implementation.",
+    "near_duplicate_text": "LangChain was selected as the primary agent framework implementation.",
+    "relevant_task_ids": ["memory-test-002"]
+  },
+  {
+    "memory_id": "memory-provider",
+    "text": "DeepSeek was selected as the single real provider for the formal study.",
+    "near_duplicate_text": "The single real provider selected for the formal study was DeepSeek.",
+    "relevant_task_ids": ["memory-test-003"]
+  },
+  {
+    "memory_id": "memory-repetitions",
+    "text": "Each formal experimental condition should be repeated 3 times.",
+    "near_duplicate_text": "Each formal experimental condition should be repeated exactly 3 times.",
+    "relevant_task_ids": ["memory-test-004"]
+  },
+  {
+    "memory_id": "memory-privacy",
+    "text": "The default trace privacy mode is redacted.",
+    "near_duplicate_text": "The default trace privacy mode is the redacted mode.",
+    "relevant_task_ids": ["memory-test-005"]
+  },
+  {
+    "memory_id": "memory-mitigation",
+    "text": "The first mitigation baseline is exact duplicate removal.",
+    "near_duplicate_text": "Exact duplicate removal is the first mitigation baseline.",
+    "relevant_task_ids": ["memory-test-006"]
+  },
+  {
+    "memory_id": "memory-margin",
+    "text": "The task-success non-inferiority margin is frozen at -5%.",
+    "near_duplicate_text": "The frozen non-inferiority margin for task success is -5%.",
+    "relevant_task_ids": ["memory-test-007"]
+  },
+  {
+    "memory_id": "memory-runs",
+    "text": "Generated experiment artifacts belong in the runs directory.",
+    "near_duplicate_text": "Generated experiment artifacts belong inside the runs directory.",
+    "relevant_task_ids": ["memory-test-008"]
+  },
+  {
+    "memory_id": "memory-ci",
+    "text": "Continuous integration covers Python 3.11 and Python 3.12.",
+    "near_duplicate_text": "Continuous integration covers both Python 3.11 and Python 3.12.",
+    "relevant_task_ids": ["memory-test-009"]
+  },
+  {
+    "memory_id": "memory-secondary",
+    "text": "Mitigation should remain lightweight and secondary to runtime auditing.",
+    "near_duplicate_text": "Mitigation should remain lightweight and secondary to the runtime auditing contribution.",
+    "relevant_task_ids": ["memory-test-010"]
+  },
+  {
+    "memory_id": "memory-stale-lunch",
+    "text": "An old conversation mentioned that lunch was scheduled for 12:30 on Friday.",
+    "near_duplicate_text": "A previous conversation scheduled Friday lunch for 12:30.",
+    "relevant_task_ids": []
+  },
+  {
+    "memory_id": "memory-stale-color",
+    "text": "A discarded interface draft used a purple background and oversized rounded cards.",
+    "near_duplicate_text": "An abandoned interface draft used purple and oversized rounded cards.",
+    "relevant_task_ids": []
+  },
+  {
+    "memory_id": "stress-govern",
+    "text": "A prior verified answer identified Govern as the cross-cutting AI RMF function.",
+    "near_duplicate_text": "A prior verified answer identified the Govern function as cross-cutting in the AI RMF.",
+    "relevant_task_ids": ["retrieval-test-001"]
+  },
+  {
+    "memory_id": "stress-trustworthy",
+    "text": "A prior verified answer listed valid and reliable as trustworthy AI characteristics.",
+    "near_duplicate_text": "A prior verified answer listed valid and reliable among trustworthy AI characteristics.",
+    "relevant_task_ids": ["retrieval-test-002"]
+  },
+  {
+    "memory_id": "stress-tool-200",
+    "text": "The remembered verified result for the current calculation is 200.",
+    "near_duplicate_text": "The remembered and verified result for the current calculation is 200.",
+    "relevant_task_ids": ["tool-test-001"]
+  },
+  {
+    "memory_id": "stress-tool-175",
+    "text": "The remembered verified result for the current calculation is 175.",
+    "near_duplicate_text": "The remembered and verified result for the current calculation is 175.",
+    "relevant_task_ids": ["tool-test-002"]
+  }
+]

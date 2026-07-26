@@ -70,5 +70,8 @@ def compute_metrics(segments: Iterable[TextSegment], near_duplicate_threshold: f
         "near_redundant_tokens": near_redundant_tokens,
         "redundancy_ratio": redundant_tokens / total_tokens if total_tokens else 0.0,
         "near_redundancy_ratio": near_redundant_tokens / total_tokens if total_tokens else 0.0,
+        "nonredundant_token_ratio": 1.0 - (redundant_tokens / total_tokens)
+        if total_tokens
+        else 0.0,
         "unique_information_ratio": 1.0 - (redundant_tokens / total_tokens) if total_tokens else 0.0,
     }

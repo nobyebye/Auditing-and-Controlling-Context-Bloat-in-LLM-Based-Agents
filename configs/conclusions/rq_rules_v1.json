@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.1.0",
+  "rule_version": "1.0.0",
+  "rq1": {
+    "minimum_macro_f1": 0.8,
+    "minimum_localization_accuracy": 0.8
+  },
+  "rq2": {
+    "minimum_spearman_rho": 0.7
+  },
+  "rq4": {
+    "minimum_token_reduction": 0.0,
+    "noninferiority_margin": -0.05
+  }
+}

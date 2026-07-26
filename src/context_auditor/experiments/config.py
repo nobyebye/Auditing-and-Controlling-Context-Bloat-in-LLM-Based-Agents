@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any
 
 from context_auditor.domain.enums import PrivacyMode
+from context_auditor.domain.models import GenerationParameters
 
 
 @dataclass(frozen=True)
@@ -21,6 +22,9 @@ class WorkflowCondition:
     include_irrelevant_retrieval: bool = False
     duplicate_memory: bool = False
     repeat_tool_output: bool = False
+    include_near_duplicate: bool = False
+    include_stale_context: bool = False
+    verbose_tool_output: bool = False
     mitigation_strategy: str = "none"
 
 
@@ -35,7 +39,13 @@ class ExperimentConfig:
     model: str
     repetitions: int
     seed: int
+    dataset_split: str
+    analysis_cohort: str
     privacy_mode: PrivacyMode
+    generation: GenerationParameters
+    near_duplicate_threshold: float
+    relevance_threshold: float
+    task_ids: tuple[str, ...]
     workflows: dict[str, tuple[WorkflowCondition, ...]]
     source_path: Path
     config_hash: str
@@ -77,7 +87,13 @@ def load_experiment_config(path: str | Path) -> ExperimentConfig:
         model=str(data["model"]),
         repetitions=repetitions,
         seed=int(data.get("seed", 42)),
+        dataset_split=str(data.get("dataset_split", "all")),
+        analysis_cohort=str(data.get("analysis_cohort", "primary")),
         privacy_mode=PrivacyMode(data.get("privacy_mode", "redacted")),
+        generation=GenerationParameters(**data.get("generation", {})),
+        near_duplicate_threshold=float(data.get("near_duplicate_threshold", 0.8)),
+        relevance_threshold=float(data.get("relevance_threshold", 0.05)),
+        task_ids=tuple(str(item) for item in data.get("task_ids", [])),
         workflows=workflows,
         source_path=source,
         config_hash=hashlib.sha256(raw).hexdigest(),

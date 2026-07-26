@@ -1,0 +1,47 @@
+{
+  "schema_version": "1.1.0",
+  "experiment_id": "formal-full-mock-langchain-v1",
+  "dataset_name": "context_bloat_benchmark",
+  "dataset_version": "v1",
+  "dataset_split": "test",
+  "framework": "langchain",
+  "provider": "mock",
+  "model": "mock-llm",
+  "repetitions": 3,
+  "seed": 42,
+  "privacy_mode": "redacted",
+  "generation": {
+    "temperature": 0.0,
+    "max_output_tokens": 256,
+    "timeout_seconds": 30,
+    "max_retries": 0
+  },
+  "near_duplicate_threshold": 0.8,
+  "relevance_threshold": 0.05,
+  "workflows": {
+    "retrieval_qa": [
+      {"name": "baseline"},
+      {"name": "sufficient", "retrieval_top_k": 1},
+      {"name": "exact_bloat", "retrieval_top_k": 1, "duplicate_retrieval": true},
+      {"name": "source_specific_bloat", "retrieval_top_k": 1, "include_near_duplicate": true, "include_irrelevant_retrieval": true},
+      {"name": "combined_bloat", "retrieval_top_k": 1, "duplicate_retrieval": true, "include_near_duplicate": true, "include_irrelevant_retrieval": true},
+      {"name": "mitigated", "retrieval_top_k": 1, "duplicate_retrieval": true, "include_near_duplicate": true, "include_irrelevant_retrieval": true, "mitigation_strategy": "source_aware"}
+    ],
+    "memory_turns": [
+      {"name": "baseline"},
+      {"name": "sufficient", "include_memory": true},
+      {"name": "exact_bloat", "include_memory": true, "duplicate_memory": true},
+      {"name": "source_specific_bloat", "include_memory": true, "include_near_duplicate": true, "include_stale_context": true},
+      {"name": "combined_bloat", "include_memory": true, "duplicate_memory": true, "include_near_duplicate": true, "include_stale_context": true},
+      {"name": "mitigated", "include_memory": true, "duplicate_memory": true, "include_near_duplicate": true, "include_stale_context": true, "mitigation_strategy": "source_aware"}
+    ],
+    "multi_step_tool": [
+      {"name": "baseline"},
+      {"name": "sufficient", "use_tools": true},
+      {"name": "exact_bloat", "use_tools": true, "repeat_tool_output": true},
+      {"name": "source_specific_bloat", "use_tools": true, "verbose_tool_output": true},
+      {"name": "combined_bloat", "use_tools": true, "repeat_tool_output": true, "verbose_tool_output": true},
+      {"name": "mitigated", "use_tools": true, "repeat_tool_output": true, "verbose_tool_output": true, "mitigation_strategy": "source_aware"}
+    ]
+  }
+}

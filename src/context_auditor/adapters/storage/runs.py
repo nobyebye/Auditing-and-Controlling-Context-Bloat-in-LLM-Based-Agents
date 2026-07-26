@@ -27,6 +27,7 @@ class RunPaths:
     invocation_metrics: Path
     task_metrics: Path
     summary: Path
+    rq_evidence: Path
     tables: Path
     figures: Path
 
@@ -126,6 +127,7 @@ class RunRegistry:
             invocation_metrics=root / "metrics" / "invocations.csv",
             task_metrics=root / "metrics" / "tasks.csv",
             summary=root / "reports" / "summary.json",
+            rq_evidence=root / "reports" / "rq_evidence.json",
             tables=root / "reports" / "tables",
             figures=root / "reports" / "figures",
         )
@@ -150,16 +152,45 @@ class RunRegistry:
         return outputs
 
 
-def current_git_commit() -> str:
+def current_git_commit(project_root: str | Path | None = None) -> str:
+    command = ["git"]
+    if project_root is not None:
+        command.extend(["-C", str(Path(project_root).resolve())])
+    command.extend(["rev-parse", "HEAD"])
     try:
         return subprocess.check_output(
-            ["git", "rev-parse", "HEAD"],
+            command,
             text=True,
             encoding="utf-8",
             stderr=subprocess.DEVNULL,
         ).strip()
     except (OSError, subprocess.CalledProcessError):
         return "0000000"
+
+
+def require_clean_git_worktree(project_root: str | Path) -> None:
+    root = Path(project_root).resolve()
+    try:
+        output = subprocess.check_output(
+            [
+                "git",
+                "-C",
+                str(root),
+                "status",
+                "--porcelain",
+                "--untracked-files=all",
+            ],
+            text=True,
+            encoding="utf-8",
+            stderr=subprocess.DEVNULL,
+        )
+    except (OSError, subprocess.CalledProcessError) as error:
+        raise RuntimeError("Real-provider runs require a readable Git worktree") from error
+    if output.strip():
+        raise RuntimeError(
+            "Real-provider runs require a clean Git worktree so the manifest commit "
+            "matches the executed code"
+        )
 
 
 def dependency_versions() -> dict[str, str]:

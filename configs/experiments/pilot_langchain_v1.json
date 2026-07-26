@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.0.0",
+  "schema_version": "1.1.0",
   "experiment_id": "pilot-context-bloat-langchain-v1",
   "dataset_name": "controlled_synthetic",
   "dataset_version": "v1",

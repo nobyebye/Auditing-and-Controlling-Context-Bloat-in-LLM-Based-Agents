@@ -1,0 +1,47 @@
+{
+  "schema_version": "1.1.0",
+  "experiment_id": "formal-stress-mock-custom-react-v1",
+  "dataset_name": "context_bloat_benchmark",
+  "dataset_version": "v1",
+  "dataset_split": "test",
+  "analysis_cohort": "stress",
+  "task_ids": [
+    "retrieval-test-001",
+    "retrieval-test-002",
+    "memory-test-001",
+    "memory-test-002",
+    "tool-test-001",
+    "tool-test-002"
+  ],
+  "framework": "custom-react",
+  "provider": "mock",
+  "model": "mock-llm",
+  "repetitions": 3,
+  "seed": 142,
+  "privacy_mode": "redacted",
+  "generation": {
+    "temperature": 0.0,
+    "max_output_tokens": 256,
+    "timeout_seconds": 30,
+    "max_retries": 0
+  },
+  "near_duplicate_threshold": 0.8,
+  "relevance_threshold": 0.05,
+  "workflows": {
+    "retrieval_qa": [
+      {"name": "sufficient", "retrieval_top_k": 1, "include_memory": true, "use_tools": true},
+      {"name": "combined_bloat", "retrieval_top_k": 1, "include_memory": true, "use_tools": true, "duplicate_retrieval": true, "include_irrelevant_retrieval": true, "duplicate_memory": true, "repeat_tool_output": true, "include_near_duplicate": true, "include_stale_context": true, "verbose_tool_output": true},
+      {"name": "mitigated", "retrieval_top_k": 1, "include_memory": true, "use_tools": true, "duplicate_retrieval": true, "include_irrelevant_retrieval": true, "duplicate_memory": true, "repeat_tool_output": true, "include_near_duplicate": true, "include_stale_context": true, "verbose_tool_output": true, "mitigation_strategy": "source_aware"}
+    ],
+    "memory_turns": [
+      {"name": "sufficient", "retrieval_top_k": 1, "include_memory": true, "use_tools": true},
+      {"name": "combined_bloat", "retrieval_top_k": 1, "include_memory": true, "use_tools": true, "duplicate_retrieval": true, "include_irrelevant_retrieval": true, "duplicate_memory": true, "repeat_tool_output": true, "include_near_duplicate": true, "include_stale_context": true, "verbose_tool_output": true},
+      {"name": "mitigated", "retrieval_top_k": 1, "include_memory": true, "use_tools": true, "duplicate_retrieval": true, "include_irrelevant_retrieval": true, "duplicate_memory": true, "repeat_tool_output": true, "include_near_duplicate": true, "include_stale_context": true, "verbose_tool_output": true, "mitigation_strategy": "source_aware"}
+    ],
+    "multi_step_tool": [
+      {"name": "sufficient", "retrieval_top_k": 1, "include_memory": true, "use_tools": true},
+      {"name": "combined_bloat", "retrieval_top_k": 1, "include_memory": true, "use_tools": true, "duplicate_retrieval": true, "include_irrelevant_retrieval": true, "duplicate_memory": true, "repeat_tool_output": true, "include_near_duplicate": true, "include_stale_context": true, "verbose_tool_output": true},
+      {"name": "mitigated", "retrieval_top_k": 1, "include_memory": true, "use_tools": true, "duplicate_retrieval": true, "include_irrelevant_retrieval": true, "duplicate_memory": true, "repeat_tool_output": true, "include_near_duplicate": true, "include_stale_context": true, "verbose_tool_output": true, "mitigation_strategy": "source_aware"}
+    ]
+  }
+}

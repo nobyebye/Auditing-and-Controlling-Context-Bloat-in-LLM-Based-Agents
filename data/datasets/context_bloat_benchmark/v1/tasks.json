@@ -1,0 +1,327 @@
+[
+  {
+    "task_id": "retrieval-cal-001",
+    "split": "calibration",
+    "workflow_family": "retrieval_qa",
+    "prompt": "What are the four functions in the NIST AI RMF Core?",
+    "expected_answer": "Govern, Map, Measure, and Manage",
+    "answer_aliases": ["govern map measure manage"],
+    "scoring": {"type": "token_f1", "minimum_f1": 0.8}
+  },
+  {
+    "task_id": "retrieval-cal-002",
+    "split": "calibration",
+    "workflow_family": "retrieval_qa",
+    "prompt": "Is use of the NIST AI RMF mandatory or voluntary?",
+    "expected_answer": "voluntary",
+    "scoring": {"type": "contains"}
+  },
+  {
+    "task_id": "retrieval-test-001",
+    "split": "test",
+    "workflow_family": "retrieval_qa",
+    "prompt": "Which AI RMF function is cross-cutting across the other functions?",
+    "expected_answer": "Govern",
+    "scoring": {"type": "contains"},
+    "tool": {"name": "structured_lookup", "result": "Govern"}
+  },
+  {
+    "task_id": "retrieval-test-002",
+    "split": "test",
+    "workflow_family": "retrieval_qa",
+    "prompt": "Name two characteristics of trustworthy AI systems listed by the AI RMF.",
+    "expected_answer": "valid and reliable",
+    "answer_aliases": ["safe and secure", "accountable and transparent"],
+    "scoring": {"type": "contains"},
+    "tool": {"name": "structured_lookup", "result": "valid and reliable"}
+  },
+  {
+    "task_id": "retrieval-test-003",
+    "split": "test",
+    "workflow_family": "retrieval_qa",
+    "prompt": "What kind of organizations can apply the AI RMF?",
+    "expected_answer": "organizations of all sizes and sectors",
+    "answer_aliases": ["all sizes", "all sectors"],
+    "scoring": {"type": "contains"}
+  },
+  {
+    "task_id": "retrieval-test-004",
+    "split": "test",
+    "workflow_family": "retrieval_qa",
+    "prompt": "How should AI risk management be performed across the lifecycle?",
+    "expected_answer": "continuously and throughout the AI system lifecycle",
+    "answer_aliases": ["continuous", "throughout the lifecycle"],
+    "scoring": {"type": "contains"}
+  },
+  {
+    "task_id": "retrieval-test-005",
+    "split": "test",
+    "workflow_family": "retrieval_qa",
+    "prompt": "Are AI RMF Core actions an ordered checklist?",
+    "expected_answer": "No",
+    "answer_aliases": ["not a checklist", "not an ordered set"],
+    "scoring": {"type": "contains"}
+  },
+  {
+    "task_id": "retrieval-test-006",
+    "split": "test",
+    "workflow_family": "retrieval_qa",
+    "prompt": "What happens to AI risks in the Manage function?",
+    "expected_answer": "They are prioritized, responded to, and managed",
+    "answer_aliases": ["prioritized and managed"],
+    "scoring": {"type": "token_f1", "minimum_f1": 0.6}
+  },
+  {
+    "task_id": "retrieval-test-007",
+    "split": "test",
+    "workflow_family": "retrieval_qa",
+    "prompt": "What is the purpose of the AI RMF Playbook?",
+    "expected_answer": "It suggests actions for achieving AI RMF outcomes",
+    "answer_aliases": ["suggested actions", "achieve the outcomes"],
+    "scoring": {"type": "contains"}
+  },
+  {
+    "task_id": "retrieval-test-008",
+    "split": "test",
+    "workflow_family": "retrieval_qa",
+    "prompt": "When was NIST AI RMF 1.0 released?",
+    "expected_answer": "January 26, 2023",
+    "answer_aliases": ["26 January 2023", "2023"],
+    "scoring": {"type": "contains"}
+  },
+  {
+    "task_id": "retrieval-test-009",
+    "split": "test",
+    "workflow_family": "retrieval_qa",
+    "prompt": "Which functions can be applied in system-specific contexts?",
+    "expected_answer": "Map, Measure, and Manage",
+    "answer_aliases": ["map measure manage"],
+    "scoring": {"type": "token_f1", "minimum_f1": 0.75}
+  },
+  {
+    "task_id": "retrieval-test-010",
+    "split": "test",
+    "workflow_family": "retrieval_qa",
+    "prompt": "What does the AI RMF aim to promote in AI development and use?",
+    "expected_answer": "trustworthy and responsible development and use of AI",
+    "answer_aliases": ["trustworthy AI", "responsible AI"],
+    "scoring": {"type": "contains"}
+  },
+  {
+    "task_id": "memory-cal-001",
+    "split": "calibration",
+    "workflow_family": "memory_turns",
+    "prompt": "What programming language did I choose for the auditor?",
+    "expected_answer": "Python",
+    "scoring": {"type": "contains"}
+  },
+  {
+    "task_id": "memory-cal-002",
+    "split": "calibration",
+    "workflow_family": "memory_turns",
+    "prompt": "How many days should calibration logs be retained?",
+    "expected_answer": "30 days",
+    "answer_aliases": ["thirty days"],
+    "scoring": {"type": "contains"}
+  },
+  {
+    "task_id": "memory-test-001",
+    "split": "test",
+    "workflow_family": "memory_turns",
+    "prompt": "What is the working title of my thesis?",
+    "expected_answer": "Auditing and Controlling Context Bloat in LLM-Based Agents",
+    "answer_aliases": ["Context Bloat"],
+    "scoring": {"type": "contains"},
+    "tool": {
+      "name": "structured_lookup",
+      "result": "Auditing and Controlling Context Bloat in LLM-Based Agents"
+    }
+  },
+  {
+    "task_id": "memory-test-002",
+    "split": "test",
+    "workflow_family": "memory_turns",
+    "prompt": "Which framework did I select as the primary agent implementation?",
+    "expected_answer": "LangChain",
+    "scoring": {"type": "contains"},
+    "tool": {"name": "structured_lookup", "result": "LangChain"}
+  },
+  {
+    "task_id": "memory-test-003",
+    "split": "test",
+    "workflow_family": "memory_turns",
+    "prompt": "Which provider did I select for the formal study?",
+    "expected_answer": "DeepSeek",
+    "scoring": {"type": "contains"}
+  },
+  {
+    "task_id": "memory-test-004",
+    "split": "test",
+    "workflow_family": "memory_turns",
+    "prompt": "How many repetitions did I plan for each formal condition?",
+    "expected_answer": "3",
+    "answer_aliases": ["three"],
+    "scoring": {"type": "contains"}
+  },
+  {
+    "task_id": "memory-test-005",
+    "split": "test",
+    "workflow_family": "memory_turns",
+    "prompt": "What privacy mode should traces use by default?",
+    "expected_answer": "redacted",
+    "scoring": {"type": "contains"}
+  },
+  {
+    "task_id": "memory-test-006",
+    "split": "test",
+    "workflow_family": "memory_turns",
+    "prompt": "What token reduction method should be evaluated first?",
+    "expected_answer": "exact duplicate removal",
+    "answer_aliases": ["duplicate removal"],
+    "scoring": {"type": "contains"}
+  },
+  {
+    "task_id": "memory-test-007",
+    "split": "test",
+    "workflow_family": "memory_turns",
+    "prompt": "What task-success non-inferiority margin did I freeze?",
+    "expected_answer": "-5%",
+    "answer_aliases": ["five percentage points", "0.05"],
+    "scoring": {"type": "contains"}
+  },
+  {
+    "task_id": "memory-test-008",
+    "split": "test",
+    "workflow_family": "memory_turns",
+    "prompt": "Where should generated experiment runs be stored?",
+    "expected_answer": "runs directory",
+    "answer_aliases": ["runs/"],
+    "scoring": {"type": "contains"}
+  },
+  {
+    "task_id": "memory-test-009",
+    "split": "test",
+    "workflow_family": "memory_turns",
+    "prompt": "Which two Python versions should CI cover?",
+    "expected_answer": "Python 3.11 and 3.12",
+    "answer_aliases": ["3.11 and 3.12"],
+    "scoring": {"type": "contains"}
+  },
+  {
+    "task_id": "memory-test-010",
+    "split": "test",
+    "workflow_family": "memory_turns",
+    "prompt": "What is the role of mitigation in the thesis?",
+    "expected_answer": "lightweight and secondary",
+    "answer_aliases": ["secondary", "lightweight"],
+    "scoring": {"type": "contains"}
+  },
+  {
+    "task_id": "tool-cal-001",
+    "split": "calibration",
+    "workflow_family": "multi_step_tool",
+    "prompt": "Use the calculator to multiply 18 by 7 and then add 42.",
+    "expected_answer": "168",
+    "scoring": {"type": "numeric", "tolerance": 0.000001},
+    "tool": {"name": "calculator", "result": "168"}
+  },
+  {
+    "task_id": "tool-cal-002",
+    "split": "calibration",
+    "workflow_family": "multi_step_tool",
+    "prompt": "Use the calculator to divide 125 by 5 and then subtract 9.",
+    "expected_answer": "16",
+    "scoring": {"type": "numeric", "tolerance": 0.000001},
+    "tool": {"name": "calculator", "result": "16"}
+  },
+  {
+    "task_id": "tool-test-001",
+    "split": "test",
+    "workflow_family": "multi_step_tool",
+    "prompt": "Use the calculator to multiply 14 by 14 and then add 4.",
+    "expected_answer": "200",
+    "scoring": {"type": "numeric", "tolerance": 0.000001},
+    "tool": {"name": "calculator", "result": "200"}
+  },
+  {
+    "task_id": "tool-test-002",
+    "split": "test",
+    "workflow_family": "multi_step_tool",
+    "prompt": "Use the calculator to multiply 32 by 6 and subtract 17.",
+    "expected_answer": "175",
+    "scoring": {"type": "numeric", "tolerance": 0.000001},
+    "tool": {"name": "calculator", "result": "175"}
+  },
+  {
+    "task_id": "tool-test-003",
+    "split": "test",
+    "workflow_family": "multi_step_tool",
+    "prompt": "Use the calculator to divide 441 by 21 and add 8.",
+    "expected_answer": "29",
+    "scoring": {"type": "numeric", "tolerance": 0.000001},
+    "tool": {"name": "calculator", "result": "29"}
+  },
+  {
+    "task_id": "tool-test-004",
+    "split": "test",
+    "workflow_family": "multi_step_tool",
+    "prompt": "Use the calculator to multiply 27 by 9 and subtract 43.",
+    "expected_answer": "200",
+    "scoring": {"type": "numeric", "tolerance": 0.000001},
+    "tool": {"name": "calculator", "result": "200"}
+  },
+  {
+    "task_id": "tool-test-005",
+    "split": "test",
+    "workflow_family": "multi_step_tool",
+    "prompt": "Use the calculator to add 365 and 487, then divide by 4.",
+    "expected_answer": "213",
+    "scoring": {"type": "numeric", "tolerance": 0.000001},
+    "tool": {"name": "calculator", "result": "213"}
+  },
+  {
+    "task_id": "tool-test-006",
+    "split": "test",
+    "workflow_family": "multi_step_tool",
+    "prompt": "Use the calculator to subtract 275 from 1000 and multiply by 2.",
+    "expected_answer": "1450",
+    "scoring": {"type": "numeric", "tolerance": 0.000001},
+    "tool": {"name": "calculator", "result": "1450"}
+  },
+  {
+    "task_id": "tool-test-007",
+    "split": "test",
+    "workflow_family": "multi_step_tool",
+    "prompt": "Use the calculator to multiply 11 by 13 and add 57.",
+    "expected_answer": "200",
+    "scoring": {"type": "numeric", "tolerance": 0.000001},
+    "tool": {"name": "calculator", "result": "200"}
+  },
+  {
+    "task_id": "tool-test-008",
+    "split": "test",
+    "workflow_family": "multi_step_tool",
+    "prompt": "Use the calculator to divide 900 by 12 and subtract 25.",
+    "expected_answer": "50",
+    "scoring": {"type": "numeric", "tolerance": 0.000001},
+    "tool": {"name": "calculator", "result": "50"}
+  },
+  {
+    "task_id": "tool-test-009",
+    "split": "test",
+    "workflow_family": "multi_step_tool",
+    "prompt": "Use the calculator to multiply 48 by 5 and divide by 3.",
+    "expected_answer": "80",
+    "scoring": {"type": "numeric", "tolerance": 0.000001},
+    "tool": {"name": "calculator", "result": "80"}
+  },
+  {
+    "task_id": "tool-test-010",
+    "split": "test",
+    "workflow_family": "multi_step_tool",
+    "prompt": "Use the calculator to add 128 and 372 and multiply by 1.5.",
+    "expected_answer": "750",
+    "scoring": {"type": "numeric", "tolerance": 0.000001},
+    "tool": {"name": "calculator", "result": "750"}
+  }
+]

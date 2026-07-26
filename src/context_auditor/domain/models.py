@@ -7,7 +7,7 @@ from typing import Any, Mapping
 
 from .enums import PrivacyMode, RunStatus
 
-SCHEMA_VERSION = "1.0.0"
+SCHEMA_VERSION = "1.1.0"
 
 
 @dataclass(frozen=True)
@@ -32,6 +32,8 @@ class TextSegment:
     content_hash: str
     normalized_hash: str
     privacy_mode: str
+    source_id: str | None = None
+    relevance_score: float | None = None
 
 
 @dataclass(frozen=True)
@@ -49,6 +51,24 @@ class ProviderResponse:
     usage: ProviderUsage = field(default_factory=ProviderUsage)
     latency_ms: float | None = None
     response_id: str | None = None
+
+
+@dataclass(frozen=True)
+class GenerationParameters:
+    temperature: float = 0.0
+    max_output_tokens: int = 256
+    timeout_seconds: int = 90
+    max_retries: int = 3
+
+
+@dataclass(frozen=True)
+class ScoringResult:
+    success: bool
+    score: float
+    method: str
+    normalized_output: str
+    normalized_expected: str
+    details: Mapping[str, Any] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -86,11 +106,18 @@ class CaptureRequest:
     invocation_index: int
     messages: tuple[Message, ...]
     config_hash: str
+    dataset_split: str = "all"
+    analysis_cohort: str = "primary"
     task_success: bool | None = None
     task_output: str | None = None
     expected_answer: str | None = None
     provider_usage: ProviderUsage | None = None
     latency_ms: float | None = None
+    attempt_index: int = 0
+    generation_parameters: GenerationParameters = field(default_factory=GenerationParameters)
+    ground_truth_labels: Mapping[str, tuple[str, ...]] = field(default_factory=dict)
+    detected_labels: Mapping[str, tuple[str, ...]] = field(default_factory=dict)
+    scoring: ScoringResult | None = None
     mitigation_decisions: tuple[MitigationDecision, ...] = ()
     privacy_mode: PrivacyMode = PrivacyMode.REDACTED
 
@@ -118,6 +145,8 @@ class AuditTrace:
     messages: tuple[Message, ...]
     segments: tuple[TextSegment, ...]
     metrics: Mapping[str, Any]
+    dataset_split: str = "all"
+    analysis_cohort: str = "primary"
     risk_flags: tuple[str, ...] = ()
     mitigation_decisions: tuple[MitigationDecision, ...] = ()
     task_success: bool | None = None
@@ -125,6 +154,11 @@ class AuditTrace:
     expected_answer: str | None = None
     provider_usage: ProviderUsage | None = None
     latency_ms: float | None = None
+    attempt_index: int = 0
+    generation_parameters: GenerationParameters = field(default_factory=GenerationParameters)
+    ground_truth_labels: Mapping[str, tuple[str, ...]] = field(default_factory=dict)
+    detected_labels: Mapping[str, tuple[str, ...]] = field(default_factory=dict)
+    scoring: ScoringResult | None = None
 
 
 @dataclass(frozen=True)
