@@ -2,6 +2,24 @@
 
 All notable changes to this thesis artifact are tracked here.
 
+## 1.0.0 - 2026-07-26
+
+- Rebuilt the package using a `src/` layout and domain, application, ports,
+  adapters, analytics, experiments, and CLI layers.
+- Separated production code, tests, configuration, versioned datasets, thesis
+  text, source materials, generated runs, and release artifacts.
+- Added immutable named run directories with collision protection.
+- Added run manifests with config, dataset, environment, output, and SHA-256
+  provenance.
+- Added `redacted`, `hash-only`, and explicit `full` trace privacy modes.
+- Added provider usage and latency models and a strict DeepSeek adapter.
+- Replaced the LangChain-compatible fallback with a strict real
+  `langchain-core` adapter.
+- Added source-aware mitigation decisions and versioned experiment schemas.
+- Reorganized tests into unit, integration, and end-to-end layers.
+- Archived the v0.10 pilot code under the `v0.10.0-pilot-archive` tag and its
+  generated outputs under `thesis/releases/`.
+
 ## 0.10.0 - 2026-06-14
 
 - Added DeepSeek provider support through the OpenAI-compatible chat

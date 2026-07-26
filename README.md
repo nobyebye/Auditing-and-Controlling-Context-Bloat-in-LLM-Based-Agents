@@ -1,200 +1,128 @@
 # Context Bloat Auditor
 
-Runtime tracing, measurement, and mitigation toolkit for context bloat in
-LLM-based agents.
-
-This repository supports the MSc thesis direction:
+Engineering-grade runtime tracing, measurement, and mitigation toolkit for the
+MSc thesis:
 
 **Auditing and Controlling Context Bloat in LLM-Based Agents**
 
-The broader object of study is automatically constructed context: model-visible
-messages assembled from system prompts, user input, retrieval, memory,
-conversation history, tool traces, and framework-generated content. The central
-research problem is context bloat: redundant, stale, irrelevant, repeated, or
-oversized context that increases cost and can make agent behavior harder to
-debug.
+The system captures model-visible context, assigns provenance to context
+segments, measures duplication and source dominance, applies auditable
+mitigation policies, and stores every experiment in an immutable named run.
 
-## Features
+## Architecture
 
-- Runtime capture of model-visible messages before each LLM invocation.
-- Framework-agnostic provenance labels for system, user, framework, retrieval,
-  memory, tool, generated trace, and other context.
-- Context bloat metrics:
-  - Redundancy Ratio
-  - Unique Information Ratio
-  - Context Growth Rate
-  - Source Contribution Ratio
-  - Duplicate Segment Count
-  - Source Dominance
-  - Estimated Cost Proxy
-- Deterministic local retrieval for reproducible RAG-style experiments.
-- Near-duplicate and irrelevant-context mitigation strategies.
-- Pre-call message-level mitigation for controlled before/after rerun
-  configurations.
-- Online guard flags for growth spikes, duplicate segments, and source
-  dominance.
-- Conservative mitigation report for exact duplicate retrieval, memory, and
-  tool segments.
-- Controlled custom ReAct-style pilot workflows for retrieval, memory, and
-  tool-use experiments.
-- LangChain-compatible pilot workflows that exercise the callback
-  instrumentation boundary.
-- One-command experiment suite that runs both implementations and writes
-  cross-framework comparison tables.
-- Suite-level run manifest for reproducibility, including artifact version,
-  schema version, configs, output paths, trace counts, and comparison rows.
-- File-backed controlled datasets for reproducible thesis experiments.
-- Minimal provider abstraction for mock and OpenAI-compatible chat providers.
-- DeepSeek provider support for a small real-model smoke test.
-- Optional LangChain callback adapter.
-
-## Repository Layout
+Production code uses a `src/` layout and explicit dependency boundaries:
 
 ```text
-context_auditor/     Core package
-datasets/           Controlled JSON datasets used by the pilot experiments
-experiments/         Controlled pilot workflows and tasks
-scripts/             Backward-compatible helper scripts and DOCX builders
-docs/                Thesis proposal, chapter outline, protocol, architecture
-tests/               Unit tests
+src/context_auditor/
+  domain/        Immutable models, enums, text and privacy policies
+  application/   Capture, analysis, mitigation and reporting use cases
+  ports/         Provider, storage, tokenizer, clock and ID protocols
+  adapters/      LangChain, DeepSeek, JSONL, datasets and run storage
+  analytics/     Context-bloat metrics
+  experiments/   Controlled workflows and experiment runner
+  cli/           Command-line interface
 ```
 
-## Quick Start
+Research material is separate from code:
 
-Run the pilot experiment:
+```text
+data/            Immutable, versioned datasets and annotations
+configs/         Versioned experiment, provider and schema files
+thesis/          Manuscript, literature, plans, materials and releases
+tests/           Unit, integration and end-to-end tests
+runs/            Generated experiment runs; never committed
+```
+
+Root-level files are limited to project metadata.
+
+## Installation
+
+Python 3.11 or 3.12 is required.
 
 ```powershell
-python -m context_auditor.cli run-pilot --config configs/pilot.json --out traces/pilot.jsonl
+python -m pip install -e ".[langchain,dev]"
 ```
 
-Run the LangChain-compatible pilot experiment:
+## Controlled Pilot
+
+Run the Custom ReAct pilot:
 
 ```powershell
-python -m context_auditor.cli run-langchain-pilot --config configs/langchain_pilot.json --out traces/langchain_pilot.jsonl
+context-auditor run `
+  --config configs/experiments/pilot_custom_react_v1.json
 ```
 
-Analyze traces:
+Run both Custom ReAct and real LangChain integration paths:
 
 ```powershell
-python -m context_auditor.cli analyze traces/pilot.jsonl --out results/pilot_summary.json --tables-dir results/tables --charts-dir results/charts
-python -m context_auditor.cli analyze traces/langchain_pilot.jsonl --out results/langchain_pilot_summary.json --tables-dir results/langchain_tables --charts-dir results/langchain_charts
+context-auditor run-suite
 ```
 
-Run the full thesis experiment suite:
+Each command creates a unique directory:
 
-```powershell
-python -m context_auditor.cli run-suite --out-dir artifacts
+```text
+runs/<experiment_id>/<utc>__<framework>__<model>__<dataset-version>__<git-sha>/
 ```
 
-Check a real provider environment without printing secrets:
+Existing run directories are never overwritten.
 
-```powershell
-python -m context_auditor.cli check-provider --provider deepseek --model deepseek-v4-flash
+## Run Artifacts
+
+Every run uses fixed artifact names:
+
+```text
+manifest.json
+logs/run.log
+traces/invocations.jsonl
+metrics/invocations.csv
+metrics/tasks.csv
+reports/summary.json
+reports/tables/
+reports/figures/
 ```
 
-Run a small DeepSeek smoke test after setting `DEEPSEEK_API_KEY` locally:
+The manifest records the project and schema versions, Git commit, Python and
+LangChain versions, config and dataset hashes, model identity, seed,
+repetition, status, output paths, and SHA-256 for every generated file.
+
+## Privacy
+
+`redacted` is the default trace mode. It masks email addresses, phone numbers,
+Bearer tokens, API keys, authorization values, tokens, and secrets.
+
+- `redacted`: stores analyzable text after masking.
+- `hash-only`: stores stable content hashes without raw text.
+- `full`: stores complete text and must only be used for controlled data.
+
+Provider credentials are read from environment variables and are never written
+to traces or manifests.
+
+## DeepSeek Smoke Test
 
 ```powershell
 $env:DEEPSEEK_API_KEY="..."
-python -m context_auditor.cli run-real-model-smoke --config configs/deepseek_smoke.json
-```
-
-Generate a mitigation report:
-
-```powershell
-python -m context_auditor.cli mitigate traces/pilot.jsonl --out results/mitigation_report.json --csv-out results/tables/mitigation_report.csv
-```
-
-Run tests:
-
-```powershell
-python -m unittest discover -s tests
-```
-
-## Controlled Dataset
-
-The default pilot uses `datasets/controlled_synthetic/`, which contains:
-
-- `tasks.json`: retrieval, memory, and tool-use tasks with expected keywords
-- `policy_docs.json`: local policy documents for deterministic retrieval
-- `memory_items.json`: controlled memory/history items
-
-Keeping the dataset in JSON makes the experimental material easy to inspect,
-version, and replace for the full thesis study.
-
-## Provider Abstraction
-
-The pilot defaults to the deterministic `mock` provider so experiments can be
-run without API cost. A minimal OpenAI-compatible provider is available for
-future real-model runs through:
-
-```powershell
-$env:OPENAI_COMPATIBLE_API_KEY="..."
-$env:OPENAI_COMPATIBLE_BASE_URL="https://api.openai.com/v1"
-```
-
-DeepSeek uses an OpenAI-compatible chat completions API. The default smoke-test
-configuration uses `https://api.deepseek.com`, `DEEPSEEK_API_KEY`, and
-`deepseek-v4-flash`. Do not commit API keys; `check-provider` reports only
-`SET` or `UNSET`.
-
-## Installable CLI
-
-From the repository root:
-
-```powershell
-pip install -e .
-context-auditor run-pilot --out traces/pilot.jsonl
-context-auditor run-langchain-pilot --out traces/langchain_pilot.jsonl
-context-auditor run-suite --out-dir artifacts
 context-auditor check-provider --provider deepseek --model deepseek-v4-flash
-context-auditor run-real-model-smoke --config configs/deepseek_smoke.json
-context-auditor analyze traces/pilot.jsonl --out results/pilot_summary.json --tables-dir results/tables --charts-dir results/charts
-context-auditor analyze traces/langchain_pilot.jsonl --out results/langchain_pilot_summary.json --tables-dir results/langchain_tables --charts-dir results/langchain_charts
-context-auditor mitigate traces/pilot.jsonl --out results/mitigation_report.json --csv-out results/tables/mitigation_report.csv
+context-auditor run-real-model-smoke --model deepseek-v4-flash
 ```
 
-## Experiment Outputs
+The smoke run stores provider token usage and latency in its named run.
 
-The commands produce:
+## Tests
 
-- `traces/pilot.jsonl`: per-invocation model-visible context traces
-- `traces/langchain_pilot.jsonl`: LangChain-compatible pilot traces
-- `results/pilot_summary.json`: grouped bloat metrics
-- `results/tables/*.csv`: thesis-ready summary tables
-- `results/charts/*.svg`: first-pass figures for redundancy and token counts
-- `results/mitigation_report.json`: before/after mitigation evaluation report
-- `results/tables/mitigation_report.csv`: thesis-ready mitigation table
-- `artifacts/results/framework_comparison.json`: cross-framework comparison
-  data for custom ReAct and LangChain-compatible runs
-- `artifacts/results/framework_comparison.csv`: thesis-ready cross-framework
-  comparison table
-- `artifacts/manifest.json`: reproducibility manifest for the full suite run
-- `artifacts/results/mitigation_report.json` and
-  `artifacts/results/langchain_mitigation_report.json`: mitigation reports for
-  both framework runs
-- `traces/deepseek_smoke.jsonl` and `results/deepseek_smoke_report.json`:
-  optional real-model smoke-test artifacts
+```powershell
+python -m unittest discover -s tests -p "test_*.py"
+```
 
-## Trace Schema
-
-Each JSONL row represents one LLM invocation and includes:
-
-- task metadata: `schema_version`, `experiment_id`, `run_id`, `trace_id`,
-  `task_id`, `framework`, `provider`, `model`, `configuration`,
-  `config_hash`, `dataset_name`, `workflow_family`, `invocation_index`,
-  `timestamp`
-- raw `messages`
-- provenance-labeled `segments`
-- aggregate `metrics`
-- `task_success`, `task_output`, and `risk_flags`
-
-The schema is intentionally framework-agnostic so the same analysis can be used
-for LangChain callbacks, a custom ReAct loop, or other agent implementations.
+The suite covers domain policies, privacy, provenance, bloat metrics,
+mitigation, run collision protection, UTF-8 text, immutable datasets, real
+LangChain messages, named artifacts, and end-to-end experiment execution.
 
 ## Versioning
 
-The project uses semantic versioning. Current version: `0.10.0`.
+Current project and trace schema version: `1.0.0`.
 
-See [CHANGELOG.md](CHANGELOG.md) for changes and
-[docs/architecture.md](docs/architecture.md) for the package structure.
+The original pilot is preserved by the `v0.10.0-pilot-archive` Git tag and
+[archived experiment package](thesis/releases/v0.10.0-pilot-artifacts.zip).
+See [CHANGELOG.md](CHANGELOG.md) and
+[architecture.md](thesis/engineering/architecture.md).

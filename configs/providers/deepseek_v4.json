@@ -1,0 +1,9 @@
+{
+  "schema_version": "1.0.0",
+  "provider": "deepseek",
+  "base_url_environment": "DEEPSEEK_BASE_URL",
+  "api_key_environment": "DEEPSEEK_API_KEY",
+  "default_model": "deepseek-v4-flash",
+  "validation_model": "deepseek-v4-pro",
+  "timeout_seconds": 90
+}

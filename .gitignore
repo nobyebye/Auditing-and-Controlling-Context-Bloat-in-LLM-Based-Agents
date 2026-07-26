@@ -15,7 +15,9 @@ dist/
 .venv/
 venv/
 
-# Experiment outputs
+# Generated experiment and thesis outputs
+runs/
+thesis/build/
 traces/
 results/
 artifacts/

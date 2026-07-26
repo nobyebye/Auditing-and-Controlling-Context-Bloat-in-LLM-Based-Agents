@@ -1,0 +1,14 @@
+{
+  "schema_version": "1.0.0",
+  "suite_id": "framework-comparison-v1",
+  "experiments": [
+    "pilot_custom_react_v1.json",
+    "pilot_langchain_v1.json"
+  ],
+  "comparison_key": "configuration",
+  "outputs": [
+    "mean_total_tokens",
+    "mean_redundancy_ratio",
+    "task_success_rate"
+  ]
+}
