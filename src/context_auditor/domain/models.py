@@ -7,7 +7,8 @@ from typing import Any, Mapping
 
 from .enums import PrivacyMode, RunStatus
 
-SCHEMA_VERSION = "1.1.0"
+SCHEMA_VERSION = "1.2.0"
+READABLE_SCHEMA_VERSIONS = frozenset({"1.1.0", SCHEMA_VERSION})
 
 
 @dataclass(frozen=True)
@@ -16,6 +17,35 @@ class Message:
     content: str
     name: str | None = None
     metadata: Mapping[str, Any] = field(default_factory=dict)
+
+
+@dataclass(frozen=True)
+class ToolDefinition:
+    name: str
+    description: str
+    parameters: Mapping[str, Any] = field(default_factory=dict)
+
+
+@dataclass(frozen=True)
+class ModelRequestEnvelope:
+    messages: tuple[Message, ...]
+    system_instructions: tuple[str, ...] = ()
+    tools: tuple[ToolDefinition, ...] = ()
+    generation_parameters: "GenerationParameters" = field(
+        default_factory=lambda: GenerationParameters()
+    )
+    response_format: Mapping[str, Any] = field(default_factory=dict)
+    metadata: Mapping[str, Any] = field(default_factory=dict)
+
+
+@dataclass(frozen=True)
+class ProviderRequestRecord:
+    endpoint: str
+    method: str
+    sent_at: str
+    payload_sha256: str
+    redacted_payload: Mapping[str, Any]
+    payload_schema: str = "openai-chat-completions"
 
 
 @dataclass(frozen=True)
@@ -34,6 +64,8 @@ class TextSegment:
     privacy_mode: str
     source_id: str | None = None
     relevance_score: float | None = None
+    container_type: str = "message"
+    container_index: int = 0
 
 
 @dataclass(frozen=True)
@@ -46,11 +78,20 @@ class ProviderUsage:
 
 
 @dataclass(frozen=True)
+class ToolCall:
+    call_id: str
+    name: str
+    arguments: Mapping[str, Any] = field(default_factory=dict)
+
+
+@dataclass(frozen=True)
 class ProviderResponse:
     content: str
     usage: ProviderUsage = field(default_factory=ProviderUsage)
     latency_ms: float | None = None
     response_id: str | None = None
+    request_record: ProviderRequestRecord | None = None
+    tool_calls: tuple[ToolCall, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -90,6 +131,37 @@ class BloatFinding:
 
 
 @dataclass(frozen=True)
+class ReferenceAnnotation:
+    segment_id: str
+    annotator_id: str
+    decision: str
+    reasons: tuple[str, ...] = ()
+    confidence: int | None = None
+    annotation_set_id: str = ""
+    adjudicated: bool = False
+
+
+@dataclass(frozen=True)
+class CounterfactualOutcome:
+    variant_id: str
+    parent_trace_id: str
+    removed_segment_ids: tuple[str, ...]
+    seed: int
+    task_success: bool
+    task_score: float | None = None
+    output_hash: str | None = None
+
+
+@dataclass(frozen=True)
+class CounterfactualVariant:
+    variant_id: str
+    parent_trace_id: str
+    removed_segment_ids: tuple[str, ...]
+    request: ModelRequestEnvelope
+    variant_type: str
+
+
+@dataclass(frozen=True)
 class CaptureRequest:
     experiment_id: str
     run_id: str
@@ -106,6 +178,12 @@ class CaptureRequest:
     invocation_index: int
     messages: tuple[Message, ...]
     config_hash: str
+    request_envelope: ModelRequestEnvelope | None = None
+    provider_request: ProviderRequestRecord | None = None
+    framework_capture_hash: str | None = None
+    evidence_tier: str = "controlled"
+    parent_trace_id: str | None = None
+    intervention: Mapping[str, Any] = field(default_factory=dict)
     dataset_split: str = "all"
     analysis_cohort: str = "primary"
     task_success: bool | None = None
@@ -115,8 +193,11 @@ class CaptureRequest:
     latency_ms: float | None = None
     attempt_index: int = 0
     generation_parameters: GenerationParameters = field(default_factory=GenerationParameters)
+    injected_labels: Mapping[str, tuple[str, ...]] = field(default_factory=dict)
     ground_truth_labels: Mapping[str, tuple[str, ...]] = field(default_factory=dict)
     detected_labels: Mapping[str, tuple[str, ...]] = field(default_factory=dict)
+    reference_annotations: tuple[ReferenceAnnotation, ...] = ()
+    counterfactual_outcomes: tuple[CounterfactualOutcome, ...] = ()
     scoring: ScoringResult | None = None
     mitigation_decisions: tuple[MitigationDecision, ...] = ()
     privacy_mode: PrivacyMode = PrivacyMode.REDACTED
@@ -145,6 +226,13 @@ class AuditTrace:
     messages: tuple[Message, ...]
     segments: tuple[TextSegment, ...]
     metrics: Mapping[str, Any]
+    request_envelope: ModelRequestEnvelope | None = None
+    provider_request: ProviderRequestRecord | None = None
+    framework_capture_hash: str | None = None
+    provider_payload_hash: str | None = None
+    evidence_tier: str = "controlled"
+    parent_trace_id: str | None = None
+    intervention: Mapping[str, Any] = field(default_factory=dict)
     dataset_split: str = "all"
     analysis_cohort: str = "primary"
     risk_flags: tuple[str, ...] = ()
@@ -156,8 +244,11 @@ class AuditTrace:
     latency_ms: float | None = None
     attempt_index: int = 0
     generation_parameters: GenerationParameters = field(default_factory=GenerationParameters)
+    injected_labels: Mapping[str, tuple[str, ...]] = field(default_factory=dict)
     ground_truth_labels: Mapping[str, tuple[str, ...]] = field(default_factory=dict)
     detected_labels: Mapping[str, tuple[str, ...]] = field(default_factory=dict)
+    reference_annotations: tuple[ReferenceAnnotation, ...] = ()
+    counterfactual_outcomes: tuple[CounterfactualOutcome, ...] = ()
     scoring: ScoringResult | None = None
 
 

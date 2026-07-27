@@ -6,7 +6,12 @@ from dataclasses import dataclass
 from typing import Callable
 
 from context_auditor.application import ApplyMitigation
-from context_auditor.domain.models import Message, MitigationDecision, ProviderResponse
+from context_auditor.domain.models import (
+    Message,
+    MitigationDecision,
+    ModelRequestEnvelope,
+    ProviderResponse,
+)
 
 from .config import WorkflowCondition
 
@@ -18,6 +23,8 @@ class InvocationResult:
     final: bool
     mitigation_decisions: tuple[MitigationDecision, ...] = ()
     attempt_index: int = 0
+    request_envelope: ModelRequestEnvelope | None = None
+    framework_capture_hash: str | None = None
 
 
 def execute_formal_workflow(
@@ -28,7 +35,13 @@ def execute_formal_workflow(
     mitigation: ApplyMitigation,
     invoke: Callable[
         [tuple[Message, ...]],
-        tuple[ProviderResponse, tuple[Message, ...], int],
+        tuple[
+            ProviderResponse,
+            tuple[Message, ...],
+            int,
+            ModelRequestEnvelope,
+            str,
+        ],
     ],
 ) -> tuple[InvocationResult, ...]:
     messages = list(build_initial_context(task, condition, data, framework))
@@ -43,8 +56,18 @@ def execute_formal_workflow(
         decisions = result.decisions
 
     if not condition.use_tools:
-        response, captured, attempt = invoke(tuple(messages))
-        return (InvocationResult(captured, response, True, decisions, attempt),)
+        response, captured, attempt, envelope, capture_hash = invoke(tuple(messages))
+        return (
+            InvocationResult(
+                captured,
+                response,
+                True,
+                decisions,
+                attempt,
+                envelope,
+                capture_hash,
+            ),
+        )
 
     planning_prompt = Message(
         "system",
@@ -52,8 +75,18 @@ def execute_formal_workflow(
         metadata={"source_type": "framework"},
     )
     messages.append(planning_prompt)
-    planning_response, captured, attempt = invoke(tuple(messages))
-    results = [InvocationResult(captured, planning_response, False, (), attempt)]
+    planning_response, captured, attempt, envelope, capture_hash = invoke(tuple(messages))
+    results = [
+        InvocationResult(
+            captured,
+            planning_response,
+            False,
+            (),
+            attempt,
+            envelope,
+            capture_hash,
+        )
+    ]
     messages.append(
         Message(
             "assistant",
@@ -92,8 +125,18 @@ def execute_formal_workflow(
         )
         messages = list(result.messages)
         decisions = result.decisions
-    response, captured, attempt = invoke(tuple(messages))
-    results.append(InvocationResult(captured, response, True, decisions, attempt))
+    response, captured, attempt, envelope, capture_hash = invoke(tuple(messages))
+    results.append(
+        InvocationResult(
+            captured,
+            response,
+            True,
+            decisions,
+            attempt,
+            envelope,
+            capture_hash,
+        )
+    )
     return tuple(results)
 
 

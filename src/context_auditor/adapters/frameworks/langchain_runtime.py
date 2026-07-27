@@ -4,7 +4,13 @@ from __future__ import annotations
 
 from typing import Any
 
-from context_auditor.domain.models import Message, ProviderResponse
+from dataclasses import replace
+
+from context_auditor.domain.models import (
+    Message,
+    ModelRequestEnvelope,
+    ProviderResponse,
+)
 from context_auditor.ports import ChatProvider
 
 from .langchain import LangChainContextAdapter, langchain_available
@@ -16,11 +22,15 @@ class LangChainRuntime:
             raise RuntimeError("langchain-core is required for the LangChain runtime")
         self.provider = provider
 
-    def invoke(self, messages: tuple[Message, ...]) -> tuple[ProviderResponse, tuple[Message, ...]]:
+    def invoke(
+        self,
+        request: ModelRequestEnvelope,
+    ) -> tuple[ProviderResponse, tuple[Message, ...]]:
         from langchain_core.callbacks import BaseCallbackHandler
         from langchain_core.language_models.chat_models import BaseChatModel
         from langchain_core.messages import AIMessage
         from langchain_core.outputs import ChatGeneration, ChatResult
+        from langchain_core.runnables import Runnable
         from pydantic import PrivateAttr
 
         provider = self.provider
@@ -57,7 +67,9 @@ class LangChainRuntime:
                 **kwargs: Any,
             ) -> ChatResult:
                 converted = adapter.convert(lc_messages)
-                self._last_response = provider.invoke(converted)
+                self._last_response = provider.invoke(
+                    replace(request, messages=converted)
+                )
                 message = AIMessage(
                     content=self._last_response.content,
                     response_metadata={
@@ -67,14 +79,42 @@ class LangChainRuntime:
                 )
                 return ChatResult(generations=[ChatGeneration(message=message)])
 
+            def bind_tools(
+                self,
+                tools: list[Any],
+                *,
+                tool_choice: str | None = None,
+                **kwargs: Any,
+            ) -> Runnable:
+                bound = {"tools": tools, **kwargs}
+                if tool_choice is not None:
+                    bound["tool_choice"] = tool_choice
+                return self.bind(**bound)
+
         from context_auditor.experiments.runner import to_langchain_messages
 
         recorder = Recorder()
         model = ProviderChatModel()
-        model.invoke(
-            to_langchain_messages(messages),
+        invoker = (
+            model.bind_tools([to_langchain_tool(tool) for tool in request.tools])
+            if request.tools
+            else model
+        )
+        invoker.invoke(
+            to_langchain_messages(request.messages),
             config={"callbacks": [recorder]},
         )
         if model._last_response is None or not recorder.messages:
             raise RuntimeError("LangChain invocation completed without a captured request")
         return model._last_response, recorder.messages
+
+
+def to_langchain_tool(tool) -> dict[str, Any]:
+    return {
+        "type": "function",
+        "function": {
+            "name": tool.name,
+            "description": tool.description,
+            "parameters": dict(tool.parameters),
+        },
+    }

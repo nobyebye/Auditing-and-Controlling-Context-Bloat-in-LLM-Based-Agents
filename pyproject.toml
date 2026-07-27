@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "context-bloat-auditor"
-version = "1.1.0"
+version = "1.2.0"
 description = "Runtime tracing, measurement, and mitigation toolkit for context bloat in LLM-based agents."
 readme = "README.md"
 requires-python = ">=3.11"
@@ -36,6 +36,8 @@ dependencies = []
 [project.optional-dependencies]
 docs = ["python-docx>=1.1.0"]
 langchain = ["langchain-core==1.5.1"]
+compression = ["llmlingua>=0.2.2"]
+statistics = ["statsmodels>=0.14.0"]
 dev = ["pytest>=8.0.0"]
 
 [project.scripts]

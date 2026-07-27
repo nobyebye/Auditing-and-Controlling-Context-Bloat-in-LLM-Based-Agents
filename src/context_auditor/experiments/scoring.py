@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import math
 import re
+import string
 
 from context_auditor.domain.models import ScoringResult
 
@@ -38,6 +39,14 @@ def score_response(task: dict, output: str) -> ScoringResult:
     if method == "exact":
         success = any(normalized_output == normalize(alias) for alias in aliases)
         score = 1.0 if success else 0.0
+    elif method == "hotpotqa_f1":
+        normalized_output = normalize_hotpot(output)
+        normalized_expected = normalize_hotpot(expected)
+        score = max(
+            token_f1(normalized_output, normalize_hotpot(alias))
+            for alias in aliases
+        )
+        success = score >= float(scoring.get("minimum_f1", 0.8))
     elif method == "token_f1":
         score = max(token_f1(normalized_output, normalize(alias)) for alias in aliases)
         success = score >= float(scoring.get("minimum_f1", 0.8))
@@ -57,6 +66,15 @@ def score_response(task: dict, output: str) -> ScoringResult:
 
 def normalize(text: str) -> str:
     return " ".join(WORD_RE.findall(text.casefold()))
+
+
+def normalize_hotpot(text: str) -> str:
+    lowered = text.casefold()
+    without_punctuation = "".join(
+        character for character in lowered if character not in string.punctuation
+    )
+    without_articles = re.sub(r"\b(a|an|the)\b", " ", without_punctuation)
+    return " ".join(without_articles.split())
 
 
 def last_number(text: str) -> float | None:

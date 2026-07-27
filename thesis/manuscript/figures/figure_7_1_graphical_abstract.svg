@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1900" height="1190" viewBox="0 0 1900 1190">
+<defs>
+<marker id="arrow" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto"><path d="M0,0 L10,4 L0,8 Z" fill="#425466"/></marker>
+</defs>
+<rect width="1900" height="1190" fill="#FFFFFF"/>
+<text x="950" y="72.0" text-anchor="middle" font-family="Arial" font-size="34" font-weight="700" fill="#17212B">Graphical abstract: evidence for detecting, measuring, and mitigating context bloat</text>
+<rect x="90" y="120" width="360" height="140" rx="8" fill="#F4F6F8" stroke="#347A91" stroke-width="3"/>
+<text x="270" y="189.0" text-anchor="middle" font-family="Arial" font-size="38" font-weight="700" fill="#347A91">1,596</text>
+<text x="270" y="235.0" text-anchor="middle" font-family="Arial" font-size="20" font-weight="700" fill="#17212B">Study A traces</text>
+<rect x="540" y="120" width="360" height="140" rx="8" fill="#F4F6F8" stroke="#6E568B" stroke-width="3"/>
+<text x="720" y="189.0" text-anchor="middle" font-family="Arial" font-size="38" font-weight="700" fill="#6E568B">120</text>
+<text x="720" y="235.0" text-anchor="middle" font-family="Arial" font-size="20" font-weight="700" fill="#17212B">Study B final contexts</text>
+<rect x="990" y="120" width="360" height="140" rx="8" fill="#F4F6F8" stroke="#B86132" stroke-width="3"/>
+<text x="1170" y="189.0" text-anchor="middle" font-family="Arial" font-size="38" font-weight="700" fill="#B86132">288</text>
+<text x="1170" y="235.0" text-anchor="middle" font-family="Arial" font-size="20" font-weight="700" fill="#17212B">Study C planned calls</text>
+<rect x="1440" y="120" width="360" height="140" rx="8" fill="#F4F6F8" stroke="#3E7C59" stroke-width="3"/>
+<text x="1620" y="189.0" text-anchor="middle" font-family="Arial" font-size="38" font-weight="700" fill="#3E7C59">4</text>
+<text x="1620" y="235.0" text-anchor="middle" font-family="Arial" font-size="20" font-weight="700" fill="#17212B">separate evidence types</text>
+<text x="950" y="327.5" text-anchor="middle" font-family="Arial" font-size="25" font-weight="700" fill="#53616F">Automatically constructed context -&gt; source-aware runtime audit -&gt; evidence-linked conclusions</text>
+<rect x="70" y="380" width="840" height="230" rx="10" fill="#DDEBF2" stroke="#347A91" stroke-width="3"/>
+<rect x="70" y="380" width="840" height="52" rx="8" fill="#347A91" stroke="#347A91" stroke-width="0"/>
+<text x="490" y="419.0" text-anchor="middle" font-family="Arial" font-size="26" font-weight="700" fill="#FFFFFF">RQ1 EXTERNAL VALIDATION PENDING</text>
+<text x="490" y="503.0" text-anchor="middle" font-family="Arial" font-size="22" font-weight="400" fill="#17212B">Study A macro-F1: 1.000 against injected labels</text>
+<text x="490" y="532.0" text-anchor="middle" font-family="Arial" font-size="22" font-weight="400" fill="#17212B">This verifies pipeline consistency only</text>
+<text x="490" y="561.0" text-anchor="middle" font-family="Arial" font-size="22" font-weight="400" fill="#17212B">Natural-trace accuracy requires Study B annotations</text>
+<rect x="990" y="380" width="840" height="230" rx="10" fill="#E9E4F1" stroke="#6E568B" stroke-width="3"/>
+<rect x="990" y="380" width="840" height="52" rx="8" fill="#6E568B" stroke="#6E568B" stroke-width="0"/>
+<text x="1410" y="419.0" text-anchor="middle" font-family="Arial" font-size="26" font-weight="700" fill="#FFFFFF">RQ2 INDEPENDENT AGREEMENT PENDING</text>
+<text x="1410" y="503.0" text-anchor="middle" font-family="Arial" font-size="22" font-weight="400" fill="#17212B">Study A measured vs injected ratio: rho = 1.000</text>
+<text x="1410" y="532.0" text-anchor="middle" font-family="Arial" font-size="22" font-weight="400" fill="#17212B">Circular controlled evidence is not external validity</text>
+<text x="1410" y="561.0" text-anchor="middle" font-family="Arial" font-size="22" font-weight="400" fill="#17212B">Human agreement and counterfactual replay are required</text>
+<rect x="70" y="660" width="840" height="240" rx="10" fill="#F6E6D8" stroke="#B86132" stroke-width="3"/>
+<rect x="70" y="660" width="840" height="52" rx="8" fill="#B86132" stroke="#B86132" stroke-width="0"/>
+<text x="490" y="699.0" text-anchor="middle" font-family="Arial" font-size="26" font-weight="700" fill="#FFFFFF">RQ3 CONTROLLED RESULT ONLY</text>
+<text x="490" y="788.0" text-anchor="middle" font-family="Arial" font-size="22" font-weight="400" fill="#17212B">Injected-bloat ratio under designed fixtures</text>
+<text x="490" y="817.0" text-anchor="middle" font-family="Arial" font-size="22" font-weight="400" fill="#17212B">Tool 0.500 &gt; Retrieval 0.487 &gt; Memory 0.468</text>
+<text x="490" y="846.0" text-anchor="middle" font-family="Arial" font-size="22" font-weight="400" fill="#17212B">Natural source ranking requires Study B</text>
+<rect x="990" y="660" width="840" height="240" rx="10" fill="#F4DEDE" stroke="#A84242" stroke-width="3"/>
+<rect x="990" y="660" width="840" height="52" rx="8" fill="#A84242" stroke="#A84242" stroke-width="0"/>
+<text x="1410" y="699.0" text-anchor="middle" font-family="Arial" font-size="26" font-weight="700" fill="#FFFFFF">RQ4 STUDY A DEGRADATION RISK</text>
+<text x="1410" y="788.0" text-anchor="middle" font-family="Arial" font-size="22" font-weight="400" fill="#17212B">Token reduction: 48.85% [42.67%, 55.31%]</text>
+<text x="1410" y="817.0" text-anchor="middle" font-family="Arial" font-size="22" font-weight="400" fill="#17212B">Task-success difference: -6.11 pp [-12.22, -0.56]</text>
+<text x="1410" y="846.0" text-anchor="middle" font-family="Arial" font-size="22" font-weight="400" fill="#17212B">Non-inferiority is not established; Study C comparison pending</text>
+<rect x="70" y="970" width="1760" height="145" rx="8" fill="#F4ECD4" stroke="#8D6B18" stroke-width="3"/>
+<text x="950" y="1032.5" text-anchor="middle" font-family="Arial" font-size="25" font-weight="700" fill="#8D6B18">Engineering conclusion</text>
+<text x="950" y="1076.0" text-anchor="middle" font-family="Arial" font-size="22" font-weight="700" fill="#17212B">Runtime auditing makes context and interventions traceable; independent labels and utility tests determine what counts as removable bloat.</text>
+<text x="950" y="1159.5" text-anchor="middle" font-family="Arial" font-size="19" font-weight="400" fill="#53616F">Draft scope: Study A is frozen; registered Study B/C real-model evidence and blind annotation remain pending.</text>
+</svg>

@@ -22,8 +22,12 @@ class FileDatasetRepository:
         path = self.dataset_path(dataset_name, version)
         return {
             "tasks": self._load_json(path / "tasks.json"),
-            "documents": self._load_json(path / "documents.json"),
-            "memory": self._load_json(path / "memory.json"),
+            "documents": self._load_json(path / "documents.json")
+            if (path / "documents.json").is_file()
+            else [],
+            "memory": self._load_json(path / "memory.json")
+            if (path / "memory.json").is_file()
+            else [],
             "manifest": self._load_json(path / "dataset_manifest.json"),
         }
 

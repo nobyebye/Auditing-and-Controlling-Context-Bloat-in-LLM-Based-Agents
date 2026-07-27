@@ -1,0 +1,87 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1900" height="1080" viewBox="0 0 1900 1080">
+<defs>
+<marker id="arrow" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto"><path d="M0,0 L10,4 L0,8 Z" fill="#425466"/></marker>
+</defs>
+<rect width="1900" height="1080" fill="#FFFFFF"/>
+<text x="950" y="72.0" text-anchor="middle" font-family="Arial" font-size="34" font-weight="700" fill="#17212B">Research overview: auditing and controlling context bloat in LLM-based agents</text>
+<text x="950" y="116.0" text-anchor="middle" font-family="Arial" font-size="22" font-weight="400" fill="#53616F">Automatically constructed context is the research object; avoidable bloat is the central problem.</text>
+<rect x="55" y="190" width="295" height="120" rx="10" fill="#DDEBF2" stroke="#347A91" stroke-width="3"/>
+<rect x="55" y="190" width="295" height="52" rx="8" fill="#347A91" stroke="#347A91" stroke-width="0"/>
+<text x="202" y="228.5" text-anchor="middle" font-family="Arial" font-size="25" font-weight="700" fill="#FFFFFF">Retrieval</text>
+<text x="202" y="286.0" text-anchor="middle" font-family="Arial" font-size="20" font-weight="400" fill="#17212B">Retrieved passages</text>
+<polyline points="350,250 455,475" fill="none" stroke="#425466" stroke-width="5" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<rect x="55" y="340" width="295" height="120" rx="10" fill="#E3EFE4" stroke="#3E7C59" stroke-width="3"/>
+<rect x="55" y="340" width="295" height="52" rx="8" fill="#3E7C59" stroke="#3E7C59" stroke-width="0"/>
+<text x="202" y="378.5" text-anchor="middle" font-family="Arial" font-size="25" font-weight="700" fill="#FFFFFF">Memory</text>
+<text x="202" y="436.0" text-anchor="middle" font-family="Arial" font-size="20" font-weight="400" fill="#17212B">Stored facts and summaries</text>
+<polyline points="350,400 455,475" fill="none" stroke="#425466" stroke-width="5" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<rect x="55" y="490" width="295" height="120" rx="10" fill="#F6E6D8" stroke="#B86132" stroke-width="3"/>
+<rect x="55" y="490" width="295" height="52" rx="8" fill="#B86132" stroke="#B86132" stroke-width="0"/>
+<text x="202" y="528.5" text-anchor="middle" font-family="Arial" font-size="25" font-weight="700" fill="#FFFFFF">Tool outputs</text>
+<text x="202" y="572.5" text-anchor="middle" font-family="Arial" font-size="20" font-weight="400" fill="#17212B">Observations and structured</text>
+<text x="202" y="599.5" text-anchor="middle" font-family="Arial" font-size="20" font-weight="400" fill="#17212B">data</text>
+<polyline points="350,550 455,475" fill="none" stroke="#425466" stroke-width="5" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<rect x="55" y="640" width="295" height="120" rx="10" fill="#E9E4F1" stroke="#6E568B" stroke-width="3"/>
+<rect x="55" y="640" width="295" height="52" rx="8" fill="#6E568B" stroke="#6E568B" stroke-width="0"/>
+<text x="202" y="678.5" text-anchor="middle" font-family="Arial" font-size="25" font-weight="700" fill="#FFFFFF">History</text>
+<text x="202" y="722.5" text-anchor="middle" font-family="Arial" font-size="20" font-weight="400" fill="#17212B">Conversation and generated</text>
+<text x="202" y="749.5" text-anchor="middle" font-family="Arial" font-size="20" font-weight="400" fill="#17212B">traces</text>
+<polyline points="350,700 455,475" fill="none" stroke="#425466" stroke-width="5" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<rect x="470" y="220" width="380" height="510" rx="10" fill="#F4F6F8" stroke="#425466" stroke-width="3"/>
+<rect x="470" y="220" width="380" height="52" rx="8" fill="#425466" stroke="#425466" stroke-width="0"/>
+<text x="660" y="259.5" text-anchor="middle" font-family="Arial" font-size="27" font-weight="700" fill="#FFFFFF">Model-visible context</text>
+<text x="660" y="351.0" text-anchor="middle" font-family="Arial" font-size="22" font-weight="700" fill="#17212B">System + user + framework</text>
+<text x="660" y="381.0" text-anchor="middle" font-family="Arial" font-size="22" font-weight="700" fill="#17212B">+ retrieval + memory</text>
+<text x="660" y="411.0" text-anchor="middle" font-family="Arial" font-size="22" font-weight="700" fill="#17212B">+ tools + generated traces</text>
+<rect x="515" y="500" width="290" height="190" rx="10" fill="#F4DEDE" stroke="#A84242" stroke-width="3"/>
+<rect x="515" y="500" width="290" height="52" rx="8" fill="#A84242" stroke="#A84242" stroke-width="0"/>
+<text x="660" y="538.0" text-anchor="middle" font-family="Arial" font-size="24" font-weight="700" fill="#FFFFFF">Context bloat</text>
+<text x="660" y="591.5" text-anchor="middle" font-family="Arial" font-size="19" font-weight="400" fill="#17212B">Duplicate</text>
+<text x="660" y="617.5" text-anchor="middle" font-family="Arial" font-size="19" font-weight="400" fill="#17212B">Irrelevant or stale</text>
+<text x="660" y="643.5" text-anchor="middle" font-family="Arial" font-size="19" font-weight="400" fill="#17212B">Verbose</text>
+<text x="660" y="669.5" text-anchor="middle" font-family="Arial" font-size="19" font-weight="400" fill="#17212B">Cross-source accumulation</text>
+<polyline points="850,475 965,475" fill="none" stroke="#425466" stroke-width="5" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<rect x="980" y="190" width="380" height="570" rx="10" fill="#DDEBF2" stroke="#347A91" stroke-width="3"/>
+<rect x="980" y="190" width="380" height="52" rx="8" fill="#347A91" stroke="#347A91" stroke-width="0"/>
+<text x="1170" y="230.0" text-anchor="middle" font-family="Arial" font-size="28" font-weight="700" fill="#FFFFFF">Runtime auditing</text>
+<text x="1170" y="413.5" text-anchor="middle" font-family="Arial" font-size="21" font-weight="400" fill="#17212B">1 Capture before each LLM call</text>
+<text x="1170" y="441.5" text-anchor="middle" font-family="Arial" font-size="21" font-weight="400" fill="#17212B"></text>
+<text x="1170" y="469.5" text-anchor="middle" font-family="Arial" font-size="21" font-weight="400" fill="#17212B">2 Attribute source provenance</text>
+<text x="1170" y="497.5" text-anchor="middle" font-family="Arial" font-size="21" font-weight="400" fill="#17212B"></text>
+<text x="1170" y="525.5" text-anchor="middle" font-family="Arial" font-size="21" font-weight="400" fill="#17212B">3 Detect and localize bloat</text>
+<text x="1170" y="553.5" text-anchor="middle" font-family="Arial" font-size="21" font-weight="400" fill="#17212B"></text>
+<text x="1170" y="581.5" text-anchor="middle" font-family="Arial" font-size="21" font-weight="400" fill="#17212B">4 Measure tokens, ratios, and</text>
+<text x="1170" y="609.5" text-anchor="middle" font-family="Arial" font-size="21" font-weight="400" fill="#17212B">growth</text>
+<polyline points="1360,365 1475,365" fill="none" stroke="#425466" stroke-width="5" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<rect x="1490" y="190" width="355" height="315" rx="10" fill="#E3EFE4" stroke="#3E7C59" stroke-width="3"/>
+<rect x="1490" y="190" width="355" height="52" rx="8" fill="#3E7C59" stroke="#3E7C59" stroke-width="0"/>
+<text x="1667" y="228.5" text-anchor="middle" font-family="Arial" font-size="25" font-weight="700" fill="#FFFFFF">Source-aware control</text>
+<text x="1667" y="356.0" text-anchor="middle" font-family="Arial" font-size="20" font-weight="400" fill="#17212B">Remove exact duplicates</text>
+<text x="1667" y="383.0" text-anchor="middle" font-family="Arial" font-size="20" font-weight="400" fill="#17212B">Filter stale or irrelevant context</text>
+<text x="1667" y="410.0" text-anchor="middle" font-family="Arial" font-size="20" font-weight="400" fill="#17212B">Compress verbose tool output</text>
+<polyline points="1667,505 1667,585" fill="none" stroke="#425466" stroke-width="5" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<rect x="1490" y="600" width="355" height="200" rx="10" fill="#F4ECD4" stroke="#8D6B18" stroke-width="3"/>
+<rect x="1490" y="600" width="355" height="52" rx="8" fill="#8D6B18" stroke="#8D6B18" stroke-width="0"/>
+<text x="1667" y="638.5" text-anchor="middle" font-family="Arial" font-size="25" font-weight="700" fill="#FFFFFF">Joint evaluation</text>
+<text x="1667" y="709.0" text-anchor="middle" font-family="Arial" font-size="20" font-weight="400" fill="#17212B">Efficiency: tokens, cost, latency</text>
+<text x="1667" y="736.0" text-anchor="middle" font-family="Arial" font-size="20" font-weight="400" fill="#17212B">Utility: task success and</text>
+<text x="1667" y="763.0" text-anchor="middle" font-family="Arial" font-size="20" font-weight="400" fill="#17212B">non-inferiority</text>
+<rect x="110" y="885" width="1680" height="125" rx="8" fill="#F4F6F8" stroke="#425466" stroke-width="3"/>
+<circle cx="200" cy="947" r="38" fill="#347A91" stroke="#347A91" stroke-width="3"/>
+<text x="200" y="957.0" text-anchor="middle" font-family="Arial" font-size="20" font-weight="700" fill="#FFFFFF">RQ1</text>
+<text x="370" y="957.0" text-anchor="middle" font-family="Arial" font-size="20" font-weight="700" fill="#17212B">Detect and localize</text>
+<polyline points="510,947 535,947" fill="none" stroke="#425466" stroke-width="4" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<circle cx="590" cy="947" r="38" fill="#6E568B" stroke="#6E568B" stroke-width="3"/>
+<text x="590" y="957.0" text-anchor="middle" font-family="Arial" font-size="20" font-weight="700" fill="#FFFFFF">RQ2</text>
+<text x="760" y="957.0" text-anchor="middle" font-family="Arial" font-size="20" font-weight="700" fill="#17212B">Measure quantitatively</text>
+<polyline points="900,947 955,947" fill="none" stroke="#425466" stroke-width="4" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<circle cx="1010" cy="947" r="38" fill="#B86132" stroke="#B86132" stroke-width="3"/>
+<text x="1010" y="957.0" text-anchor="middle" font-family="Arial" font-size="20" font-weight="700" fill="#FFFFFF">RQ3</text>
+<text x="1180" y="943.0" text-anchor="middle" font-family="Arial" font-size="20" font-weight="700" fill="#17212B">Explain sources and</text>
+<text x="1180" y="971.0" text-anchor="middle" font-family="Arial" font-size="20" font-weight="700" fill="#17212B">patterns</text>
+<polyline points="1320,947 1390,947" fill="none" stroke="#425466" stroke-width="4" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<circle cx="1445" cy="947" r="38" fill="#3E7C59" stroke="#3E7C59" stroke-width="3"/>
+<text x="1445" y="957.0" text-anchor="middle" font-family="Arial" font-size="20" font-weight="700" fill="#FFFFFF">RQ4</text>
+<text x="1615" y="943.0" text-anchor="middle" font-family="Arial" font-size="20" font-weight="700" fill="#17212B">Mitigate without</text>
+<text x="1615" y="971.0" text-anchor="middle" font-family="Arial" font-size="20" font-weight="700" fill="#17212B">unacceptable task loss</text>
+</svg>

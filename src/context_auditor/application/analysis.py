@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from collections import Counter, defaultdict
 from statistics import mean
 from typing import Any, Iterable
@@ -10,8 +11,11 @@ from context_auditor.application.evaluation import (
     evaluate_detection,
     evaluate_measurement,
     evaluate_mitigation,
+    bootstrap_mean_interval,
+    reference_labels,
+    reference_bloat_ratio,
 )
-from context_auditor.domain.models import AuditTrace
+from context_auditor.domain.models import AuditTrace, SCHEMA_VERSION
 
 
 class AnalyzeBloat:
@@ -33,7 +37,7 @@ class AnalyzeBloat:
             cohorts[trace.analysis_cohort].append(trace)
         source_bloat = self._source_bloat(inferential_items)
         return {
-            "schema_version": "1.1.0",
+            "schema_version": SCHEMA_VERSION,
             "trace_count": len(items),
             "task_count": len({trace.task_id for trace in items}),
             "inferential_trace_count": len(inferential_items),
@@ -69,6 +73,7 @@ class AnalyzeBloat:
             "measurement": evaluate_measurement(inferential_items),
             "mitigation_effect": evaluate_mitigation(inferential_items),
             "source_bloat": source_bloat,
+            "workflow_bloat": self._workflow_bloat(inferential_items),
             "mitigation": self._mitigation_summary(inferential_items),
         }
 
@@ -153,12 +158,15 @@ class AnalyzeBloat:
         }
 
     @staticmethod
-    def _source_bloat(traces: list[AuditTrace]) -> dict[str, dict[str, float]]:
+    def _source_bloat(traces: list[AuditTrace]) -> dict[str, dict[str, Any]]:
         totals: dict[str, int] = defaultdict(int)
         bloated: dict[str, int] = defaultdict(int)
         trace_ratios: dict[str, list[float]] = defaultdict(list)
+        task_ratios: dict[str, dict[str, list[float]]] = defaultdict(
+            lambda: defaultdict(list)
+        )
         for trace in traces:
-            truth_ids = set(trace.ground_truth_labels)
+            truth_ids = set(reference_labels(trace))
             trace_total: dict[str, int] = defaultdict(int)
             trace_bloat: dict[str, int] = defaultdict(int)
             for segment in trace.segments:
@@ -171,6 +179,9 @@ class AnalyzeBloat:
                 trace_ratios[source].append(
                     trace_bloat[source] / tokens if tokens else 0.0
                 )
+                task_ratios[source][trace.task_id].append(
+                    trace_bloat[source] / tokens if tokens else 0.0
+                )
         return {
             source: {
                 "total_tokens": float(totals[source]),
@@ -179,6 +190,71 @@ class AnalyzeBloat:
                     bloated[source] / totals[source] if totals[source] else 0.0
                 ),
                 "mean_bloat_ratio": mean(trace_ratios[source]),
+                "mean_bloat_ratio_ci95": bootstrap_mean_interval(
+                    [
+                        mean(values)
+                        for values in task_ratios[source].values()
+                    ]
+                ),
+                "task_count": len(task_ratios[source]),
             }
             for source in sorted(totals)
         }
+
+    @staticmethod
+    def _workflow_bloat(traces: list[AuditTrace]) -> dict[str, Any]:
+        task_values: dict[str, dict[str, list[float]]] = defaultdict(
+            lambda: defaultdict(list)
+        )
+        for trace in traces:
+            if trace.task_success is None:
+                continue
+            task_values[trace.workflow_family][trace.task_id].append(
+                reference_bloat_ratio(trace)
+            )
+        summaries = {}
+        flattened = {}
+        for workflow, tasks in sorted(task_values.items()):
+            values = [mean(items) for items in tasks.values()]
+            flattened[workflow] = values
+            summaries[workflow] = {
+                "task_count": len(values),
+                "mean_human_reference_bloat_ratio": (
+                    mean(values) if values else None
+                ),
+                "ci95": bootstrap_mean_interval(values),
+            }
+        effects = []
+        names = sorted(flattened)
+        for index, left in enumerate(names):
+            for right in names[index + 1 :]:
+                effects.append(
+                    {
+                        "left": left,
+                        "right": right,
+                        "mean_difference": (
+                            mean(flattened[left]) - mean(flattened[right])
+                        ),
+                        "hedges_g": hedges_g(
+                            flattened[left],
+                            flattened[right],
+                        ),
+                    }
+                )
+        return {"by_workflow": summaries, "pairwise_effects": effects}
+
+
+def hedges_g(left: list[float], right: list[float]) -> float | None:
+    if len(left) < 2 or len(right) < 2:
+        return None
+    left_mean = mean(left)
+    right_mean = mean(right)
+    pooled_denominator = len(left) + len(right) - 2
+    pooled_variance = (
+        sum((value - left_mean) ** 2 for value in left)
+        + sum((value - right_mean) ** 2 for value in right)
+    ) / pooled_denominator
+    if pooled_variance <= 0:
+        return 0.0
+    correction = 1 - 3 / (4 * (len(left) + len(right)) - 9)
+    return correction * (left_mean - right_mean) / math.sqrt(pooled_variance)

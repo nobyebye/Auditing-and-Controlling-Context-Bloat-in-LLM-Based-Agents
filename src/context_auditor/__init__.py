@@ -5,27 +5,41 @@ from .domain.models import (
     AuditTrace,
     BloatFinding,
     CaptureRequest,
+    CounterfactualOutcome,
+    CounterfactualVariant,
     Message,
     MitigationDecision,
+    ModelRequestEnvelope,
+    ProviderRequestRecord,
     ProviderResponse,
     ProviderUsage,
+    ReferenceAnnotation,
     RunManifest,
     TextSegment,
+    ToolCall,
+    ToolDefinition,
 )
 
 __all__ = [
     "AuditTrace",
     "BloatFinding",
     "CaptureRequest",
+    "CounterfactualOutcome",
+    "CounterfactualVariant",
     "Message",
     "MitigationDecision",
+    "ModelRequestEnvelope",
     "PrivacyMode",
+    "ProviderRequestRecord",
     "ProviderResponse",
     "ProviderUsage",
+    "ReferenceAnnotation",
     "RunManifest",
     "RunStatus",
     "SourceType",
     "TextSegment",
+    "ToolCall",
+    "ToolDefinition",
 ]
 
-__version__ = "1.1.0"
+__version__ = "1.2.0"

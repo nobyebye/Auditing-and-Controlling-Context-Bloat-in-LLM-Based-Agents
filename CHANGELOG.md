@@ -2,6 +2,28 @@
 
 All notable changes to this thesis artifact are tracked here.
 
+## 1.2.0 - Unreleased
+
+- Separated controlled injected labels, heuristic detections, independent
+  human-reference annotations, and counterfactual outcomes.
+- Added a versioned model-request envelope and a redacted provider-request
+  record with canonical payload hashes.
+- Added model-visible provenance segments for tool definitions, system
+  instructions, and response formats.
+- Added a 12-task calibration and 60-task held-out external dataset sampled
+  from pinned HotpotQA, LongMemEval, and BFCL v4 sources.
+- Added deterministic redaction of credentials and direct identifiers before
+  third-party task text is persisted or exported for annotation.
+- Added natural Custom ReAct and LangChain execution paths with a shared,
+  persistent 500-call budget and an OSF registration gate.
+- Added fully overlapping, condition-blind context and mitigation-outcome
+  annotation packages with agreement and adjudication reports.
+- Added counterfactual single-segment removal and a budget-matched
+  LLMLingua-2 comparison.
+- Replaced circular controlled-label measurement validation with independent
+  human-reference and counterfactual evidence builders.
+- Retained schema 1.1.0 as read-only input for the archived formal study.
+
 ## 1.1.0 - 2026-07-26
 
 - Added the 36-task context-bloat benchmark with frozen calibration/test splits.

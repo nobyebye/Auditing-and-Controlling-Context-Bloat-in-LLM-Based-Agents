@@ -1,0 +1,35 @@
+{
+  "file_sha256": {
+    "../../configs/conclusions/rq_rules_v2.json": "97c12cfef3fd1a127763235b54b4ef35f7a562c28b3161fe22c4d0f666483c3a",
+    "../../configs/experiments/external_calibration_custom_react_v1.2.json": "4bdaff82564b21038705fabc463c5f3789c209f8e8ed6d646327de0555724b70",
+    "../../configs/experiments/external_calibration_langchain_v1.2.json": "fd6b90dd1477298723e41151a84eed46a67dd83873d3e8c49fcb58c82444e54d",
+    "../../configs/experiments/external_custom_react_v1.2.json": "60a75537ff341b7d48aaa238fa283244d4145d0be4d3749f9b4ff7fe5ec8b54b",
+    "../../configs/experiments/external_langchain_v1.2.json": "70adfe4234c7637b42b7f4f3cecdf983d2be44c135e310824048055b5c04dc87",
+    "../../configs/experiments/study_c_v1.2.json": "f407e817d6848b204e01ad72fb96489fba7e114829d347d39a224b0aec1b6fe8",
+    "../../configs/schemas/external-validation.schema.json": "8c1f553991b12b38e61c3749b84236b8401cc55b58b6a8a212740a2cecd99cba",
+    "../../data/datasets/external_validation/v1/dataset_manifest.json": "34c9360c7fc82a299a438d384cf512bcbb18fee180db2a6b8b690c3976f3844a",
+    "annotation_codebook_v1.2.md": "08d6d8e1f7ac769c308a801806d54825ee5d665b284e7d331e0b1bd3a80d3395",
+    "external_validation_protocol_v1.2.md": "42809f03283f968e90ab9a276e0ae7746e33e2a02d171d6ba1fa2feba6cd075a"
+  },
+  "note": "Upload the protocol package to an immutable OSF registration, then add its URL/timestamp and explicitly enable paid calls.",
+  "paid_test_calls_allowed": false,
+  "protocol_package": "thesis/releases/osf_external_validation_protocol_v1.2.zip",
+  "protocol_package_sha256": "6d69fdebef6353d5098343c3924b16581092cc40dcbc0745d4badc9265c5270c",
+  "protocol_version": "1.2.0",
+  "registered_at": "",
+  "registered_commit": "",
+  "registration_status": "ready_for_registration",
+  "registration_url": "",
+  "required_files": [
+    "external_validation_protocol_v1.2.md",
+    "annotation_codebook_v1.2.md",
+    "../../configs/conclusions/rq_rules_v2.json",
+    "../../configs/schemas/external-validation.schema.json",
+    "../../configs/experiments/external_calibration_custom_react_v1.2.json",
+    "../../configs/experiments/external_calibration_langchain_v1.2.json",
+    "../../configs/experiments/external_custom_react_v1.2.json",
+    "../../configs/experiments/external_langchain_v1.2.json",
+    "../../configs/experiments/study_c_v1.2.json",
+    "../../data/datasets/external_validation/v1/dataset_manifest.json"
+  ]
+}

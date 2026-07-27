@@ -2,67 +2,79 @@
 
 ## Title
 
-**Auditing and Controlling Context Bloat in LLM-Based Agents**
+**Detecting, Measuring, and Mitigating Context Bloat in LLM-Based Agents: A
+Runtime Auditing Approach**
 
-Alternative title: **Detecting, Measuring, and Mitigating Context Bloat in LLM-Based Agents**
-
-Chinese title: **面向 LLM 智能体上下文膨胀的检测、量化与缓解研究**
+Chinese reference title: **面向基于大语言模型智能体的上下文膨胀检测、量化与缓解：一种运行时审计方法**
 
 ## Summary
 
-This thesis studies context bloat in LLM-based agents. The broader research
-object is automatically constructed context: the model-visible context assembled
-at runtime from system prompts, user input, retrieval, memory, tool traces,
-conversation history, and framework-generated content. The central problem is
-that this automatically constructed context can become bloated through
-redundant, stale, irrelevant, or repeated content.
+LLM-based agents automatically assemble model-visible context from
+instructions, user input, retrieved documents, conversational memory, tool
+definitions and results, and intermediate traces. This context can accumulate
+duplicate, irrelevant, stale, or unnecessarily verbose material. The thesis
+studies this context-bloat problem through provenance-aware runtime auditing.
 
-The thesis uses runtime tracing, context auditing, and a provenance schema as
-the methodological foundation. These tools are not the final goal by themselves.
-They are used to detect, localize, measure, and mitigate context bloat across
-controlled LLM-agent workflows.
+The research distinguishes four evidence levels: injected perturbations,
+heuristic indicators, independent human reference annotations, and
+counterfactual removability. Runtime tracing and the provenance schema are the
+measurement infrastructure; independently validated detection and
+utility-aware mitigation are the empirical objectives.
 
 ## Research Questions
 
-RQ1: How can context bloat be detected and localized in LLM-based agents?
+**RQ1:** How accurately can provenance-aware heuristic signals detect and
+localize independently annotated context bloat in natural LLM-agent traces?
 
-RQ2: How can context bloat be quantitatively measured?
+**RQ2:** To what extent do automated context-bloat measures agree with
+independent human judgments and counterfactual removability?
 
-RQ3: What are the main sources and patterns of context bloat?
+**RQ3:** What bloat sources and patterns are observed across retrieval, memory,
+and tool workflows under controlled and naturalistic conditions?
 
-RQ4: Can context bloat be mitigated without significantly reducing task
-performance?
+**RQ4:** What token and cost savings, and what task-performance trade-offs,
+arise from provenance-aware mitigation compared with prompt compression?
 
 ## Contributions
 
-1. A taxonomy of context bloat patterns in automatically constructed agent
-   context.
-2. A set of quantitative metrics for context redundancy and growth, including
-   Redundancy Ratio, Unique Information Ratio, Context Growth Rate, and Source
-   Contribution Ratio.
-3. A runtime tracing and auditing toolkit that captures model-visible context
-   before each LLM invocation and localizes bloat by source type.
-4. An empirical analysis of bloat sources across retrieval, memory, tool-use,
-   conversation-history, and combined agent workflows.
-5. A simple mitigation method, such as duplicate removal, irrelevant memory
-   filtering, or tool-output compression, evaluated for token reduction and task
-   performance impact.
+1. A provenance-linked taxonomy that distinguishes bloat type, context source,
+   and evidence origin.
+2. A versioned runtime auditing framework that records client-side request
+   envelopes, provider payload hashes, source segments, metrics, and
+   interventions.
+3. A controlled perturbation benchmark for testing internal pipeline
+   consistency.
+4. An independently annotated natural-trace validation study using retrieval,
+   memory, and tool-use tasks.
+5. A counterfactual and utility-aware mitigation evaluation against a
+   budget-matched LLMLingua-2 baseline.
 
 ## Method
 
-The thesis will evaluate a LangChain-based agent and a lightweight custom
-ReAct-style agent. Workflow families include retrieval QA, multi-step tool use,
-and memory-based multi-turn tasks. Each workflow will be run under controlled
-configurations such as baseline, retrieval-enabled, memory-enabled, tool-use,
-combined retrieval-memory-tool, guard detection, and mitigation mode.
+The empirical design contains three studies. Study A retains the existing
+controlled benchmark and interprets its perfect injected-label results only as
+internal consistency. Study B runs 60 held-out public tasks from HotpotQA,
+LongMemEval, and BFCL through LangChain and Custom ReAct paths. Two annotators
+independently label every final context while framework identity, detector
+flags, source labels, model output, and automatic scores are hidden.
 
-The runtime auditor captures every model-visible invocation, segments the
-context, labels each segment by source type, and computes bloat metrics. The
-analysis then identifies which source categories contribute most to bloat and
-which workflow patterns produce the fastest growth.
+Study C selects segment-level counterfactuals from the adjudicated Study B
+contexts and compares original, candidate-removal, and necessary-segment
+removal requests. A separate replay compares unmodified context,
+provenance-aware mitigation, and LLMLingua-2 under equal retained-token
+budgets. Token, cost, latency, automatic score, and blind human task success
+are reported together.
 
-Mitigation is evaluated in a controlled way. The thesis will compare original
-context against reduced context and report token reduction, redundancy
-reduction, and lightweight task performance. The goal is not to build a broad
-optimization system, but to test whether simple bloat controls can reduce
-unnecessary context without clearly harming utility.
+The independent analysis unit is `task_id`. Confidence intervals use
+task-cluster hierarchical bootstrap, and task success is checked with a
+task-clustered GEE sensitivity analysis. The real held-out calls are gated by a
+frozen, externally timestamped OSF protocol and a shared limit of 500 HTTP
+attempts.
+
+## Expected Scope
+
+The thesis does not claim to observe provider-internal prompt transformations
+or to build a universal context optimizer. It evaluates a client-side,
+provenance-aware engineering method in a fixed set of workflows, datasets, and
+model conditions. Final claims about natural-trace accuracy and mitigation
+depend on the registered Study B and Study C results.

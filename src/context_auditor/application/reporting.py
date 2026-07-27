@@ -85,7 +85,9 @@ class BuildReport:
             "duplicate_segment_count",
             "task_success",
             "latency_ms",
-            "ground_truth_bloat_ratio",
+            "evidence_tier",
+            "injected_bloat_ratio",
+            "human_reference_bloat_ratio",
             "detected_bloat_ratio",
             "nonredundant_token_ratio",
             "input_tokens",
@@ -113,8 +115,13 @@ class BuildReport:
                 "duplicate_segment_count": trace.metrics.get("duplicate_segment_count", 0),
                 "task_success": trace.task_success,
                 "latency_ms": trace.latency_ms,
-                "ground_truth_bloat_ratio": trace.metrics.get(
-                    "ground_truth_bloat_ratio", 0.0
+                "evidence_tier": trace.evidence_tier,
+                "injected_bloat_ratio": trace.metrics.get(
+                    "injected_bloat_ratio",
+                    trace.metrics.get("ground_truth_bloat_ratio", 0.0),
+                ),
+                "human_reference_bloat_ratio": trace.metrics.get(
+                    "human_reference_bloat_ratio", 0.0
                 ),
                 "detected_bloat_ratio": trace.metrics.get(
                     "detected_bloat_ratio", 0.0

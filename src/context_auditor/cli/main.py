@@ -15,17 +15,41 @@ from context_auditor.adapters.storage.serialization import write_json_atomic
 from context_auditor.application import CaptureContext
 from context_auditor.application.annotations import export_blind_review_package
 from context_auditor.application.comparison import CompareFrameworks
+from context_auditor.application.external_annotations import (
+    adjudicate_annotation_files,
+    export_context_annotation_packages,
+    import_context_annotation_file,
+)
+from context_auditor.application.external_evidence import BuildExternalEvidence
+from context_auditor.application.outcome_annotations import (
+    adjudicate_outcome_files,
+    export_outcome_annotation_packages,
+)
 from context_auditor.application.reporting import write_csv
+from context_auditor.application.study_c_evidence import build_study_c_evidence
 from context_auditor.application.study_bundle import ExportStudyBundle, validate_study_bundle
 from context_auditor.domain.enums import PrivacyMode
-from context_auditor.domain.models import CaptureRequest, Message
+from context_auditor.domain.models import (
+    CaptureRequest,
+    Message,
+    ModelRequestEnvelope,
+    SCHEMA_VERSION,
+)
 from context_auditor.domain.text import hash_text
 from context_auditor.experiments import (
     RunExperiment,
+    RunExternalValidation,
     RunFormalExperiment,
+    RunStudyC,
+    load_external_validation_config,
     load_experiment_config,
+    load_study_c_config,
 )
 from context_auditor.experiments.dataset_validation import validate_dataset
+from context_auditor.experiments.external_dataset import (
+    prepare_external_validation_dataset,
+)
+from context_auditor.experiments.protocol_lock import freeze_protocol_package
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -115,6 +139,135 @@ def build_parser() -> argparse.ArgumentParser:
     annotations.add_argument("--bundle", required=True)
     annotations.add_argument("--output", required=True)
     annotations.add_argument("--seed", type=int, default=20260726)
+
+    prepare_external = subparsers.add_parser(
+        "prepare-external-dataset",
+        help="Build the pinned 12-calibration/60-test external dataset.",
+    )
+    prepare_external.add_argument("--hotpot", required=True)
+    prepare_external.add_argument("--longmemeval", required=True)
+    prepare_external.add_argument("--bfcl", required=True)
+    prepare_external.add_argument(
+        "--output",
+        default="data/datasets/external_validation/v1",
+    )
+    prepare_external.add_argument("--seed", type=int, default=20260727)
+
+    run_external = subparsers.add_parser(
+        "run-external",
+        help="Run one natural-trace external-validation config.",
+    )
+    run_external.add_argument("--config", required=True)
+    run_external.add_argument("--project-root", default=".")
+    run_external.add_argument("--run-id")
+    run_external.add_argument("--confirm-real-cost", action="store_true")
+
+    run_external_suite = subparsers.add_parser(
+        "run-external-suite",
+        help="Run paired Custom ReAct and LangChain natural-trace configs.",
+    )
+    run_external_suite.add_argument(
+        "--custom-config",
+        default="configs/experiments/external_custom_react_v1.2.json",
+    )
+    run_external_suite.add_argument(
+        "--langchain-config",
+        default="configs/experiments/external_langchain_v1.2.json",
+    )
+    run_external_suite.add_argument("--project-root", default=".")
+    run_external_suite.add_argument("--confirm-real-cost", action="store_true")
+
+    context_annotations = subparsers.add_parser(
+        "export-context-annotations",
+        help="Export full-overlap double-blind context-segment forms.",
+    )
+    context_annotations.add_argument("--bundle", required=True)
+    context_annotations.add_argument("--output", required=True)
+    context_annotations.add_argument("--annotation-set-id", required=True)
+
+    import_context_annotations = subparsers.add_parser(
+        "import-context-annotations",
+        help="Validate and freeze one completed blinded context review.",
+    )
+    import_context_annotations.add_argument("--reviewer", required=True)
+    import_context_annotations.add_argument("--answer-key", required=True)
+    import_context_annotations.add_argument("--output", required=True)
+    import_context_annotations.add_argument("--annotation-set-id", required=True)
+    import_context_annotations.add_argument("--reviewer-id", required=True)
+
+    adjudicate = subparsers.add_parser(
+        "adjudicate-annotations",
+        help="Compute agreement and create a consensus adjudication form.",
+    )
+    adjudicate.add_argument("--reviewer-a", required=True)
+    adjudicate.add_argument("--reviewer-b", required=True)
+    adjudicate.add_argument("--answer-key", required=True)
+    adjudicate.add_argument("--output", required=True)
+    adjudicate.add_argument("--annotation-set-id", required=True)
+
+    external_evidence = subparsers.add_parser(
+        "build-external-evidence",
+        help="Build RQ1-RQ3 evidence from immutable traces and adjudication.",
+    )
+    external_evidence.add_argument("--project-root", default=".")
+    external_evidence.add_argument("--bundle", required=True)
+    external_evidence.add_argument("--adjudication", required=True)
+    external_evidence.add_argument("--answer-key", required=True)
+    external_evidence.add_argument("--output", required=True)
+    external_evidence.add_argument("--annotation-set-id", required=True)
+
+    study_c = subparsers.add_parser(
+        "run-counterfactual-suite",
+        help="Run the frozen Study C counterfactual and mitigation replay.",
+    )
+    study_c.add_argument("--project-root", default=".")
+    study_c.add_argument(
+        "--config",
+        default="configs/experiments/study_c_v1.2.json",
+    )
+    study_c.add_argument("--bundle", required=True)
+    study_c.add_argument("--adjudication", required=True)
+    study_c.add_argument("--answer-key", required=True)
+    study_c.add_argument("--annotation-set-id", required=True)
+    study_c.add_argument("--run-id")
+    study_c.add_argument("--confirm-real-cost", action="store_true")
+
+    outcome_annotations = subparsers.add_parser(
+        "export-outcome-annotations",
+        help="Export condition-blind Study C mitigation outcome forms.",
+    )
+    outcome_annotations.add_argument("--traces", required=True)
+    outcome_annotations.add_argument("--output", required=True)
+    outcome_annotations.add_argument("--annotation-set-id", required=True)
+
+    outcome_adjudication = subparsers.add_parser(
+        "adjudicate-outcomes",
+        help="Measure agreement and prepare consensus outcome decisions.",
+    )
+    outcome_adjudication.add_argument("--reviewer-a", required=True)
+    outcome_adjudication.add_argument("--reviewer-b", required=True)
+    outcome_adjudication.add_argument("--answer-key", required=True)
+    outcome_adjudication.add_argument("--output", required=True)
+    outcome_adjudication.add_argument("--annotation-set-id", required=True)
+
+    study_c_evidence = subparsers.add_parser(
+        "build-study-c-evidence",
+        help="Build counterfactual and RQ4 evidence after outcome adjudication.",
+    )
+    study_c_evidence.add_argument("--traces", required=True)
+    study_c_evidence.add_argument("--outcome-adjudication", required=True)
+    study_c_evidence.add_argument("--outcome-answer-key", required=True)
+    study_c_evidence.add_argument("--output", required=True)
+
+    freeze_protocol = subparsers.add_parser(
+        "freeze-external-protocol",
+        help="Build the immutable upload package required before paid test calls.",
+    )
+    freeze_protocol.add_argument("--project-root", default=".")
+    freeze_protocol.add_argument(
+        "--output",
+        default="thesis/releases/osf_external_validation_protocol_v1.2.zip",
+    )
     return parser
 
 
@@ -211,6 +364,139 @@ def main(argv: list[str] | None = None) -> int:
             )
         )
         return 0
+    if args.command == "prepare-external-dataset":
+        print(
+            prepare_external_validation_dataset(
+                hotpot_path=args.hotpot,
+                longmemeval_path=args.longmemeval,
+                bfcl_path=args.bfcl,
+                destination=args.output,
+                seed=args.seed,
+            )
+        )
+        return 0
+    if args.command == "run-external":
+        root = Path(args.project_root).resolve()
+        config = load_external_validation_config(root / args.config)
+        if config.provider != "mock" and not args.confirm_real_cost:
+            print("Real external runs require --confirm-real-cost.")
+            return 2
+        print(
+            RunExternalValidation(root).execute(
+                config,
+                run_id=args.run_id,
+            )
+        )
+        return 0
+    if args.command == "run-external-suite":
+        root = Path(args.project_root).resolve()
+        configs = [
+            load_external_validation_config(root / args.custom_config),
+            load_external_validation_config(root / args.langchain_config),
+        ]
+        if (
+            any(config.provider != "mock" for config in configs)
+            and not args.confirm_real_cost
+        ):
+            print("Real external suites require --confirm-real-cost.")
+            return 2
+        for config in configs:
+            print(RunExternalValidation(root).execute(config))
+        return 0
+    if args.command == "export-context-annotations":
+        print(
+            export_context_annotation_packages(
+                args.bundle,
+                args.output,
+                annotation_set_id=args.annotation_set_id,
+            )
+        )
+        return 0
+    if args.command == "import-context-annotations":
+        print(
+            import_context_annotation_file(
+                args.reviewer,
+                args.answer_key,
+                args.output,
+                annotation_set_id=args.annotation_set_id,
+                reviewer_id=args.reviewer_id,
+            )
+        )
+        return 0
+    if args.command == "adjudicate-annotations":
+        print(
+            adjudicate_annotation_files(
+                args.reviewer_a,
+                args.reviewer_b,
+                args.answer_key,
+                args.output,
+                annotation_set_id=args.annotation_set_id,
+            )
+        )
+        return 0
+    if args.command == "build-external-evidence":
+        root = Path(args.project_root).resolve()
+        print(
+            BuildExternalEvidence(root).execute(
+                args.bundle,
+                args.adjudication,
+                args.answer_key,
+                args.output,
+                annotation_set_id=args.annotation_set_id,
+            )
+        )
+        return 0
+    if args.command == "run-counterfactual-suite":
+        root = Path(args.project_root).resolve()
+        config = load_study_c_config(root / args.config)
+        if config.provider != "mock" and not args.confirm_real_cost:
+            print("Real Study C runs require --confirm-real-cost.")
+            return 2
+        print(
+            RunStudyC(root).execute(
+                config,
+                bundle_path=args.bundle,
+                adjudication_path=args.adjudication,
+                answer_key_path=args.answer_key,
+                annotation_set_id=args.annotation_set_id,
+                run_id=args.run_id,
+            )
+        )
+        return 0
+    if args.command == "export-outcome-annotations":
+        print(
+            export_outcome_annotation_packages(
+                args.traces,
+                args.output,
+                annotation_set_id=args.annotation_set_id,
+            )
+        )
+        return 0
+    if args.command == "adjudicate-outcomes":
+        print(
+            adjudicate_outcome_files(
+                args.reviewer_a,
+                args.reviewer_b,
+                args.answer_key,
+                args.output,
+                annotation_set_id=args.annotation_set_id,
+            )
+        )
+        return 0
+    if args.command == "build-study-c-evidence":
+        print(
+            build_study_c_evidence(
+                args.traces,
+                args.outcome_adjudication,
+                args.outcome_answer_key,
+                args.output,
+            )
+        )
+        return 0
+    if args.command == "freeze-external-protocol":
+        root = Path(args.project_root).resolve()
+        print(freeze_protocol_package(root, root / args.output))
+        return 0
     return 1
 
 
@@ -238,7 +524,8 @@ def run_real_model_smoke(project_root: Path, args: argparse.Namespace) -> int:
             Message("system", "You are participating in a context auditing connectivity test."),
             Message("user", args.prompt),
         )
-        response = DeepSeekProvider.from_environment(args.model).invoke(messages)
+        envelope = ModelRequestEnvelope(messages=messages)
+        response = DeepSeekProvider.from_environment(args.model).invoke(envelope)
         repository = JsonlTraceRepository(paths.traces)
         capture = CaptureContext(repository, RegexTokenizer(), UtcClock(), DefaultIdGenerator())
         trace = capture.execute(
@@ -258,6 +545,8 @@ def run_real_model_smoke(project_root: Path, args: argparse.Namespace) -> int:
                 invocation_index=0,
                 messages=messages,
                 config_hash=config_hash,
+                request_envelope=envelope,
+                provider_request=response.request_record,
                 task_success=bool(response.content.strip()),
                 task_output=response.content,
                 expected_answer=None,
@@ -270,7 +559,7 @@ def run_real_model_smoke(project_root: Path, args: argparse.Namespace) -> int:
         write_json_atomic(
             paths.summary,
             {
-                "schema_version": "1.1.0",
+                "schema_version": SCHEMA_VERSION,
                 "trace_id": trace.trace_id,
                 "provider": args.model,
                 "response_chars": len(response.content),

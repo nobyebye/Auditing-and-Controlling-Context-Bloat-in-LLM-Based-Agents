@@ -3,13 +3,19 @@
 from __future__ import annotations
 
 import json
+import hashlib
 import logging
 import time
+from dataclasses import replace
 from pathlib import Path
 
 from context_auditor.adapters.common import DefaultIdGenerator, RegexTokenizer, UtcClock
 from context_auditor.adapters.frameworks import LangChainRuntime
 from context_auditor.adapters.providers import DeepSeekProvider, MockProvider
+from context_auditor.adapters.providers.payload import (
+    build_openai_payload,
+    canonical_payload_bytes,
+)
 from context_auditor.adapters.storage import (
     FileDatasetRepository,
     JsonlTraceRepository,
@@ -19,7 +25,11 @@ from context_auditor.adapters.storage.runs import require_clean_git_worktree
 from context_auditor.application import ApplyMitigation, CaptureContext
 from context_auditor.application.analysis import AnalyzeBloat
 from context_auditor.application.reporting import BuildReport
-from context_auditor.domain.models import CaptureRequest, ProviderUsage
+from context_auditor.domain.models import (
+    CaptureRequest,
+    ModelRequestEnvelope,
+    ProviderUsage,
+)
 from context_auditor.ports import ChatProvider
 
 from .config import ExperimentConfig
@@ -123,11 +133,27 @@ class RunFormalExperiment:
         def invoke(messages):
             for attempt in range(config.generation.max_retries + 1):
                 try:
+                    envelope = ModelRequestEnvelope(
+                        messages=messages,
+                        generation_parameters=config.generation,
+                    )
                     if langchain:
-                        response, captured = langchain.invoke(messages)
+                        response, captured = langchain.invoke(envelope)
                     else:
-                        response, captured = provider.invoke(messages), messages
-                    return response, captured, attempt
+                        response, captured = provider.invoke(envelope), messages
+                    captured_envelope = replace(envelope, messages=captured)
+                    capture_hash = hashlib.sha256(
+                        canonical_payload_bytes(
+                            build_openai_payload(captured_envelope, config.model)
+                        )
+                    ).hexdigest()
+                    return (
+                        response,
+                        captured,
+                        attempt,
+                        captured_envelope,
+                        capture_hash,
+                    )
                 except Exception:
                     if attempt >= config.generation.max_retries:
                         raise
@@ -189,6 +215,10 @@ class RunFormalExperiment:
                                     invocation_index=invocation_index,
                                     messages=invocation.messages,
                                     config_hash=config.config_hash,
+                                    request_envelope=invocation.request_envelope,
+                                    provider_request=invocation.response.request_record,
+                                    framework_capture_hash=invocation.framework_capture_hash,
+                                    evidence_tier="controlled",
                                     dataset_split=task.get("split", "test"),
                                     analysis_cohort=config.analysis_cohort,
                                     task_success=scoring.success if scoring else None,

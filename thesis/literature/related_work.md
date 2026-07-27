@@ -2,7 +2,8 @@
 
 This note organizes implementation references and papers for the thesis:
 
-**Auditing and Controlling Context Bloat in LLM-Based Agents**
+**Detecting, Measuring, and Mitigating Context Bloat in LLM-Based Agents: A
+Runtime Auditing Approach**
 
 The main thesis framing is:
 

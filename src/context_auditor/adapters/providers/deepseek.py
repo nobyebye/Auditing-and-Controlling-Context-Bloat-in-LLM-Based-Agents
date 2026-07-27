@@ -10,11 +10,13 @@ from urllib import request
 
 from context_auditor.domain.models import (
     GenerationParameters,
-    Message,
+    ModelRequestEnvelope,
     ProviderResponse,
     ProviderUsage,
+    ToolCall,
 )
 
+from .payload import build_openai_payload, canonical_payload_bytes, request_record
 
 @dataclass(frozen=True)
 class DeepSeekProvider:
@@ -42,20 +44,13 @@ class DeepSeekProvider:
             max_output_tokens=selected.max_output_tokens,
         )
 
-    def invoke(self, messages: tuple[Message, ...]) -> ProviderResponse:
-        payload = {
-            "model": self.model,
-            "messages": [
-                {"role": normalize_role(item.role), "content": item.content}
-                for item in messages
-            ],
-            "stream": False,
-            "temperature": self.temperature,
-            "max_tokens": self.max_output_tokens,
-        }
+    def invoke(self, envelope: ModelRequestEnvelope) -> ProviderResponse:
+        payload = build_openai_payload(envelope, self.model)
+        endpoint = self.base_url.rstrip("/") + "/chat/completions"
+        record = request_record(payload, endpoint=endpoint)
         api_request = request.Request(
-            self.base_url.rstrip("/") + "/chat/completions",
-            data=json.dumps(payload).encode("utf-8"),
+            endpoint,
+            data=canonical_payload_bytes(payload),
             headers={
                 "Authorization": f"Bearer {self.api_key}",
                 "Content-Type": "application/json",
@@ -80,24 +75,34 @@ class DeepSeekProvider:
                 "cost_usd": estimate_cost_usd(self.model, provider_usage),
             }
         )
+        response_message = body["choices"][0]["message"]
         return ProviderResponse(
-            content=body["choices"][0]["message"]["content"],
+            content=response_message.get("content") or "",
             usage=provider_usage,
             latency_ms=latency_ms,
             response_id=body.get("id"),
+            request_record=record,
+            tool_calls=tuple(
+                ToolCall(
+                    call_id=str(item.get("id", "")),
+                    name=str(item.get("function", {}).get("name", "")),
+                    arguments=parse_tool_arguments(
+                        item.get("function", {}).get("arguments", {})
+                    ),
+                )
+                for item in response_message.get("tool_calls", [])
+            ),
         )
 
 
-def normalize_role(role: str) -> str:
-    if role in {"human", "user"}:
-        return "user"
-    if role in {"ai", "assistant"}:
-        return "assistant"
-    if role == "system":
-        return "system"
-    if role == "tool":
-        return "tool"
-    return "user"
+def parse_tool_arguments(value: object) -> dict:
+    if isinstance(value, dict):
+        return value
+    if isinstance(value, str):
+        parsed = json.loads(value or "{}")
+        if isinstance(parsed, dict):
+            return parsed
+    raise ValueError("Provider returned invalid tool-call arguments")
 
 
 def estimate_cost_usd(model: str, usage: ProviderUsage) -> float | None:

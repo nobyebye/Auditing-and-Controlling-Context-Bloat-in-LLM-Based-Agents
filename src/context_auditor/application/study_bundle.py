@@ -16,6 +16,7 @@ from context_auditor.adapters.storage.serialization import dumps, write_json_ato
 from context_auditor.application.analysis import AnalyzeBloat
 from context_auditor.application.reporting import BuildReport
 from context_auditor.domain.enums import RunStatus
+from context_auditor.domain.models import READABLE_SCHEMA_VERSIONS, SCHEMA_VERSION
 
 REQUIRED_BUNDLE_FILES = {
     "study_manifest.json",
@@ -72,12 +73,17 @@ class ExportStudyBundle:
                 ).iter_traces()
             ]
             summary = AnalyzeBloat().execute(traces)
+            rules_filename = (
+                "rq_rules_v2.json"
+                if any(trace.evidence_tier != "controlled" for trace in traces)
+                else "rq_rules_v1.json"
+            )
             rules = json.loads(
                 (
                     self.project_root
                     / "configs"
                     / "conclusions"
-                    / "rq_rules_v1.json"
+                    / rules_filename
                 ).read_text(encoding="utf-8")
             )
             BuildReport().execute(
@@ -99,7 +105,7 @@ class ExportStudyBundle:
             )
             write_json_atomic(root / "configs" / "rq_rules.json", rules)
             study_manifest = {
-                "schema_version": "1.1.0",
+                "schema_version": SCHEMA_VERSION,
                 "study_id": destination.stem,
                 "created_at": UtcClock().now_iso(),
                 "analysis_git_commit": current_git_commit(self.project_root),
@@ -144,8 +150,8 @@ def validate_component_run(path: Path) -> dict:
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     if manifest.get("status") != RunStatus.COMPLETED.value:
         raise ValueError(f"Component run is not completed: {path}")
-    if manifest.get("schema_version") != "1.1.0":
-        raise ValueError(f"Component run schema is not 1.1.0: {path}")
+    if manifest.get("schema_version") not in READABLE_SCHEMA_VERSIONS:
+        raise ValueError(f"Unsupported component run schema: {path}")
     for relative, expected in manifest.get("output_hashes", {}).items():
         artifact = path / relative
         if not artifact.is_file() or file_hash(artifact) != expected:
@@ -165,7 +171,7 @@ def validate_study_bundle(path: str | Path) -> dict:
         if any(name.startswith("/") or ".." in Path(name).parts for name in names):
             raise ValueError("Study bundle contains an unsafe path")
         manifest = json.loads(archive.read("study_manifest.json").decode("utf-8"))
-        if manifest.get("schema_version") != "1.1.0":
+        if manifest.get("schema_version") not in READABLE_SCHEMA_VERSIONS:
             raise ValueError("Unsupported study bundle schema")
         checksums = json.loads(archive.read("checksums.json").decode("utf-8"))
         for name, expected in checksums.items():

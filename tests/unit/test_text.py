@@ -36,6 +36,12 @@ class TextPolicyTests(unittest.TestCase):
     def test_redacts_api_key_assignment(self):
         self.assertIn("[REDACTED]", redact_text("api_key=secret-value"))
 
+    def test_redacts_long_hex_secret(self):
+        self.assertEqual(
+            redact_text("token " + ("a" * 40)),
+            "token [REDACTED_SECRET]",
+        )
+
     def test_full_mode_preserves_text(self):
         self.assertEqual(store_text("raw text", PrivacyMode.FULL), "raw text")
 

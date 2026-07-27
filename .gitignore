@@ -21,6 +21,7 @@ dashboard/test-results/
 
 # Generated experiment and thesis outputs
 runs/
+data/sources/
 thesis/build/
 traces/
 results/

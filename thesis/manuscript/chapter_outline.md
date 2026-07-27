@@ -1,57 +1,77 @@
 # Chapter Outline
 
+Working title: **Detecting, Measuring, and Mitigating Context Bloat in
+LLM-Based Agents: A Runtime Auditing Approach**
+
 ## Chapter 1: Introduction
 
-Introduce automatically constructed context in LLM agents and motivate context
-bloat as the central problem. Explain why bloated context matters for cost,
-latency, reliability, transparency, and debugging. State the thesis question,
-research questions, and contributions.
+Motivates context bloat in automatically constructed agent context, defines the
+four research questions, introduces the three-study evidence structure, and
+states the conceptual, engineering, and empirical contributions.
+
+Sections: Background and Motivation; Research Problem and Objectives; Research
+Questions; Contributions and Thesis Structure.
 
 ## Chapter 2: Background and Related Work
 
-Cover LLM agents, tool use, retrieval-augmented generation, memory mechanisms,
-conversation history, prompt/context management, observability, provenance, and
-prior work related to context efficiency or redundancy.
+Connects agent context construction, long-context behavior, retrieval and
+memory evaluation, prompt compression, observability, and request telemetry.
+It positions HotpotQA, LongMemEval, BFCL, LLMLingua-2, and OpenTelemetry
+relative to the research gap.
 
-## Chapter 3: Conceptual Model of Context Bloat
+Sections: Context Construction in LLM-Based Agents; Context Bloat and Context
+Management; Agent Observability and Runtime Auditing; Research Gap.
 
-Define automatically constructed context, model-visible context, context
-segment, context source, and context bloat. Present a taxonomy of bloat patterns
-such as duplicate retrieval, repeated tool traces, stale memory, irrelevant
-conversation history, oversized retrieved passages, and framework overhead.
+## Chapter 3: Context Bloat Model and Auditing Framework
 
-## Chapter 4: Runtime Tracing and Bloat Localization
+Defines the bloat taxonomy and the separate injected, heuristic,
+human-reference, and counterfactual evidence namespaces. It presents the
+request envelope, provider payload record, provenance metrics, detection,
+localization, and protected-segment mitigation.
 
-Describe the instrumentation layer, trace format, provenance schema, segment
-labeling rules, and localization method. Explain how the auditor connects bloat
-patterns to source categories such as memory, retrieval, tool, conversation
-history, and framework content.
+Sections: Definition and Taxonomy; Provenance and Measurement Model; Runtime
+Auditing Framework; Detection, Localization, and Mitigation.
 
-## Chapter 5: Measuring Context Bloat
+## Chapter 4: Research Methodology
 
-Define the quantitative metrics: Redundancy Ratio, Unique Information Ratio,
-Context Growth Rate, Source Contribution Ratio, Duplicate Segment Count,
-Source Dominance, and estimated token/cost impact. Explain how each metric is
-computed and interpreted.
+Specifies Study A (controlled perturbations), Study B (independently annotated
+natural traces), and Study C (counterfactual and compression comparison). It
+documents datasets, two execution paths, request capture, blind annotation,
+task-cluster statistics, OSF gating, and the 500-call budget.
 
-## Chapter 6: Experimental Setup
+Sections: Experimental Design; Agent Implementations and Environment;
+Evaluation and Statistical Analysis; Human Evaluation and Validity.
 
-Describe agent implementations, providers/models, workflow families,
-configurations, tasks, repetition strategy, and task performance checks.
+## Chapter 5: Empirical Results
 
-## Chapter 7: Empirical Results: Sources and Patterns of Bloat
+Reports Study A as controlled pipeline consistency and reserves external
+detection, measurement, and natural source claims for the registered Study B
+evidence. Controlled and natural results remain separate throughout.
 
-Analyze where context bloat appears, which sources contribute most, how context
-grows across invocations, and which workflow patterns are most vulnerable.
+Sections: Detection and Localization; Measurement and Source Analysis;
+Execution-Path and Stress-Case Comparison; RQ1-RQ3 Evidence Summary.
 
-## Chapter 8: Mitigation Case Study
+## Chapter 6: Mitigation Evaluation and Discussion
 
-Evaluate simple mitigation methods such as exact duplicate removal, irrelevant
-memory filtering, or tool-output compression. Compare context reduction,
-redundancy reduction, and task performance before and after mitigation.
+Reports Study A token savings together with its observed degradation risk,
+defines counterfactual necessity, and specifies the equal-budget Study C
+comparison with LLMLingua-2. It then discusses capture boundaries, provenance,
+deployment implications, and validity limitations.
 
-## Chapter 9: Discussion and Conclusion
+Sections: Mitigation Effectiveness; Counterfactual Necessity and
+Interpretation; Engineering Implications; Limitations and Future Work.
 
-Answer the research questions, discuss developer implications, limitations,
-threats to validity, and future work. Emphasize that runtime auditing is the
-methodological foundation, while context bloat is the main research problem.
+## Chapter 7: Conclusion
+
+Answers each RQ using effect estimates, uncertainty, scope, and evidence
+status. Pending Study B/C values are not replaced by controlled or mock
+results.
+
+Sections: Answers to the Research Questions; Contributions and Future
+Directions.
+
+## Back Matter
+
+References are followed by appendices for the taxonomy and schema; datasets and
+configurations; additional statistics; reproduction instructions; and the
+human annotation protocols.

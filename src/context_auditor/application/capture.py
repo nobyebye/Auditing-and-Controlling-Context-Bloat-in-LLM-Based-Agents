@@ -3,14 +3,22 @@
 from __future__ import annotations
 
 from dataclasses import replace
+from typing import Any, Mapping
 
 from context_auditor.analytics import compute_metrics
 from context_auditor.domain.enums import SourceType
-from context_auditor.domain.models import AuditTrace, CaptureRequest, Message, SCHEMA_VERSION
+from context_auditor.domain.models import (
+    AuditTrace,
+    CaptureRequest,
+    Message,
+    ModelRequestEnvelope,
+    SCHEMA_VERSION,
+    ToolDefinition,
+)
 from context_auditor.domain.text import store_text
 from context_auditor.ports import Clock, IdGenerator, Tokenizer, TraceRepository
 
-from .segmentation import segment_messages
+from .segmentation import segment_envelope
 from .localization import findings_by_segment, localize_segments
 
 
@@ -37,7 +45,16 @@ class CaptureContext:
         self._previous_tokens: dict[tuple[str, str, str, int], int] = {}
 
     def execute(self, request: CaptureRequest) -> AuditTrace:
-        segments = segment_messages(request.messages, self.tokenizer, request.privacy_mode)
+        validate_evidence_boundary(request)
+        envelope = request.request_envelope or ModelRequestEnvelope(
+            messages=request.messages,
+            generation_parameters=request.generation_parameters,
+        )
+        segments = segment_envelope(
+            envelope,
+            self.tokenizer,
+            request.privacy_mode,
+        )
         metrics = compute_metrics(segments)
         user_query = next(
             (message.content for message in reversed(request.messages) if message.role == "user"),
@@ -52,13 +69,29 @@ class CaptureContext:
                 verbose_tool_token_threshold=self.verbose_tool_token_threshold,
             )
         )
-        ground_truth_labels = request.ground_truth_labels or ground_truth_from_messages(
-            request.messages, segments
+        injected_labels = (
+            request.injected_labels
+            or request.ground_truth_labels
+            or (
+                injected_labels_from_messages(request.messages, segments)
+                if request.evidence_tier == "controlled"
+                else {}
+            )
         )
-        ground_truth_ids = set(ground_truth_labels)
+        injected_ids = set(injected_labels)
         detected_ids = set(detected_labels)
-        ground_truth_tokens = sum(
-            segment.token_count for segment in segments if segment.segment_id in ground_truth_ids
+        injected_tokens = sum(
+            segment.token_count for segment in segments if segment.segment_id in injected_ids
+        )
+        reference_remove_ids = {
+            annotation.segment_id
+            for annotation in request.reference_annotations
+            if annotation.adjudicated and annotation.decision == "remove"
+        }
+        reference_tokens = sum(
+            segment.token_count
+            for segment in segments
+            if segment.segment_id in reference_remove_ids
         )
         detected_tokens = sum(
             segment.token_count for segment in segments if segment.segment_id in detected_ids
@@ -66,9 +99,13 @@ class CaptureContext:
         total_tokens = int(metrics["total_tokens"])
         metrics = {
             **metrics,
-            "ground_truth_bloat_tokens": ground_truth_tokens,
-            "ground_truth_bloat_ratio": (
-                ground_truth_tokens / total_tokens if total_tokens else 0.0
+            "injected_bloat_tokens": injected_tokens,
+            "injected_bloat_ratio": (
+                injected_tokens / total_tokens if total_tokens else 0.0
+            ),
+            "human_reference_bloat_tokens": reference_tokens,
+            "human_reference_bloat_ratio": (
+                reference_tokens / total_tokens if total_tokens else 0.0
             ),
             "detected_bloat_tokens": detected_tokens,
             "detected_bloat_ratio": (
@@ -79,6 +116,18 @@ class CaptureContext:
             replace(message, content=store_text(message.content, request.privacy_mode))
             for message in request.messages
         )
+        safe_envelope = redact_envelope(envelope, request)
+        safe_provider_request = (
+            replace(
+                request.provider_request,
+                redacted_payload=redact_mapping(
+                    request.provider_request.redacted_payload,
+                    request,
+                ),
+            )
+            if request.provider_request
+            else None
+        )
         growth_key = (
             request.run_id,
             request.task_id,
@@ -87,6 +136,13 @@ class CaptureContext:
         )
         previous_tokens = self._previous_tokens.get(growth_key)
         risk_flags = self._risk_flags(metrics, previous_tokens)
+        if (
+            request.framework_capture_hash
+            and request.provider_request
+            and request.framework_capture_hash
+            != request.provider_request.payload_sha256
+        ):
+            risk_flags = (*risk_flags, "payload_mismatch")
         self._previous_tokens[growth_key] = int(metrics["total_tokens"])
         trace = AuditTrace(
             schema_version=SCHEMA_VERSION,
@@ -112,6 +168,17 @@ class CaptureContext:
             messages=safe_messages,
             segments=segments,
             metrics=metrics,
+            request_envelope=safe_envelope,
+            provider_request=safe_provider_request,
+            framework_capture_hash=request.framework_capture_hash,
+            provider_payload_hash=(
+                request.provider_request.payload_sha256
+                if request.provider_request
+                else None
+            ),
+            evidence_tier=request.evidence_tier,
+            parent_trace_id=request.parent_trace_id,
+            intervention=request.intervention,
             risk_flags=risk_flags,
             mitigation_decisions=request.mitigation_decisions,
             task_success=request.task_success,
@@ -121,8 +188,10 @@ class CaptureContext:
             latency_ms=request.latency_ms,
             attempt_index=request.attempt_index,
             generation_parameters=request.generation_parameters,
-            ground_truth_labels=ground_truth_labels,
+            injected_labels=injected_labels,
             detected_labels=detected_labels,
+            reference_annotations=request.reference_annotations,
+            counterfactual_outcomes=request.counterfactual_outcomes,
             scoring=request.scoring,
         )
         self.repository.append(trace)
@@ -140,14 +209,92 @@ class CaptureContext:
         return tuple(flags)
 
 
-def ground_truth_from_messages(
+def injected_labels_from_messages(
     messages: tuple[Message, ...],
     segments: tuple,
 ) -> dict[str, tuple[str, ...]]:
     result: dict[str, tuple[str, ...]] = {}
     for segment in segments:
+        if segment.container_type != "message":
+            continue
         raw = messages[segment.message_index].metadata.get("bloat_labels", ())
         labels = (raw,) if isinstance(raw, str) else tuple(str(label) for label in raw)
         if labels:
             result[segment.segment_id] = labels
+    return result
+
+
+def ground_truth_from_messages(
+    messages: tuple[Message, ...],
+    segments: tuple,
+) -> dict[str, tuple[str, ...]]:
+    """Compatibility alias for controlled schema-1.1 fixtures."""
+    return injected_labels_from_messages(messages, segments)
+
+
+def validate_evidence_boundary(request: CaptureRequest) -> None:
+    if request.evidence_tier == "controlled":
+        return
+    if request.ground_truth_labels or request.injected_labels:
+        raise ValueError(
+            "Natural and counterfactual evidence cannot accept injected labels"
+        )
+    contaminated = [
+        index
+        for index, message in enumerate(request.messages)
+        if message.metadata.get("bloat_labels")
+    ]
+    if contaminated:
+        raise ValueError(
+            "Natural and counterfactual evidence cannot contain bloat_labels "
+            f"metadata; contaminated message indexes: {contaminated}"
+        )
+
+
+def redact_envelope(
+    envelope: ModelRequestEnvelope,
+    request: CaptureRequest,
+) -> ModelRequestEnvelope:
+    return replace(
+        envelope,
+        messages=tuple(
+            replace(message, content=store_text(message.content, request.privacy_mode))
+            for message in envelope.messages
+        ),
+        system_instructions=tuple(
+            store_text(instruction, request.privacy_mode)
+            for instruction in envelope.system_instructions
+        ),
+        tools=tuple(
+            ToolDefinition(
+                name=tool.name,
+                description=store_text(
+                    tool.description,
+                    request.privacy_mode,
+                ),
+                parameters=redact_mapping(tool.parameters, request),
+            )
+            for tool in envelope.tools
+        ),
+        response_format=redact_mapping(envelope.response_format, request),
+        metadata=redact_mapping(envelope.metadata, request),
+    )
+
+
+def redact_mapping(value: Mapping[str, Any], request: CaptureRequest) -> dict[str, Any]:
+    result: dict[str, Any] = {}
+    for key, item in value.items():
+        if isinstance(item, str):
+            result[str(key)] = store_text(item, request.privacy_mode)
+        elif isinstance(item, Mapping):
+            result[str(key)] = redact_mapping(item, request)
+        elif isinstance(item, (list, tuple)):
+            result[str(key)] = [
+                store_text(entry, request.privacy_mode)
+                if isinstance(entry, str)
+                else entry
+                for entry in item
+            ]
+        else:
+            result[str(key)] = item
     return result

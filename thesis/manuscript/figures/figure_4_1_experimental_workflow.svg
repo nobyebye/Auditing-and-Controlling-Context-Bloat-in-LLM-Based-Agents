@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1900" height="1120" viewBox="0 0 1900 1120">
+<defs>
+<marker id="arrow" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto"><path d="M0,0 L10,4 L0,8 Z" fill="#425466"/></marker>
+</defs>
+<rect width="1900" height="1120" fill="#FFFFFF"/>
+<text x="950" y="73.0" text-anchor="middle" font-family="Arial" font-size="36" font-weight="700" fill="#17212B">Independent validation workflow</text>
+<text x="950" y="116.0" text-anchor="middle" font-family="Arial" font-size="22" font-weight="400" fill="#53616F">Controlled consistency, independent annotation, and utility-aware intervention</text>
+<rect x="55" y="180" width="350" height="250" rx="10" fill="#F4F6F8" stroke="#425466" stroke-width="3"/>
+<rect x="55" y="180" width="350" height="52" rx="8" fill="#425466" stroke="#425466" stroke-width="0"/>
+<text x="230" y="218.5" text-anchor="middle" font-family="Arial" font-size="25" font-weight="700" fill="#FFFFFF">Shared infrastructure</text>
+<text x="230" y="301.5" text-anchor="middle" font-family="Arial" font-size="19" font-weight="400" fill="#17212B">Schema 1.2 request envelope</text>
+<text x="230" y="327.5" text-anchor="middle" font-family="Arial" font-size="19" font-weight="400" fill="#17212B">Client-side payload hash</text>
+<text x="230" y="353.5" text-anchor="middle" font-family="Arial" font-size="19" font-weight="400" fill="#17212B">Source-attributed segments</text>
+<text x="230" y="379.5" text-anchor="middle" font-family="Arial" font-size="19" font-weight="400" fill="#17212B">Immutable manifests and call ledger</text>
+<rect x="480" y="165" width="420" height="280" rx="10" fill="#DDEBF2" stroke="#347A91" stroke-width="3"/>
+<rect x="480" y="165" width="420" height="52" rx="8" fill="#347A91" stroke="#347A91" stroke-width="0"/>
+<text x="690" y="203.0" text-anchor="middle" font-family="Arial" font-size="24" font-weight="700" fill="#FFFFFF">Study A Controlled</text>
+<text x="690" y="301.5" text-anchor="middle" font-family="Arial" font-size="19" font-weight="400" fill="#17212B">Injected perturbations</text>
+<text x="690" y="327.5" text-anchor="middle" font-family="Arial" font-size="19" font-weight="400" fill="#17212B">1,188 completed runs</text>
+<text x="690" y="353.5" text-anchor="middle" font-family="Arial" font-size="19" font-weight="400" fill="#17212B">1,596 invocation traces</text>
+<text x="690" y="379.5" text-anchor="middle" font-family="Arial" font-size="19" font-weight="400" fill="#17212B">Purpose: pipeline consistency</text>
+<rect x="945" y="165" width="420" height="280" rx="10" fill="#E9E4F1" stroke="#6E568B" stroke-width="3"/>
+<rect x="945" y="165" width="420" height="52" rx="8" fill="#6E568B" stroke="#6E568B" stroke-width="0"/>
+<text x="1155" y="203.0" text-anchor="middle" font-family="Arial" font-size="24" font-weight="700" fill="#FFFFFF">Study B Natural traces</text>
+<text x="1155" y="301.5" text-anchor="middle" font-family="Arial" font-size="19" font-weight="400" fill="#17212B">60 held-out public tasks</text>
+<text x="1155" y="327.5" text-anchor="middle" font-family="Arial" font-size="19" font-weight="400" fill="#17212B">2 execution paths / 120 contexts</text>
+<text x="1155" y="353.5" text-anchor="middle" font-family="Arial" font-size="19" font-weight="400" fill="#17212B">Two independent annotators</text>
+<text x="1155" y="379.5" text-anchor="middle" font-family="Arial" font-size="19" font-weight="400" fill="#17212B">Purpose: RQ1-RQ3 validity</text>
+<rect x="1410" y="165" width="420" height="280" rx="10" fill="#F6E6D8" stroke="#B86132" stroke-width="3"/>
+<rect x="1410" y="165" width="420" height="52" rx="8" fill="#B86132" stroke="#B86132" stroke-width="0"/>
+<text x="1620" y="203.0" text-anchor="middle" font-family="Arial" font-size="24" font-weight="700" fill="#FFFFFF">Study C Intervention</text>
+<text x="1620" y="301.5" text-anchor="middle" font-family="Arial" font-size="19" font-weight="400" fill="#17212B">108 counterfactual calls</text>
+<text x="1620" y="327.5" text-anchor="middle" font-family="Arial" font-size="19" font-weight="400" fill="#17212B">180 mitigation replays</text>
+<text x="1620" y="353.5" text-anchor="middle" font-family="Arial" font-size="19" font-weight="400" fill="#17212B">Equal-budget LLMLingua-2</text>
+<text x="1620" y="379.5" text-anchor="middle" font-family="Arial" font-size="19" font-weight="400" fill="#17212B">Purpose: RQ2 and RQ4 utility</text>
+<polyline points="405,305 440,305 440,140 1620,140" fill="none" stroke="#425466" stroke-width="4" stroke-linejoin="round"/>
+<polyline points="690,140 690,165" fill="none" stroke="#425466" stroke-width="4" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<polyline points="1155,140 1155,165" fill="none" stroke="#425466" stroke-width="4" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<polyline points="1620,140 1620,165" fill="none" stroke="#425466" stroke-width="4" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<polyline points="690,445 690,555" fill="none" stroke="#425466" stroke-width="4" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<polyline points="1155,445 1155,555" fill="none" stroke="#425466" stroke-width="4" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<polyline points="1620,445 1620,555" fill="none" stroke="#425466" stroke-width="4" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<text x="950" y="576.0" text-anchor="middle" font-family="Arial" font-size="22" font-weight="700" fill="#53616F">Evidence namespaces remain separate</text>
+<rect x="75" y="635" width="405" height="225" rx="10" fill="#DDEBF2" stroke="#347A91" stroke-width="3"/>
+<rect x="75" y="635" width="405" height="52" rx="8" fill="#347A91" stroke="#347A91" stroke-width="0"/>
+<text x="277" y="674.0" text-anchor="middle" font-family="Arial" font-size="26" font-weight="700" fill="#FFFFFF">Injected</text>
+<text x="277" y="769.5" text-anchor="middle" font-family="Arial" font-size="20" font-weight="400" fill="#17212B">Designed fixture labels</text>
+<text x="277" y="796.5" text-anchor="middle" font-family="Arial" font-size="20" font-weight="400" fill="#17212B">Internal consistency only</text>
+<polyline points="950,590 277,620" fill="none" stroke="#425466" stroke-width="4" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<rect x="525" y="635" width="405" height="225" rx="10" fill="#E9E4F1" stroke="#6E568B" stroke-width="3"/>
+<rect x="525" y="635" width="405" height="52" rx="8" fill="#6E568B" stroke="#6E568B" stroke-width="0"/>
+<text x="727" y="674.0" text-anchor="middle" font-family="Arial" font-size="26" font-weight="700" fill="#FFFFFF">Heuristic</text>
+<text x="727" y="769.5" text-anchor="middle" font-family="Arial" font-size="20" font-weight="400" fill="#17212B">Detector indicators</text>
+<text x="727" y="796.5" text-anchor="middle" font-family="Arial" font-size="20" font-weight="400" fill="#17212B">Precision, recall, localization</text>
+<polyline points="950,590 727,620" fill="none" stroke="#425466" stroke-width="4" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<rect x="975" y="635" width="405" height="225" rx="10" fill="#E3EFE4" stroke="#3E7C59" stroke-width="3"/>
+<rect x="975" y="635" width="405" height="52" rx="8" fill="#3E7C59" stroke="#3E7C59" stroke-width="0"/>
+<text x="1177" y="674.0" text-anchor="middle" font-family="Arial" font-size="26" font-weight="700" fill="#FFFFFF">Human reference</text>
+<text x="1177" y="769.5" text-anchor="middle" font-family="Arial" font-size="20" font-weight="400" fill="#17212B">Blind keep / remove labels</text>
+<text x="1177" y="796.5" text-anchor="middle" font-family="Arial" font-size="20" font-weight="400" fill="#17212B">Agreement before adjudication</text>
+<polyline points="950,590 1177,620" fill="none" stroke="#425466" stroke-width="4" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<rect x="1425" y="635" width="405" height="225" rx="10" fill="#F4ECD4" stroke="#8D6B18" stroke-width="3"/>
+<rect x="1425" y="635" width="405" height="52" rx="8" fill="#8D6B18" stroke="#8D6B18" stroke-width="0"/>
+<text x="1627" y="674.0" text-anchor="middle" font-family="Arial" font-size="26" font-weight="700" fill="#FFFFFF">Counterfactual</text>
+<text x="1627" y="769.5" text-anchor="middle" font-family="Arial" font-size="20" font-weight="400" fill="#17212B">Paired removals</text>
+<text x="1627" y="796.5" text-anchor="middle" font-family="Arial" font-size="20" font-weight="400" fill="#17212B">Task utility and non-inferiority</text>
+<polyline points="950,590 1627,620" fill="none" stroke="#425466" stroke-width="4" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<rect x="210" y="960" width="1480" height="100" rx="8" fill="#F4F6F8" stroke="#425466" stroke-width="3"/>
+<text x="950" y="1022.0" text-anchor="middle" font-family="Arial" font-size="24" font-weight="700" fill="#17212B">Task-cluster statistics -&gt; evidence builders -&gt; scoped RQ answers with uncertainty</text>
+<polyline points="277,860 277,930 950,930 950,960" fill="none" stroke="#425466" stroke-width="3" stroke-linejoin="round"/>
+<polyline points="727,860 727,930 950,930 950,960" fill="none" stroke="#425466" stroke-width="3" stroke-linejoin="round"/>
+<polyline points="1177,860 1177,930 950,930 950,960" fill="none" stroke="#425466" stroke-width="3" stroke-linejoin="round"/>
+<polyline points="1627,860 1627,930 950,930 950,960" fill="none" stroke="#425466" stroke-width="3" stroke-linejoin="round"/>
+</svg>

@@ -1,0 +1,23 @@
+{
+  "schema_version": "1.2.0",
+  "experiment_id": "external-validation-study-c-v1.2",
+  "provider": "deepseek",
+  "model": "deepseek-v4-flash",
+  "seed": 20260727,
+  "repetition_seeds": [
+    20260727,
+    20260728
+  ],
+  "call_budget": 500,
+  "call_ledger_path": "runs/studies/external-validation-v1.2-call-ledger.jsonl",
+  "counterfactual_per_workflow_framework": 3,
+  "mitigation_tasks_per_workflow": 10,
+  "privacy_mode": "redacted",
+  "llmlingua_model": "microsoft/llmlingua-2-xlm-roberta-large-meetingbank",
+  "generation": {
+    "temperature": 0.0,
+    "max_output_tokens": 256,
+    "timeout_seconds": 90,
+    "max_retries": 0
+  }
+}

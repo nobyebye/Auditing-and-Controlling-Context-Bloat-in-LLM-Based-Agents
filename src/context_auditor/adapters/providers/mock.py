@@ -2,7 +2,14 @@
 
 from __future__ import annotations
 
-from context_auditor.domain.models import Message, ProviderResponse, ProviderUsage
+from context_auditor.domain.models import (
+    ModelRequestEnvelope,
+    ProviderResponse,
+    ProviderUsage,
+    ToolCall,
+)
+
+from .payload import build_openai_payload, request_record
 
 
 class MockProvider:
@@ -11,7 +18,8 @@ class MockProvider:
     def __init__(self, model: str = "mock-llm") -> None:
         self.model = model
 
-    def invoke(self, messages: tuple[Message, ...]) -> ProviderResponse:
+    def invoke(self, request: ModelRequestEnvelope) -> ProviderResponse:
+        messages = request.messages
         user = next((item.content for item in reversed(messages) if item.role == "user"), "")
         useful = next(
             (
@@ -23,6 +31,18 @@ class MockProvider:
             "",
         )
         content = useful or f"mock response to: {user}"
+        has_tool_result = any(item.role == "tool" for item in messages)
+        tool_calls = (
+            (
+                ToolCall(
+                    call_id="mock-tool-call",
+                    name=request.tools[0].name,
+                    arguments={},
+                ),
+            )
+            if request.tools and not has_tool_result
+            else ()
+        )
         input_tokens = sum(len(item.content.split()) for item in messages)
         output_tokens = len(content.split())
         return ProviderResponse(
@@ -34,4 +54,9 @@ class MockProvider:
             ),
             latency_ms=0.0,
             response_id="mock-response",
+            request_record=request_record(
+                build_openai_payload(request, self.model),
+                endpoint="mock://chat/completions",
+            ),
+            tool_calls=tool_calls,
         )

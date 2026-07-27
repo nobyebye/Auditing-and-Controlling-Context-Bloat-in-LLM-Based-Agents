@@ -3,7 +3,8 @@
 Engineering-grade runtime tracing, measurement, and mitigation toolkit for the
 MSc thesis:
 
-**Auditing and Controlling Context Bloat in LLM-Based Agents**
+**Detecting, Measuring, and Mitigating Context Bloat in LLM-Based Agents:
+A Runtime Auditing Approach**
 
 The system captures model-visible context, assigns provenance to context
 segments, measures duplication and source dominance, applies auditable
@@ -85,6 +86,49 @@ changes are present. See
 [the frozen protocol](thesis/plans/experiment_protocol.md) and
 [the 2026-07-26 run record](thesis/releases/v1.1.0-formal-study-run.md).
 
+This schema-1.1 study is retained as **Study A**, a controlled perturbation
+benchmark. Its injected labels establish pipeline consistency, not external
+detection accuracy.
+
+## Independent Validation
+
+Schema 1.2 adds two independent evidence stages:
+
+- **Study B** captures natural requests from 60 held-out tasks sampled from
+  HotpotQA, LongMemEval, and BFCL v4, then evaluates heuristic indicators
+  against two independent context annotations.
+- **Study C** replays one-segment counterfactual removals and compares
+  provenance-aware mitigation with an equal-budget LLMLingua-2 arm. Mitigation
+  outcomes receive a separate condition-blind human review.
+
+Paid held-out runs are deliberately blocked until
+`thesis/plans/osf_registration_manifest_v1.2.json` contains a verifiable
+registration URL and frozen protocol/config/data hashes.
+
+Prepare and calibrate the external dataset without provider cost:
+
+```powershell
+context-auditor prepare-external-dataset `
+  --hotpot data/sources/hotpot_dev_distractor_v1.json `
+  --longmemeval data/sources/longmemeval_s_cleaned.json `
+  --bfcl data/sources/bfcl_v4_multi_turn_base_first_two.jsonl
+
+context-auditor run-external-suite `
+  --custom-config configs/experiments/external_calibration_custom_react_v1.2.json `
+  --langchain-config configs/experiments/external_calibration_langchain_v1.2.json
+
+context-auditor freeze-external-protocol
+```
+
+Upload the generated protocol ZIP to an immutable OSF registration, record its
+URL and timestamp in the manifest, and commit the registration record. From a
+clean worktree, run Study B with `--confirm-real-cost`, export the two blinded
+reviewer forms, adjudicate them, and build the RQ1-RQ3 evidence. Study C then
+consumes the immutable Study B bundle and completed adjudication. It produces
+108 counterfactual calls and 180 mitigation-comparison calls, followed by a
+separate condition-blind outcome review. Exact commands are recorded in
+`thesis/plans/external_validation_protocol_v1.2.md`.
+
 ## Run Artifacts
 
 Every run uses fixed artifact names:
@@ -139,7 +183,8 @@ LangChain messages, named artifacts, and end-to-end experiment execution.
 
 ## Versioning
 
-Current project and trace schema version: `1.1.0`.
+Current project and trace schema version: `1.2.0`. Schema `1.1.0` remains
+readable for the immutable Study A archive but is not written by current code.
 
 The original pilot is preserved by the `v0.10.0-pilot-archive` Git tag and
 [archived experiment package](thesis/releases/v0.10.0-pilot-artifacts.zip).

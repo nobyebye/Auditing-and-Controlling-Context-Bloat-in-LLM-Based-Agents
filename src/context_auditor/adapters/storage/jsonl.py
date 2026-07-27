@@ -8,12 +8,18 @@ from typing import Iterable
 
 from context_auditor.domain.models import (
     AuditTrace,
+    CounterfactualOutcome,
     GenerationParameters,
     Message,
     MitigationDecision,
+    ModelRequestEnvelope,
+    ProviderRequestRecord,
     ProviderUsage,
+    READABLE_SCHEMA_VERSIONS,
+    ReferenceAnnotation,
     ScoringResult,
     TextSegment,
+    ToolDefinition,
 )
 
 from .serialization import dumps
@@ -38,11 +44,26 @@ class JsonlTraceRepository:
 
 
 def trace_from_dict(data: dict) -> AuditTrace:
+    schema_version = data["schema_version"]
+    if schema_version not in READABLE_SCHEMA_VERSIONS:
+        raise ValueError(f"Unsupported trace schema version: {schema_version}")
     usage = data.get("provider_usage")
     generation = data.get("generation_parameters")
     scoring = data.get("scoring")
+    envelope = envelope_from_dict(data.get("request_envelope"))
+    provider_request = data.get("provider_request")
+    legacy_ground_truth = {
+        key: tuple(labels)
+        for key, labels in data.get("ground_truth_labels", {}).items()
+    }
+    injected_labels = {
+        key: tuple(labels)
+        for key, labels in data.get("injected_labels", {}).items()
+    }
+    if schema_version == "1.1.0" and not injected_labels:
+        injected_labels = legacy_ground_truth
     return AuditTrace(
-        schema_version=data["schema_version"],
+        schema_version=schema_version,
         trace_id=data["trace_id"],
         timestamp=data["timestamp"],
         experiment_id=data["experiment_id"],
@@ -65,6 +86,18 @@ def trace_from_dict(data: dict) -> AuditTrace:
         messages=tuple(Message(**item) for item in data.get("messages", [])),
         segments=tuple(TextSegment(**item) for item in data.get("segments", [])),
         metrics=data.get("metrics", {}),
+        request_envelope=envelope,
+        provider_request=(
+            ProviderRequestRecord(**provider_request) if provider_request else None
+        ),
+        framework_capture_hash=data.get("framework_capture_hash"),
+        provider_payload_hash=data.get("provider_payload_hash"),
+        evidence_tier=data.get(
+            "evidence_tier",
+            "controlled" if schema_version == "1.1.0" else "natural",
+        ),
+        parent_trace_id=data.get("parent_trace_id"),
+        intervention=data.get("intervention", {}),
         risk_flags=tuple(data.get("risk_flags", [])),
         mitigation_decisions=tuple(
             MitigationDecision(**item) for item in data.get("mitigation_decisions", [])
@@ -78,13 +111,45 @@ def trace_from_dict(data: dict) -> AuditTrace:
         generation_parameters=(
             GenerationParameters(**generation) if generation else GenerationParameters()
         ),
-        ground_truth_labels={
-            key: tuple(labels)
-            for key, labels in data.get("ground_truth_labels", {}).items()
-        },
+        injected_labels=injected_labels,
+        ground_truth_labels=legacy_ground_truth,
         detected_labels={
             key: tuple(labels)
             for key, labels in data.get("detected_labels", {}).items()
         },
+        reference_annotations=tuple(
+            ReferenceAnnotation(
+                **{
+                    **item,
+                    "reasons": tuple(item.get("reasons", ())),
+                }
+            )
+            for item in data.get("reference_annotations", [])
+        ),
+        counterfactual_outcomes=tuple(
+            CounterfactualOutcome(
+                **{
+                    **item,
+                    "removed_segment_ids": tuple(item.get("removed_segment_ids", ())),
+                }
+            )
+            for item in data.get("counterfactual_outcomes", [])
+        ),
         scoring=ScoringResult(**scoring) if scoring else None,
+    )
+
+
+def envelope_from_dict(data: dict | None) -> ModelRequestEnvelope | None:
+    if not data:
+        return None
+    generation = data.get("generation_parameters")
+    return ModelRequestEnvelope(
+        messages=tuple(Message(**item) for item in data.get("messages", [])),
+        system_instructions=tuple(data.get("system_instructions", [])),
+        tools=tuple(ToolDefinition(**item) for item in data.get("tools", [])),
+        generation_parameters=(
+            GenerationParameters(**generation) if generation else GenerationParameters()
+        ),
+        response_format=data.get("response_format", {}),
+        metadata=data.get("metadata", {}),
     )

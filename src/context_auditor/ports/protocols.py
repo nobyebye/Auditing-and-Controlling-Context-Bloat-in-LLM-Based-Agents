@@ -5,14 +5,14 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any, Iterable, Protocol
 
-from context_auditor.domain.models import AuditTrace, Message, ProviderResponse
+from context_auditor.domain.models import AuditTrace, ModelRequestEnvelope, ProviderResponse
 
 
 class ChatProvider(Protocol):
     provider_name: str
     model: str
 
-    def invoke(self, messages: tuple[Message, ...]) -> ProviderResponse: ...
+    def invoke(self, request: ModelRequestEnvelope) -> ProviderResponse: ...
 
 
 class Tokenizer(Protocol):

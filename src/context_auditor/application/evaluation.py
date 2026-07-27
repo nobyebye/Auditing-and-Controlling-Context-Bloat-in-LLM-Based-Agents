@@ -6,7 +6,7 @@ import math
 import random
 from collections import defaultdict
 from statistics import mean
-from typing import Iterable
+from typing import Callable, Iterable
 
 from context_auditor.domain.models import AuditTrace
 
@@ -17,6 +17,11 @@ BOOTSTRAP_SEED = 20260726
 def evaluate_detection(traces: Iterable[AuditTrace]) -> dict:
     items = list(traces)
     result = _detection_metrics(items)
+    reference_type = (
+        "human_reference"
+        if any(trace.reference_annotations for trace in items)
+        else "injected_perturbation"
+    )
     by_task: dict[str, list[AuditTrace]] = defaultdict(list)
     for trace in items:
         by_task[trace.task_id].append(trace)
@@ -26,6 +31,11 @@ def evaluate_detection(traces: Iterable[AuditTrace]) -> dict:
         for row in task_rows
         if row["macro_f1"] is not None
     ]
+    task_binary_f1 = [
+        float(row["binary"]["f1"])
+        for row in task_rows
+        if row["binary"]["f1"] is not None
+    ]
     task_localization = [
         float(row["localization_accuracy"])
         for row in task_rows
@@ -33,7 +43,12 @@ def evaluate_detection(traces: Iterable[AuditTrace]) -> dict:
     ]
     return {
         **result,
+        "reference_type": reference_type,
         "task_sample_size": len(by_task),
+        "task_macro_binary_f1": (
+            mean(task_binary_f1) if task_binary_f1 else None
+        ),
+        "task_macro_binary_f1_ci95": bootstrap_mean_interval(task_binary_f1),
         "macro_f1_ci95": bootstrap_mean_interval(task_macro_f1),
         "localization_accuracy_ci95": bootstrap_mean_interval(task_localization),
     }
@@ -43,7 +58,7 @@ def _detection_metrics(items: list[AuditTrace]) -> dict:
     truth = {
         (trace.trace_id, segment_id, label)
         for trace in items
-        for segment_id, labels in trace.ground_truth_labels.items()
+        for segment_id, labels in reference_labels(trace).items()
         for label in labels
     }
     detected = {
@@ -63,17 +78,19 @@ def _detection_metrics(items: list[AuditTrace]) -> dict:
         macro_f1_values.append(row["f1"])
     overall = classification_counts(truth, detected)
     truth_segments = {(trace_id, segment_id) for trace_id, segment_id, _ in truth}
-    localized_segments = {
-        (trace_id, segment_id)
-        for trace_id, segment_id, _ in truth & detected
+    detected_segments = {
+        (trace_id, segment_id) for trace_id, segment_id, _ in detected
     }
+    binary = classification_counts(truth_segments, detected_segments)
+    localized_segments = truth_segments & detected_segments
     return {
-        "ground_truth_label_count": len(truth),
+        "reference_label_count": len(truth),
         "detected_label_count": len(detected),
         "precision": overall["precision"],
         "recall": overall["recall"],
         "f1": overall["f1"],
         "macro_f1": mean(macro_f1_values) if macro_f1_values else None,
+        "binary": binary,
         "localization_accuracy": (
             len(localized_segments) / len(truth_segments) if truth_segments else None
         ),
@@ -113,41 +130,39 @@ def classification_counts(truth: set, detected: set) -> dict:
 
 def evaluate_measurement(traces: Iterable[AuditTrace]) -> dict:
     final = [trace for trace in traces if trace.task_success is not None]
-    truth = [
-        float(trace.metrics.get("ground_truth_bloat_ratio", 0.0)) for trace in final
-    ]
+    reference_type = (
+        "human_reference"
+        if any(trace.reference_annotations for trace in final)
+        else "injected_perturbation"
+    )
+    truth = [reference_bloat_ratio(trace) for trace in final]
     measured = [
-        max(
-            float(trace.metrics.get("redundancy_ratio", 0.0)),
-            float(trace.metrics.get("near_redundancy_ratio", 0.0)),
-            float(trace.metrics.get("detected_bloat_ratio", 0.0)),
-        )
-        for trace in final
+        float(trace.metrics.get("detected_bloat_ratio", 0.0)) for trace in final
     ]
     by_task: dict[str, list[tuple[float, float]]] = defaultdict(list)
     for trace, truth_value, measured_value in zip(final, truth, measured):
         by_task[trace.task_id].append((truth_value, measured_value))
-    task_correlations = [
-        correlation
-        for pairs in by_task.values()
-        if (
-            correlation := spearman_correlation(
-                [pair[0] for pair in pairs],
-                [pair[1] for pair in pairs],
-            )
-        )
-        is not None
-    ]
+    absolute_errors = [abs(a - b) for a, b in zip(truth, measured)]
+    differences = [b - a for a, b in zip(truth, measured)]
+    calibration = linear_calibration(measured, truth)
+    rho_ci = cluster_bootstrap_interval(
+        by_task,
+        lambda pairs: spearman_correlation(
+            [pair[0] for pair in pairs],
+            [pair[1] for pair in pairs],
+        ),
+    )
     return {
         "sample_size": len(final),
         "task_sample_size": len(by_task),
+        "reference_type": reference_type,
         "spearman_rho": spearman_correlation(truth, measured),
-        "task_mean_spearman_rho": (
-            mean(task_correlations) if task_correlations else None
-        ),
-        "spearman_rho_ci95": bootstrap_mean_interval(task_correlations),
-        "mean_ground_truth_bloat_ratio": mean(truth) if truth else None,
+        "spearman_rho_ci95": rho_ci,
+        "mean_absolute_error": mean(absolute_errors) if absolute_errors else None,
+        "mean_reference_bloat_ratio": mean(truth) if truth else None,
         "mean_measured_bloat_ratio": mean(measured) if measured else None,
+        "calibration": calibration,
+        "bland_altman": bland_altman(differences),
     }
 
 
@@ -181,7 +196,7 @@ def evaluate_mitigation(
         float(bool(after.task_success)) - float(bool(before.task_success))
         for before, after in pairs
     ]
-    cluster_values: dict[tuple[str, str], dict[str, list[float]]] = defaultdict(
+    cluster_values: dict[str, dict[str, list[float]]] = defaultdict(
         lambda: {"tokens": [], "ratios": [], "success": []}
     )
     for reduction, ratio, success, (before, _) in zip(
@@ -190,7 +205,7 @@ def evaluate_mitigation(
         success_differences,
         pairs,
     ):
-        cluster = cluster_values[(before.framework, before.task_id)]
+        cluster = cluster_values[before.task_id]
         cluster["tokens"].append(reduction)
         cluster["ratios"].append(ratio)
         cluster["success"].append(success)
@@ -236,8 +251,112 @@ def evaluate_mitigation(
             "improved": improved,
             "degraded": degraded,
             "exact_p_value": mcnemar_exact_p_value(improved, degraded),
+            "interpretation": "exploratory_repetition_level_only",
         },
     }
+
+
+def reference_labels(trace: AuditTrace) -> dict[str, tuple[str, ...]]:
+    adjudicated = [
+        annotation
+        for annotation in trace.reference_annotations
+        if annotation.adjudicated and annotation.decision == "remove"
+    ]
+    if adjudicated:
+        return {
+            annotation.segment_id: annotation.reasons or ("context_bloat",)
+            for annotation in adjudicated
+        }
+    if trace.injected_labels:
+        return {
+            segment_id: tuple(labels)
+            for segment_id, labels in trace.injected_labels.items()
+        }
+    return {
+        segment_id: tuple(labels)
+        for segment_id, labels in trace.ground_truth_labels.items()
+    }
+
+
+def reference_bloat_ratio(trace: AuditTrace) -> float:
+    reference_ids = set(reference_labels(trace))
+    total = sum(segment.token_count for segment in trace.segments)
+    bloated = sum(
+        segment.token_count
+        for segment in trace.segments
+        if segment.segment_id in reference_ids
+    )
+    return bloated / total if total else 0.0
+
+
+def linear_calibration(
+    predictor: list[float],
+    outcome: list[float],
+) -> dict[str, float | None]:
+    if len(predictor) != len(outcome) or len(predictor) < 2:
+        return {"intercept": None, "slope": None}
+    predictor_mean = mean(predictor)
+    denominator = sum((value - predictor_mean) ** 2 for value in predictor)
+    if denominator == 0:
+        return {"intercept": mean(outcome), "slope": None}
+    slope = sum(
+        (x - predictor_mean) * (y - mean(outcome))
+        for x, y in zip(predictor, outcome)
+    ) / denominator
+    return {
+        "intercept": mean(outcome) - slope * predictor_mean,
+        "slope": slope,
+    }
+
+
+def bland_altman(differences: list[float]) -> dict[str, float | None]:
+    if not differences:
+        return {
+            "mean_bias": None,
+            "lower_limit_of_agreement": None,
+            "upper_limit_of_agreement": None,
+        }
+    bias = mean(differences)
+    if len(differences) == 1:
+        standard_deviation = 0.0
+    else:
+        standard_deviation = math.sqrt(
+            sum((value - bias) ** 2 for value in differences)
+            / (len(differences) - 1)
+        )
+    return {
+        "mean_bias": bias,
+        "lower_limit_of_agreement": bias - 1.96 * standard_deviation,
+        "upper_limit_of_agreement": bias + 1.96 * standard_deviation,
+    }
+
+
+def cluster_bootstrap_interval(
+    values_by_task: dict[str, list[tuple[float, float]]],
+    statistic: Callable[[list[tuple[float, float]]], float | None],
+    *,
+    samples: int = BOOTSTRAP_SAMPLES,
+    seed: int = BOOTSTRAP_SEED,
+) -> list[float] | None:
+    task_ids = sorted(values_by_task)
+    if not task_ids:
+        return None
+    generator = random.Random(seed)
+    estimates: list[float] = []
+    for _ in range(samples):
+        sampled: list[tuple[float, float]] = []
+        for _ in task_ids:
+            sampled.extend(values_by_task[task_ids[generator.randrange(len(task_ids))]])
+        value = statistic(sampled)
+        if value is not None:
+            estimates.append(float(value))
+    if not estimates:
+        return None
+    estimates.sort()
+    return [
+        estimates[math.floor((len(estimates) - 1) * 0.025)],
+        estimates[math.ceil((len(estimates) - 1) * 0.975)],
+    ]
 
 
 def spearman_correlation(left: list[float], right: list[float]) -> float | None:

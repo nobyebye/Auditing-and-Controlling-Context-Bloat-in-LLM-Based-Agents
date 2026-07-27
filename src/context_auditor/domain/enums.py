@@ -10,6 +10,7 @@ class SourceType(StrEnum):
     RETRIEVAL = "retrieval"
     MEMORY = "memory"
     TOOL = "tool"
+    TOOL_SCHEMA = "tool_schema"
     GENERATED_TRACE = "generated_trace"
     OTHER = "other"
 

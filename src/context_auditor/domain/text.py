@@ -14,6 +14,7 @@ BEARER_RE = re.compile(r"(?i)\bBearer\s+[A-Za-z0-9._~+/=-]+")
 SECRET_RE = re.compile(
     r"(?i)\b(api[_ -]?key|authorization|access[_ -]?token|secret)\b(\s*[:=]\s*)([^\s,;]+)"
 )
+LONG_HEX_SECRET_RE = re.compile(r"(?i)\b[a-f0-9]{32,}\b")
 
 
 def normalize_text(text: str) -> str:
@@ -31,6 +32,7 @@ def normalized_hash(text: str) -> str:
 def redact_text(text: str) -> str:
     redacted = BEARER_RE.sub("Bearer [REDACTED]", text)
     redacted = SECRET_RE.sub(lambda match: f"{match.group(1)}{match.group(2)}[REDACTED]", redacted)
+    redacted = LONG_HEX_SECRET_RE.sub("[REDACTED_SECRET]", redacted)
     redacted = EMAIL_RE.sub("[REDACTED_EMAIL]", redacted)
     return PHONE_RE.sub("[REDACTED_PHONE]", redacted)
 
