@@ -5,6 +5,7 @@ from __future__ import annotations
 import csv
 import hashlib
 import json
+import random
 import zipfile
 from dataclasses import replace
 from pathlib import Path
@@ -16,6 +17,10 @@ from context_auditor.adapters.storage.serialization import write_json_atomic
 from context_auditor.application.agreement import (
     VALID_DECISIONS,
     annotation_agreement,
+)
+from context_auditor.application.annotation_workbooks import (
+    read_annotation_workbooks,
+    write_annotation_workbook,
 )
 from context_auditor.application.study_bundle import validate_study_bundle
 from context_auditor.domain.models import AuditTrace, ReferenceAnnotation, SCHEMA_VERSION
@@ -30,8 +35,12 @@ ANNOTATION_REASONS = frozenset(
         "other",
     }
 )
+ANNOTATION_PROTECTED_SOURCES = frozenset({"system", "user", "tool_schema"})
 
 REVIEW_FIELDS = (
+    "block_id",
+    "block_started_at",
+    "block_completed_at",
     "sample_id",
     "segment_key",
     "task_prompt",
@@ -77,6 +86,8 @@ def export_context_annotation_packages(
         sample_id = opaque_id(annotation_set_id, trace.trace_id)
         prompt = user_prompt(trace)
         for segment in trace.segments:
+            if not annotation_eligible_segment(segment):
+                continue
             segment_key = opaque_id(
                 annotation_set_id,
                 f"{trace.trace_id}:{segment.segment_id}",
@@ -113,8 +124,29 @@ def export_context_annotation_packages(
                 }
             )
     destination.mkdir(parents=True)
-    write_csv(destination / "reviewer_a.csv", REVIEW_FIELDS, rows)
-    write_csv(destination / "reviewer_b.csv", REVIEW_FIELDS, rows)
+    reviewer_rows = {}
+    for reviewer in ("a", "b"):
+        ordered, blocks = randomized_context_blocks(
+            rows,
+            annotation_set_id=annotation_set_id,
+            reviewer=reviewer,
+            contexts_per_block=10,
+        )
+        reviewer_rows[reviewer] = ordered
+        write_csv(
+            destination / f"reviewer_{reviewer}.csv",
+            REVIEW_FIELDS,
+            ordered,
+        )
+        block_dir = destination / f"reviewer_{reviewer}_blocks"
+        for block_id, block_rows in blocks:
+            write_annotation_workbook(
+                block_dir / f"{block_id}.xlsx",
+                fields=REVIEW_FIELDS,
+                rows=block_rows,
+                block_id=block_id,
+                decision_values=tuple(sorted(VALID_DECISIONS)),
+            )
     write_csv(
         destination / "answer_key.csv",
         tuple(answer_key[0]),
@@ -130,6 +162,12 @@ def export_context_annotation_packages(
             "trace_count": len(selected),
             "segment_count": len(rows),
             "reviewer_overlap": "100%",
+            "contexts_per_block": 10,
+            "reviewer_order_randomized_independently": True,
+            "session_rule": {
+                "maximum_blocks_per_session": 2,
+                "minimum_break_minutes": 10,
+            },
             "include_splits": list(include_splits),
             "decision_values": sorted(VALID_DECISIONS),
             "reason_values": sorted(ANNOTATION_REASONS),
@@ -156,8 +194,8 @@ def adjudicate_annotation_files(
     *,
     annotation_set_id: str,
 ) -> Path:
-    reviewer_a = read_csv(Path(reviewer_a_path))
-    reviewer_b = read_csv(Path(reviewer_b_path))
+    reviewer_a = read_annotation_workbooks(reviewer_a_path)
+    reviewer_b = read_annotation_workbooks(reviewer_b_path)
     answer_key = {row["segment_key"]: row for row in read_csv(Path(answer_key_path))}
     agreement = annotation_agreement(reviewer_a, reviewer_b)
     left = completed_by_key(reviewer_a)
@@ -219,9 +257,13 @@ def import_context_annotation_file(
     """Validate and freeze one completed blinded reviewer file."""
     source = Path(reviewer_path)
     answer_path = Path(answer_key_path)
-    rows = read_csv(source)
+    rows = read_annotation_workbooks(source)
     if not rows:
         raise ValueError("The reviewer file is empty")
+    for row in rows:
+        row.setdefault("block_id", "legacy_unblocked")
+        row.setdefault("block_started_at", "not_recorded")
+        row.setdefault("block_completed_at", "not_recorded")
     unexpected_fields = sorted(set(rows[0]) - set(REVIEW_FIELDS))
     missing_fields = sorted(set(REVIEW_FIELDS) - set(rows[0]))
     if unexpected_fields or missing_fields:
@@ -264,7 +306,7 @@ def import_context_annotation_file(
             "annotation_set_id": annotation_set_id,
             "reviewer_id": reviewer_id,
             "annotation_count": len(completed),
-            "source_sha256": file_hash(source),
+            "source_sha256": annotation_input_hash(source),
             "answer_key_sha256": file_hash(answer_path),
             "imported_sha256": file_hash(imported_path),
             "validation": {
@@ -374,9 +416,59 @@ def user_prompt(trace: AuditTrace) -> str:
     )
 
 
+def annotation_eligible_segment(segment) -> bool:
+    return (
+        segment.source_type not in ANNOTATION_PROTECTED_SOURCES
+        and segment.container_type
+        not in {"system_instruction", "tool_definition", "response_format"}
+        and bool(segment.text.strip())
+    )
+
+
 def read_csv(path: Path) -> list[dict[str, str]]:
     with path.open(encoding="utf-8-sig", newline="") as handle:
         return list(csv.DictReader(handle))
+
+
+def randomized_context_blocks(
+    rows: list[dict[str, object]],
+    *,
+    annotation_set_id: str,
+    reviewer: str,
+    contexts_per_block: int,
+) -> tuple[list[dict[str, object]], list[tuple[str, list[dict[str, object]]]]]:
+    by_sample: dict[str, list[dict[str, object]]] = {}
+    for row in rows:
+        by_sample.setdefault(str(row["sample_id"]), []).append(row)
+    sample_ids = sorted(by_sample)
+    random.Random(f"{annotation_set_id}:{reviewer}").shuffle(sample_ids)
+    ordered: list[dict[str, object]] = []
+    blocks: list[tuple[str, list[dict[str, object]]]] = []
+    for block_index in range(0, len(sample_ids), contexts_per_block):
+        block_id = f"block_{block_index // contexts_per_block + 1:02d}"
+        block_rows: list[dict[str, object]] = []
+        for sample_id in sample_ids[
+            block_index : block_index + contexts_per_block
+        ]:
+            context_rows = sorted(
+                by_sample[sample_id],
+                key=lambda item: (
+                    int(item["message_index"]),
+                    int(item["segment_ordinal"]),
+                ),
+            )
+            for row in context_rows:
+                block_rows.append(
+                    {
+                        **row,
+                        "block_id": block_id,
+                        "block_started_at": "",
+                        "block_completed_at": "",
+                    }
+                )
+        ordered.extend(block_rows)
+        blocks.append((block_id, block_rows))
+    return ordered, blocks
 
 
 def write_csv(
@@ -390,3 +482,16 @@ def write_csv(
         writer.writeheader()
         writer.writerows(rows)
     temporary.replace(path)
+
+
+def annotation_input_hash(path: Path) -> str:
+    if path.is_file():
+        return file_hash(path)
+    digest = hashlib.sha256()
+    files = sorted(item for item in path.rglob("*") if item.is_file())
+    if not files:
+        raise ValueError(f"Annotation input directory is empty: {path}")
+    for item in files:
+        digest.update(item.relative_to(path).as_posix().encode("utf-8"))
+        digest.update(item.read_bytes())
+    return digest.hexdigest()

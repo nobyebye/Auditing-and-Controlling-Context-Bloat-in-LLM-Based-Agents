@@ -2,8 +2,8 @@
 
 This note organizes implementation references and papers for the thesis:
 
-**Detecting, Measuring, and Mitigating Context Bloat in LLM-Based Agents: A
-Runtime Auditing Approach**
+**Runtime Auditing of Context Bloat in LLM-Based Agents: Detection,
+Measurement, and Mitigation Evaluation**
 
 The main thesis framing is:
 
@@ -22,6 +22,11 @@ The main thesis framing is:
 | MCP Token Auditor | https://github.com/Ismail-2001/mcp-token-auditor | Small but thematically close token/context auditing project, especially for MCP, context-window usage, and token attribution. |
 
 ## Core Papers to Use
+
+The versioned bibliography currently contains 45 records: 39 scholarly
+journal/conference sources and six engineering repositories or specifications.
+Repository references support implementation comparison; empirical and
+methodological claims should rely on the scholarly sources.
 
 ### 1. Context Bloat Motivation and Long-Context Failure
 
@@ -169,6 +174,33 @@ Link: https://arxiv.org/abs/2402.14034
 
 Use this for agent framework background. It is helpful when discussing how
 frameworks manage messages, tools, memory, and monitoring.
+
+### 6. Closest Independent Validation and Attribution Work
+
+**ContextCite: Attributing Model Generation to Context**  
+Benjamin Cohen-Wang et al., NeurIPS 2024.  
+Link: https://proceedings.neurips.cc/paper_files/paper/2024/hash/adbea136219b64db96a9941e4249a857-Abstract-Conference.html
+
+Use this as the closest context-attribution comparison. It localizes which
+context parts influence model generation and includes pruning as an
+application, but it does not replace provenance capture or independent
+annotation of agent-constructed context.
+
+**ProCut: LLM Prompt Compression via Attribution Estimation**  
+Zhentao Xu et al., EMNLP Industry 2025.  
+Link: https://aclanthology.org/2025.emnlp-industry.20/
+
+Use this as a strong attribution-based compression comparison. It reinforces
+the need to report task utility together with reduction.
+
+**ARES: An Automated Evaluation Framework for Retrieval-Augmented Generation
+Systems**  
+Jon Saad-Falcon et al., NAACL 2024.  
+Link: https://aclanthology.org/2024.naacl-long.20/
+
+Use this to motivate combining automated evaluation with a limited independent
+human reference rather than treating synthetic or model-generated labels as
+fully independent evidence.
 
 ## Emerging but Optional Papers
 

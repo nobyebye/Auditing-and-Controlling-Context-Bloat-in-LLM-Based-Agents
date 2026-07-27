@@ -35,8 +35,10 @@ def execute_natural_workflow(
     retrieval_top_k: int,
     memory_top_k: int,
     generation,
-    max_tool_invocations: int,
+    max_provider_invocations_per_tool_cell: int,
+    randomization_seed: int,
     invoke: Callable[[ModelRequestEnvelope], ProviderResponse],
+    on_invocation: Callable[[NaturalInvocation], None] | None = None,
 ) -> tuple[NaturalInvocation, ...]:
     request = build_natural_request(
         task,
@@ -44,23 +46,84 @@ def execute_natural_workflow(
         retrieval_top_k=retrieval_top_k,
         memory_top_k=memory_top_k,
         generation=generation,
+        randomization_seed=randomization_seed,
+    )
+    request = with_call_metadata(
+        request,
+        task=task,
+        framework=framework,
+        invocation_index=0,
     )
     response = invoke(request)
     if task["workflow_family"] != "multi_step_tool":
         scoring = score_response(task, response.content)
-        return (NaturalInvocation(request, response, True, scoring),)
+        invocation = NaturalInvocation(request, response, True, scoring)
+        if on_invocation:
+            on_invocation(invocation)
+        return (invocation,)
     tool_scoring = score_tool_calls(task, response)
-    if max_tool_invocations == 1 or not response.tool_calls:
-        return (NaturalInvocation(request, response, True, tool_scoring),)
+    if max_provider_invocations_per_tool_cell == 1 or not response.tool_calls:
+        invocation = NaturalInvocation(request, response, True, tool_scoring)
+        if on_invocation:
+            on_invocation(invocation)
+        return (invocation,)
+    first = NaturalInvocation(request, response, False, None)
+    if on_invocation:
+        on_invocation(first)
+    follow_up = build_tool_follow_up_request(
+        request,
+        task=task,
+        framework=framework,
+        tool_calls=response.tool_calls,
+        assistant_content=response.content,
+    )
+    final_response = invoke(follow_up)
+    if final_response.dispatch_error_type:
+        tool_scoring = replace(
+            tool_scoring,
+            success=False,
+            score=0.0,
+            details={
+                **tool_scoring.details,
+                "termination_reason": "provider_dispatch_failed",
+                "error_type": final_response.dispatch_error_type,
+            },
+        )
+    elif final_response.tool_calls:
+        tool_scoring = replace(
+            tool_scoring,
+            success=False,
+            score=0.0,
+            details={
+                **tool_scoring.details,
+                "termination_reason": (
+                    "provider_invocation_cap_reached_before_third_dispatch"
+                ),
+            },
+        )
+    final = NaturalInvocation(follow_up, final_response, True, tool_scoring)
+    if on_invocation:
+        on_invocation(final)
+    return (first, final)
+
+
+def build_tool_follow_up_request(
+    request: ModelRequestEnvelope,
+    *,
+    task: dict,
+    framework: str,
+    tool_calls: tuple,
+    assistant_content: str = "",
+) -> ModelRequestEnvelope:
     follow_up_messages = [
         *request.messages,
         Message(
             "assistant",
-            response.content or "[tool call]",
+            assistant_content or "[tool call]",
             metadata={"source_type": "generated_trace"},
         ),
     ]
-    for call in response.tool_calls:
+    for call in tool_calls:
         follow_up_messages.append(
             Message(
                 "tool",
@@ -79,11 +142,11 @@ def execute_natural_workflow(
             metadata={"source_type": "framework"},
         )
     )
-    follow_up = replace(request, messages=tuple(follow_up_messages))
-    final_response = invoke(follow_up)
-    return (
-        NaturalInvocation(request, response, False, None),
-        NaturalInvocation(follow_up, final_response, True, tool_scoring),
+    return with_call_metadata(
+        replace(request, messages=tuple(follow_up_messages)),
+        task=task,
+        framework=framework,
+        invocation_index=1,
     )
 
 
@@ -94,6 +157,7 @@ def build_natural_request(
     retrieval_top_k: int,
     memory_top_k: int,
     generation,
+    randomization_seed: int | None = None,
 ) -> ModelRequestEnvelope:
     messages = [
         Message(
@@ -167,9 +231,32 @@ def build_natural_request(
         messages=tuple(messages),
         tools=tools,
         generation_parameters=generation,
+        randomization_seed=randomization_seed,
+        provider_seed=None,
         metadata={
             "source_dataset": task.get("source_dataset"),
             "source_record_id": task.get("source_record_id"),
+        },
+    )
+
+
+def with_call_metadata(
+    request: ModelRequestEnvelope,
+    *,
+    task: dict,
+    framework: str,
+    invocation_index: int,
+) -> ModelRequestEnvelope:
+    cell_id = f"{task['task_id']}__{framework}"
+    return replace(
+        request,
+        metadata={
+            **request.metadata,
+            "cell_id": cell_id,
+            "task_id": task["task_id"],
+            "framework": framework,
+            "arm": "natural_unmodified",
+            "provider_invocation_index": invocation_index,
         },
     )
 

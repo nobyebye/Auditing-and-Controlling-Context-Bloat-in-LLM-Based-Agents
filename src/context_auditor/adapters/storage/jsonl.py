@@ -111,6 +111,9 @@ def trace_from_dict(data: dict) -> AuditTrace:
         generation_parameters=(
             GenerationParameters(**generation) if generation else GenerationParameters()
         ),
+        randomization_seed=data.get("randomization_seed"),
+        replicate_id=data.get("replicate_id"),
+        provider_seed=data.get("provider_seed"),
         injected_labels=injected_labels,
         ground_truth_labels=legacy_ground_truth,
         detected_labels={
@@ -151,5 +154,8 @@ def envelope_from_dict(data: dict | None) -> ModelRequestEnvelope | None:
             GenerationParameters(**generation) if generation else GenerationParameters()
         ),
         response_format=data.get("response_format", {}),
+        randomization_seed=data.get("randomization_seed"),
+        replicate_id=data.get("replicate_id"),
+        provider_seed=data.get("provider_seed"),
         metadata=data.get("metadata", {}),
     )

@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 from pathlib import Path
 
 from context_auditor.adapters.storage.runs import file_hash
@@ -10,11 +9,13 @@ from context_auditor.adapters.storage.serialization import (
     dumps,
     write_json_atomic,
 )
-from context_auditor.application.analysis import AnalyzeBloat
-from context_auditor.application.conclusions import BuildRQEvidence
 from context_auditor.application.external_annotations import (
+    annotation_eligible_segment,
     attach_adjudicated_annotations,
     load_bundle,
+)
+from context_auditor.application.external_statistics import (
+    build_study_b_statistics,
 )
 from context_auditor.domain.models import SCHEMA_VERSION
 
@@ -52,7 +53,11 @@ class BuildExternalEvidence:
         incomplete = [
             trace.trace_id
             for trace in final_natural
-            if len(trace.reference_annotations) != len(trace.segments)
+            if len(trace.reference_annotations)
+            != sum(
+                annotation_eligible_segment(segment)
+                for segment in trace.segments
+            )
         ]
         if incomplete:
             raise ValueError(
@@ -60,16 +65,57 @@ class BuildExternalEvidence:
                 "segment; incomplete traces: "
                 + ", ".join(incomplete[:10])
             )
-        summary = AnalyzeBloat().execute(annotated)
-        rules = json.loads(
-            (
-                self.project_root
-                / "configs"
-                / "conclusions"
-                / "rq_rules_v2.json"
-            ).read_text(encoding="utf-8")
-        )
-        evidence = BuildRQEvidence().execute(summary, rules)
+        statistics = build_study_b_statistics(final_natural)
+        summary = {
+            "schema_version": SCHEMA_VERSION,
+            "study": "B",
+            "trace_count": len(final_natural),
+            "independent_task_count": len(
+                {trace.task_id for trace in final_natural}
+            ),
+            "frameworks": sorted(
+                {trace.framework for trace in final_natural}
+            ),
+            "statistics": statistics,
+        }
+        primary = statistics["by_policy"]["primary"]
+        evidence = {
+            "schema_version": SCHEMA_VERSION,
+            "study": "B",
+            "conclusion_policy": (
+                "Effect estimates, confidence intervals, sample sizes, and "
+                "error patterns are reported without Supported/Not-supported "
+                "threshold labels."
+            ),
+            "research_questions": {
+                "RQ1": {
+                    "evidence_type": "independent_human_reference",
+                    "metrics": primary[
+                        "rq1_detection_and_localization"
+                    ],
+                },
+                "RQ2": {
+                    "human_reference_validity": primary[
+                        "rq2_human_measurement_validity"
+                    ],
+                    "counterfactual_validity": (
+                        "reported separately in Study C"
+                    ),
+                },
+                "RQ3": {
+                    "evidence_type": "descriptive_natural_trace",
+                    "metrics": primary["rq3_source_patterns"],
+                },
+                "RQ4": {
+                    "evidence_type": "not_evaluated_in_study_b",
+                },
+            },
+            "uncertain_sensitivity": {
+                key: value
+                for key, value in statistics["by_policy"].items()
+                if key != "primary"
+            },
+        }
         destination.mkdir(parents=True)
         write_json_atomic(destination / "summary.json", summary)
         write_json_atomic(destination / "rq_evidence.json", evidence)

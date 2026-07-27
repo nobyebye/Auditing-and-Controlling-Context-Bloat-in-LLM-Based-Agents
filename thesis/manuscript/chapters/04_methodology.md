@@ -52,39 +52,52 @@ requires at most 160 provider calls. No duplicate, relevance, stale-memory, or
 verbosity label is embedded in task messages. The external runner rejects any
 message containing Study A bloat metadata.
 
-Two annotators independently label every segment in all 120 final contexts.
+Two human annotators independently label every eligible segment in all 120
+final contexts.
 They see the task, ordered role, and text, but not task ID, framework,
 provenance source, detector output, model answer, or automatic score. Each
 segment receives `keep`, `remove`, or `uncertain`, one or more reason codes, and
 a confidence value. Reasons are exact duplicate, near duplicate, low query
 relevance, stale or conflicting context, verbose tool output, and other.
 Agreement is calculated before discussion; disagreements are then adjudicated
-without replacing the two original files.
+without replacing the two original files. The primary analysis excludes
+`uncertain`; sensitivity analysis A treats it as `keep/non-bloat`, and
+sensitivity analysis B treats it as `remove/bloat`.
 
 ### Study C: counterfactual and mitigation evaluation
 
-The counterfactual component selects three eligible contexts from every
-workflow-framework combination, for 18 contexts in total. Each contributes an
-unmodified request, a request with one consensus `remove` segment deleted, and
-a request with a token-matched consensus `keep` segment deleted. All three
-variants are executed with seeds `20260727` and `20260728`, giving 108 calls.
-A candidate is classified as counterfactually removable only if both deletion
-repetitions succeed and neither score is below its paired unmodified baseline.
+The counterfactual component selects at most three eligible contexts from every
+workflow-framework combination, for no more than 18 contexts. Candidates come
+only from adjudicated `REMOVE` segments that are non-empty, automatically
+constructed, non-protected, and paired with an adjudicated `KEEP` segment from
+the same source. Each context contributes an original request, a request with
+the selected `REMOVE` segment deleted, and a request with the closest-length
+`KEEP` segment deleted. All variants receive two independent provider
+replicates under fixed decoding parameters, giving at most 108 calls. The
+selected segment is counterfactually removable only if both original
+replicates and both candidate-removal replicates receive adjudicated successful
+outcomes. If fewer than 18 contexts qualify, the observed count is reported
+without changing the selection rule.
 
-The mitigation component preselects ten task IDs per workflow. Both frameworks
-are replayed under `unmodified`, `provenance_aware`, and
-`llmlingua2_budget_matched`, giving 180 calls. LLMLingua-2 is an extractive,
-task-agnostic compression baseline [@pan2024llmlingua2]. It receives the same
-managed-source token budget retained by the provenance-aware arm. System and
-user instructions, response contracts, and tool definitions are protected.
-Two annotators score all 180 mitigation outputs while condition and automatic
+The mitigation component preselects ten task IDs per workflow without using
+detector or annotation results. Both frameworks are replayed under
+`unmodified`, `provenance_aware`, and `llmlingua2_budget_matched`, giving 180
+calls. Every arm is a single controlled completion from the same captured final
+context; retrieval, memory, and tool loops are not rerun. LLMLingua-2 is an
+extractive, task-agnostic compression baseline [@pan2024llmlingua2]. It receives
+the same canonical serialized managed-content token budget retained by the
+provenance-aware arm, with tolerance `max(2 tokens, 2%)`. System and user
+instructions, response contracts, and tool definitions are protected. Two
+human annotators score all 288 Study C outputs while condition and automatic
 score remain hidden.
 
-Study B and Study C share a persistent, process-locked ledger capped at 500
-HTTP attempts. Their frozen maximum is 448, leaving 52 attempts for failures or
-documented recovery. The 501st reservation fails before a provider request can
-be created. API failures remain failures under intention-to-treat analysis; a
-completed-run analysis is secondary.
+Calibration, Study B, and Study C share a persistent, process-locked ledger
+capped at 500 provider invocations. Their primary maxima are 32, 160, and 288,
+respectively, leaving 20 calls reserved for ordered manual retries of timeout,
+429, or 5xx failures. Every dispatch is reserved before network I/O; failures
+and retries consume the ledger. The 501st reservation fails before dispatch.
+The initial request remains a failure under intention-to-treat analysis;
+successful manual retries enter only a completed-run sensitivity analysis.
 
 Figure 4.1 summarizes the three-study design.
 
@@ -111,19 +124,25 @@ provider-internal transformations.
 
 Study A uses `deepseek-v4-flash`, temperature 0.0, a maximum output length of
 256 tokens, and the archived schema-1.1 configurations. Study B and Study C use
-the same provider condition with schema 1.2.0, temperature 0.0, a 256-token
-output limit, a 90-second timeout, and no automatic retry. Disabling retries
-makes the call ledger and intention-to-treat denominator unambiguous. The exact
+the same provider condition with schema 1.2.1, temperature 0.0, a 256-token
+output limit, disabled thinking, a 90-second timeout, and no automatic retry.
+DeepSeek does not expose a documented reproducible seed for this model, so
+`provider_seed` is null and repeated calls are described as independent
+provider replicates. Disabling retries makes the call ledger and
+intention-to-treat denominator unambiguous. The exact
 model identifier, provider, call date, generation parameters, dependency
 versions, configuration hash, dataset hash, and Git commit are retained in
 each run manifest.
 
 Every run receives a unique non-overwriting directory and begins in `running`
 state. Completion records output-file SHA-256 values, token usage, estimated
-cost, and status. Real Study B/C runs require a clean worktree and an externally
-timestamped OSF registration containing the frozen protocol, codebook,
-configuration, conclusion rules, schema, and dataset manifest. Study A predates
-this procedure and is described as frozen, not preregistered.
+cost, and status. Resume first verifies protocol, config, dataset, bundle,
+annotation, and dependency hashes; completed cells are skipped without
+overwriting traces. A reservation without an outcome is conservatively treated
+as attempted. Real calibration requires an initial OSF registration. Held-out
+Study B/C calls additionally require a calibration addendum containing the
+frozen codebook and detector settings. Study A predates this procedure and is
+described as frozen, not preregistered.
 
 Persisted requests use redacted mode. Full text is permitted only as an
 explicit private condition, while hash-only traces cannot be used for textual
@@ -136,28 +155,38 @@ The independent analysis unit is the 60 held-out `task_id` values. Framework,
 intervention, invocation, and repetition are within-task observations.
 Confidence intervals use 10,000 deterministic hierarchical bootstrap samples:
 task IDs are sampled with replacement, and all observations belonging to each
-sampled task remain together.
+sampled task remain together. This applies the bootstrap principle
+[@efron1979bootstrap] at the actual independence level rather than treating
+frameworks or replicates as new tasks.
 
-RQ1 reports binary segment precision, recall, and F1; task-macro binary F1;
-reason-subtype metrics; and segment localization accuracy. Binary localization
-requires the correct segment, not the same reason name. Study A results are
-reported separately as injected-rule consistency. Study B results use only
-adjudicated human `remove` segments as the reference.
+For RQ1, a human-positive context contains at least one eligible adjudicated
+`REMOVE` segment, while a detector-positive context contains at least one
+detector-positive eligible segment. Contexts with no eligible segment after
+primary uncertain exclusion are omitted. RQ1 reports context sensitivity,
+specificity, precision, and F1; task-macro segment precision, recall, and F1;
+token-weighted localization IoU; task-cluster 95% confidence intervals; and the
+false-positive rate among tasks with no human-positive context. Study A remains
+separate injected-rule consistency evidence.
 
 For RQ2, the Human Bloat Ratio is the token share of adjudicated `remove`
 segments in a final request. It is compared with the detected token share using
 Spearman correlation, mean absolute error, calibration intercept and slope,
-and Bland-Altman mean bias and limits of agreement. The former composite
+and Bland-Altman mean bias and limits of agreement
+[@bland1986agreement]. The former composite
 measure `max(RR, NRR, DBR)` is excluded because it contains detector output and
 cannot independently validate the detector. Counterfactual removability is
 reported as a separate behavioral result rather than folded into the same
 ratio.
 
 RQ3 reports controlled injected ratios and natural human-reference ratios in
-separate tables. Source and workflow means include task-cluster bootstrap
-intervals. Pairwise workflow contrasts include mean differences and Hedges'
-$g$. A ranking is written as an observation under the sampled tasks and
-context-construction policy, not as a general causal ordering.
+separate tables. Its sole primary ranking statistic is adjudicated REMOVE
+tokens for a source divided by all eligible annotated tokens for that source.
+The two frameworks are combined within task before aggregation across task
+IDs. Missing sources are NA. A paired source-difference interval containing
+zero is described as "indistinguishable at the prespecified confidence level",
+not as equivalence. Study A and Study B rankings are compared only with
+Kendall's tau-b [@kendall1945ties], and source/workflow confounding prevents a causal
+interpretation.
 
 RQ4 pairs each mitigation arm with the unmodified request within task and
 framework. Outcomes are context-token reduction, provider-reported cost,
@@ -170,7 +199,9 @@ $$
 
 Non-inferiority is established at the main margin only if the lower 95%
 confidence bound is at least -0.05. Sensitivity analyses repeat the decision at
--0.02 and -0.10. A task-clustered logistic GEE is reported as a validation
+-0.02 and -0.10. These margins are reported as sensitivity evidence rather
+than proof of equivalence [@piaggio2012noninferiority]. A task-clustered
+logistic GEE [@liang1986gee] is reported as a validation
 analysis; if the contrast is non-estimable, that fact is retained rather than
 converted to a finite value. Study A's repetition-level McNemar result remains
 exploratory.
@@ -186,18 +217,23 @@ or accept misleading ones.
 
 ## 4.4 Human Evaluation, Ethics, and Validity
 
-Context annotation uses 100% reviewer overlap. Before adjudication, the study
-reports percent agreement, Cohen's kappa, Gwet's AC1, and nominal
+Context annotation uses 100% overlap by two human reviewers. Before
+adjudication, the study reports percent agreement, Cohen's kappa
+[@cohen1960coefficient], Gwet's AC1 [@gwet2008variance], and nominal
 Krippendorff's alpha. Outcome annotation uses the same overlap and agreement
-procedure. Original reviewer files, answer keys, adjudication decisions, input
-hashes, and agreement reports are retained as distinct artifacts.
+procedure. Study B workbooks contain ten contexts; Study C workbooks contain 24
+outputs; Study A workbooks contain 30 outputs. Each session is limited to two
+blocks followed by at least a ten-minute break. Block timestamps support a
+fatigue trend check. Original reviewer files, answer keys, adjudication
+decisions, input hashes, and agreement reports are retained as distinct
+artifacts.
 
 The main construct-validity risk is that context bloat is not directly
 observable. A human `remove` judgement may still be wrong, and removability can
 depend on a particular model sample. The evidence hierarchy addresses this
 without claiming to eliminate it: injected patterns validate software,
 independent annotations validate perceived avoidability, and counterfactual
-deletion tests utility under two fixed repetitions.
+deletion tests utility under two independent provider replicates.
 
 Internal validity benefits from frozen IDs, shared configurations, payload
 hashes, task-cluster analysis, and intention-to-treat handling. Remaining risks
@@ -212,7 +248,7 @@ synthetic fixtures but do not represent every deployed retriever, memory
 system, or external API. Findings are therefore scoped to observed traces.
 
 For conclusion validity, three repetitions in Study A and two counterfactual
-seeds do not create new independent tasks. All uncertainty calculations retain
+replicates do not create new independent tasks. All uncertainty calculations retain
 `task_id` as the cluster. The -5 percentage-point margin is interpreted as at
 most one additional failure per twenty tasks rather than presented as a
 domain-independent standard. Information-preservation research similarly

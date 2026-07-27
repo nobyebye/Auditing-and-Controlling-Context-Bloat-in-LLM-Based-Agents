@@ -80,14 +80,15 @@ counterfactual removability. Only the last concept directly tests whether a
 candidate segment can be removed without an observed utility loss under the
 specified replay conditions.
 
-The Study C counterfactual suite selects 18 contexts, with three contexts from
-each workflow-by-framework combination. Each selected context is paired with
-one consensus `remove` segment and one token-length-matched consensus `keep`
-segment. The original request, candidate-removal request, and necessary-segment
-removal request are each replayed with two fixed seeds, yielding 108 calls. A
-candidate is classified as counterfactually removable only when both
-candidate-removal repetitions preserve task success relative to the original.
-Removing the matched `keep` segment acts as a negative control.
+The Study C counterfactual suite selects at most 18 contexts, with no more than
+three contexts from each workflow-by-framework combination. Each selected
+context is paired with one adjudicated `REMOVE` segment and one closest-length
+adjudicated `KEEP` segment from the same source. The original,
+candidate-removal, and matched-control requests each receive two independent
+provider replicates under fixed decoding parameters, yielding at most 108
+calls. A candidate is classified as counterfactually removable only when both
+original and both candidate-removal outputs receive adjudicated successful
+outcomes. Removing the matched `KEEP` segment acts as a negative control.
 
 This design does not turn counterfactual removability into a universal fact.
 The result remains conditional on the task definition, model, request
@@ -128,7 +129,7 @@ efficiency-utility trade-off auditable.
 
 The first implication concerns the capture boundary. Framework callbacks can
 observe messages before a provider adapter serializes them, while application
-logs may record only user input and final output. Version 1.2 therefore stores
+logs may record only user input and final output. Version 1.2.1 therefore stores
 both a framework-side `ModelRequestEnvelope` and a redacted
 `ProviderRequestRecord`. Their canonical hashes reveal whether the two
 representations differ. For the DeepSeek adapter, the provider record is

@@ -1,0 +1,60 @@
+{
+  "schema_version": "1.2.1",
+  "experiment_id": "external-validation-study-c-mock-v1.2.1",
+  "provider": "mock",
+  "model": "mock-v1",
+  "randomization_seed": 20260727,
+  "replicate_ids": ["replicate-a", "replicate-b"],
+  "call_budget": 500,
+  "call_ledger_path": "runs/studies/external-validation-v1.2.1-mock-ledger.jsonl",
+  "counterfactual_per_workflow_framework": 3,
+  "privacy_mode": "redacted",
+  "llmlingua_model": "deterministic-offline-test-backend",
+  "llmlingua_model_revision": "mock-revision",
+  "mitigation_task_ids": {
+    "retrieval_qa": [
+      "hotpot-5a78d2b955429974737f78c0",
+      "hotpot-5ae4c5595542990ba0bbb123",
+      "hotpot-5ac2acff55429921a00ab02b",
+      "hotpot-5ae531ee5542990ba0bbb1ff",
+      "hotpot-5a7c68575542996dd594b91c",
+      "hotpot-5abdff775542993f32c2a082",
+      "hotpot-5ac42ae45542997ea680ca18",
+      "hotpot-5ab587ad5542992aa134a34b",
+      "hotpot-5adf72335542992d7e9f935f",
+      "hotpot-5abcf46255429959677d6b6b"
+    ],
+    "memory_turns": [
+      "longmem-c14c00dd",
+      "longmem-5e1b23de",
+      "longmem-eace081b",
+      "longmem-d682f1a2",
+      "longmem-d596882b",
+      "longmem-1c0ddc50",
+      "longmem-ccb36322",
+      "longmem-8077ef71",
+      "longmem-a1eacc2a",
+      "longmem-8cf4d046"
+    ],
+    "multi_step_tool": [
+      "bfcl-multi_turn_base_41",
+      "bfcl-multi_turn_base_137",
+      "bfcl-multi_turn_base_105",
+      "bfcl-multi_turn_base_88",
+      "bfcl-multi_turn_base_49",
+      "bfcl-multi_turn_base_190",
+      "bfcl-multi_turn_base_48",
+      "bfcl-multi_turn_base_55",
+      "bfcl-multi_turn_base_111",
+      "bfcl-multi_turn_base_97"
+    ]
+  },
+  "generation": {
+    "temperature": 0.0,
+    "max_output_tokens": 256,
+    "timeout_seconds": 90,
+    "max_retries": 0,
+    "thinking": "disabled",
+    "tool_choice": "none"
+  }
+}

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import importlib.metadata
+import json
 import platform
 import subprocess
 from dataclasses import dataclass, replace
@@ -52,6 +53,9 @@ class RunRegistry:
         seed: int,
         repetition_id: int,
         run_id: str | None = None,
+        protocol_hash: str | None = None,
+        source_bundle_hash: str | None = None,
+        annotation_hash: str | None = None,
     ) -> tuple[RunPaths, RunManifest]:
         git_commit = current_git_commit()
         selected_id = run_id or DefaultIdGenerator().new_run_id(
@@ -84,9 +88,61 @@ class RunRegistry:
             dataset_hash=dataset_hash,
             seed=seed,
             repetition_id=repetition_id,
+            protocol_hash=protocol_hash,
+            source_bundle_hash=source_bundle_hash,
+            annotation_hash=annotation_hash,
+            dependency_hash=dependency_snapshot_hash(),
         )
         write_json_atomic(paths.manifest, manifest)
         return paths, manifest
+
+    def resume(
+        self,
+        *,
+        experiment_id: str,
+        run_id: str,
+        config_hash: str,
+        dataset_hash: str,
+        protocol_hash: str | None = None,
+        source_bundle_hash: str | None = None,
+        annotation_hash: str | None = None,
+    ) -> tuple[RunPaths, RunManifest]:
+        root = self.runs_root / experiment_id / run_id
+        paths = self._paths(root)
+        if not paths.manifest.is_file():
+            raise FileNotFoundError(f"Run manifest does not exist: {paths.manifest}")
+        manifest = manifest_from_dict(
+            json.loads(paths.manifest.read_text(encoding="utf-8"))
+        )
+        expected = {
+            "config_hash": config_hash,
+            "dataset_hash": dataset_hash,
+            "protocol_hash": protocol_hash,
+            "source_bundle_hash": source_bundle_hash,
+            "annotation_hash": annotation_hash,
+            "dependency_hash": dependency_snapshot_hash(),
+        }
+        mismatches = [
+            key
+            for key, value in expected.items()
+            if value is not None and getattr(manifest, key) != value
+        ]
+        if mismatches:
+            raise RuntimeError(
+                "Resume hashes do not match the frozen run: "
+                + ", ".join(sorted(mismatches))
+            )
+        if manifest.status is RunStatus.COMPLETED:
+            return paths, manifest
+        resumed = replace(
+            manifest,
+            status=RunStatus.RUNNING,
+            completed_at=None,
+            failure_reason=None,
+            resume_count=manifest.resume_count + 1,
+        )
+        write_json_atomic(paths.manifest, resumed)
+        return paths, resumed
 
     def complete(
         self,
@@ -119,7 +175,20 @@ class RunRegistry:
 
     @staticmethod
     def _create_layout(root: Path) -> RunPaths:
-        paths = RunPaths(
+        paths = RunRegistry._paths(root)
+        for directory in (
+            paths.log.parent,
+            paths.traces.parent,
+            paths.invocation_metrics.parent,
+            paths.tables,
+            paths.figures,
+        ):
+            directory.mkdir(parents=True, exist_ok=False)
+        return paths
+
+    @staticmethod
+    def _paths(root: Path) -> RunPaths:
+        return RunPaths(
             root=root,
             manifest=root / "manifest.json",
             log=root / "logs" / "run.log",
@@ -131,15 +200,6 @@ class RunRegistry:
             tables=root / "reports" / "tables",
             figures=root / "reports" / "figures",
         )
-        for directory in (
-            paths.log.parent,
-            paths.traces.parent,
-            paths.invocation_metrics.parent,
-            paths.tables,
-            paths.figures,
-        ):
-            directory.mkdir(parents=True, exist_ok=False)
-        return paths
 
     @staticmethod
     def _outputs(paths: RunPaths) -> dict[str, Path]:
@@ -195,12 +255,40 @@ def require_clean_git_worktree(project_root: str | Path) -> None:
 
 def dependency_versions() -> dict[str, str]:
     versions: dict[str, str] = {}
-    for package in ("langchain-core",):
+    for package in (
+        "langchain-core",
+        "llmlingua",
+        "openpyxl",
+        "statsmodels",
+        "tokenizers",
+        "torch",
+        "transformers",
+    ):
         try:
             versions[package] = importlib.metadata.version(package)
         except importlib.metadata.PackageNotFoundError:
             versions[package] = "not-installed"
     return versions
+
+
+def dependency_snapshot_hash() -> str:
+    payload = json.dumps(
+        dependency_versions(),
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8")
+    return hashlib.sha256(payload).hexdigest()
+
+
+def manifest_from_dict(data: dict) -> RunManifest:
+    usage = data.get("token_usage") or {}
+    return RunManifest(
+        **{
+            **data,
+            "status": RunStatus(data["status"]),
+            "token_usage": ProviderUsage(**usage),
+        }
+    )
 
 
 def file_hash(path: Path) -> str:

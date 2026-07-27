@@ -2,8 +2,8 @@
 
 ## Document Identity
 
-**English title:** Detecting, Measuring, and Mitigating Context Bloat in
-LLM-Based Agents: A Runtime Auditing Approach
+**English title:** Runtime Auditing of Context Bloat in LLM-Based Agents:
+Detection, Measurement, and Mitigation Evaluation
 
 **Chinese reference title:** 面向基于大语言模型智能体的上下文膨胀检测、量化与缓解：一种运行时审计方法
 

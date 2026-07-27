@@ -16,9 +16,10 @@ Study A found perfect agreement with 1,122 injected labels, but those labels
 were generated from the same controlled metadata used by the detector. This
 result verifies the internal operation of capture, segmentation, rule
 application, and localization; it is not an estimate of natural-trace
-accuracy. RQ1 requires task-macro precision, recall, F1, and localization
-accuracy against the two-annotator Study B reference labels. Those real-model
-results are pending in this draft, so no external detection claim is made.
+accuracy. RQ1 requires context-level detection metrics, task-macro segment
+precision, recall and F1, and token-weighted localization IoU against the two
+human annotators' Study B reference labels. Those real-model results are
+pending in this draft, so no external detection claim is made.
 
 **RQ2 asks how automated bloat measures agree with independent human judgments
 and counterfactual removability.** Study A's perfect correlation is similarly
@@ -26,8 +27,9 @@ an internal consistency result because the measured and injected ratios share
 the controlled label construction. Version 1.2 instead compares the detected
 token ratio directly with the adjudicated human `remove` ratio using Spearman
 correlation, mean absolute error, calibration slope, and Bland-Altman bias. A
-separate replay labels a segment counterfactually removable only when its
-deletion preserves success in both fixed repetitions. Until those real
+separate replay labels a selected segment counterfactually removable only when
+both original and candidate-removal provider replicates preserve adjudicated
+success. Until those real
 annotations and replays are complete, RQ2 remains empirically unanswered
 outside the controlled benchmark.
 
@@ -66,7 +68,7 @@ counterfactual outcomes. This vocabulary prevents detector output from being
 silently promoted to ground truth.
 
 The second contribution is a runtime auditing framework that records the
-client-side model request. Version 1.2 represents messages, separate system
+client-side model request. Version 1.2.1 represents messages, separate system
 instructions, tool definitions, generation parameters, and response format in
 a `ModelRequestEnvelope`. A redacted provider request record and canonical
 hash make framework-to-provider transformations auditable while keeping the
@@ -76,17 +78,18 @@ The third contribution is an executable and reproducible research artifact.
 The implementation separates domain models, application use cases, ports, and
 framework, provider, storage, and compression adapters. Each run receives a
 unique directory and a manifest containing code, configuration, dataset,
-model, seed, dependency, usage, failure, and file-hash provenance. Schema 1.1
-remains readable for the frozen Study A archive, while schema 1.2 writes the
-separated evidence namespaces.
+model, replicate, dependency, usage, failure, and file-hash provenance.
+Schemas 1.1.0 and 1.2.0 remain readable for archived evidence, while schema
+1.2.1 writes the separated evidence namespaces.
 
 The fourth contribution is a three-part empirical design. Study A supplies a
 controlled perturbation benchmark with 1,188 completed task runs and 1,596
 invocation traces. Study B adds 60 held-out public tasks executed through
 LangChain and Custom ReAct, full-overlap double-blind segment annotation, and
-agreement analysis. Study C adds 108 counterfactual replays and 180
-budget-matched mitigation replays. This design turns the limitation exposed by
-Study A into a directly testable validation protocol.
+agreement analysis. Study C adds at most 108 counterfactual replays and 180
+budget-matched mitigation replays; all Study C outputs receive double human
+review. This design turns the limitation exposed by Study A into a directly
+testable validation protocol.
 
 The fifth contribution is a utility-aware evaluation of mitigation. Every
 deletion or compression remains linked to a source segment, and the analysis
@@ -95,12 +98,13 @@ sensitivity analyses at -2, -5, and -10 percentage points make the practical
 tolerance visible instead of hiding it behind a single compression score.
 
 The immediate remaining work is empirical rather than architectural. The
-protocol package must receive an externally timestamped OSF registration
-before paid test calls are enabled. Two annotators must then complete the
-hidden Study B context labels and the condition-blind Study C outcome labels.
-Only after adjudication, agreement analysis, and evidence freezing should the
-abstract, graphical abstract, and final RQ wording be updated with Study B and
-Study C numerical results.
+initial protocol must receive an externally timestamped OSF registration
+before real calibration calls. A second addendum must freeze
+calibration-derived codebook and detector settings before held-out calls. Two
+human annotators must then complete the hidden Study B context labels and the
+condition-blind Study C outcome labels. Only after adjudication, agreement
+analysis, and evidence freezing should the abstract, graphical abstract, and
+final RQ wording be updated with Study B and Study C numerical results.
 
 Further research should evaluate additional providers, models, frameworks,
 languages, retrieval systems, memory policies, and live tools. Semantic

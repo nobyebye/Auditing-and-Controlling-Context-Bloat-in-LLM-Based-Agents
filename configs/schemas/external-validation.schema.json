@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://context-auditor.local/schemas/external-validation-1.2.0.json",
+  "$id": "https://context-auditor.local/schemas/external-validation-1.2.1.json",
   "title": "External Validation Experiment",
   "type": "object",
   "required": [
@@ -13,7 +13,7 @@
     "model"
   ],
   "properties": {
-    "schema_version": {"const": "1.2.0"},
+    "schema_version": {"const": "1.2.1"},
     "experiment_id": {"type": "string", "minLength": 1},
     "dataset_name": {"const": "external_validation"},
     "dataset_version": {"const": "v1"},
@@ -22,7 +22,12 @@
     "provider": {"enum": ["mock", "deepseek"]},
     "model": {"type": "string", "minLength": 1},
     "call_budget": {"type": "integer", "minimum": 1, "maximum": 500},
-    "max_tool_invocations": {"type": "integer", "minimum": 1, "maximum": 2},
+    "randomization_seed": {"type": "integer"},
+    "max_provider_invocations_per_tool_cell": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 2
+    },
     "privacy_mode": {"enum": ["redacted", "hash-only", "full"]}
   },
   "additionalProperties": true

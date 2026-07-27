@@ -1,0 +1,24 @@
+{
+  "schema_version": "1.2.1",
+  "experiment_id": "external-calibration-langchain-v1.2.1",
+  "dataset_name": "external_validation",
+  "dataset_version": "v1",
+  "dataset_split": "calibration",
+  "framework": "langchain",
+  "provider": "deepseek",
+  "model": "deepseek-v4-flash",
+  "randomization_seed": 20260727,
+  "retrieval_top_k": 5,
+  "memory_top_k": 8,
+  "max_provider_invocations_per_tool_cell": 2,
+  "call_budget": 500,
+  "call_ledger_path": "runs/studies/external-validation-v1.2.1-call-ledger.jsonl",
+  "privacy_mode": "redacted",
+  "generation": {
+    "temperature": 0.0,
+    "max_output_tokens": 256,
+    "timeout_seconds": 90,
+    "max_retries": 0,
+    "thinking": "disabled"
+  }
+}

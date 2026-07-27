@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://context-auditor.local/schemas/study-c-1.2.1.json",
+  "title": "Study C replay experiment",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "experiment_id",
+    "provider",
+    "model",
+    "randomization_seed",
+    "replicate_ids",
+    "call_budget",
+    "call_ledger_path",
+    "mitigation_task_ids",
+    "llmlingua_model",
+    "llmlingua_model_revision"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.2.1"},
+    "provider": {"enum": ["mock", "deepseek"]},
+    "replicate_ids": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "uniqueItems": true
+    },
+    "call_budget": {"const": 500},
+    "counterfactual_per_workflow_framework": {"const": 3},
+    "privacy_mode": {"enum": ["redacted", "hash-only", "full"]}
+  },
+  "additionalProperties": true
+}

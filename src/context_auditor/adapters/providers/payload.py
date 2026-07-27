@@ -34,6 +34,7 @@ def build_openai_payload(
         "stream": False,
         "temperature": envelope.generation_parameters.temperature,
         "max_tokens": envelope.generation_parameters.max_output_tokens,
+        "thinking": {"type": envelope.generation_parameters.thinking},
     }
     if envelope.tools:
         payload["tools"] = [
@@ -49,6 +50,10 @@ def build_openai_payload(
         ]
     if envelope.response_format:
         payload["response_format"] = dict(envelope.response_format)
+    if envelope.generation_parameters.tool_choice is not None:
+        payload["tool_choice"] = envelope.generation_parameters.tool_choice
+    if envelope.provider_seed is not None:
+        payload["seed"] = envelope.provider_seed
     return payload
 
 

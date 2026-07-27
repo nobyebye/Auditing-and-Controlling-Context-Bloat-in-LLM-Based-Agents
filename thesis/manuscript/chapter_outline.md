@@ -1,7 +1,7 @@
 # Chapter Outline
 
-Working title: **Detecting, Measuring, and Mitigating Context Bloat in
-LLM-Based Agents: A Runtime Auditing Approach**
+Working title: **Runtime Auditing of Context Bloat in LLM-Based Agents:
+Detection, Measurement, and Mitigation Evaluation**
 
 ## Chapter 1: Introduction
 

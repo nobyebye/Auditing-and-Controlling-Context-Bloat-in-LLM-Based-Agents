@@ -24,8 +24,8 @@ from build_thesis_core_figures import build as build_core_figures
 
 
 TITLE = (
-    "Detecting, Measuring, and Mitigating Context Bloat in LLM-Based Agents: "
-    "A Runtime Auditing Approach"
+    "Runtime Auditing of Context Bloat in LLM-Based Agents: Detection, "
+    "Measurement, and Mitigation Evaluation"
 )
 AUTHOR = "Guochen Li"
 PROGRAMME = ""

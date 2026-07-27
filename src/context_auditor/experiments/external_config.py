@@ -21,10 +21,10 @@ class ExternalValidationConfig:
     framework: str
     provider: str
     model: str
-    seed: int
+    randomization_seed: int
     retrieval_top_k: int
     memory_top_k: int
-    max_tool_invocations: int
+    max_provider_invocations_per_tool_cell: int
     call_budget: int
     call_ledger_path: str
     privacy_mode: PrivacyMode
@@ -55,9 +55,18 @@ def load_external_validation_config(
     missing = sorted(required - data.keys())
     if missing:
         raise ValueError("Missing external config fields: " + ", ".join(missing))
-    max_tool_invocations = int(data.get("max_tool_invocations", 2))
-    if max_tool_invocations not in {1, 2}:
-        raise ValueError("max_tool_invocations must be 1 or 2")
+    provider_cap = int(
+        data.get("max_provider_invocations_per_tool_cell", 2)
+    )
+    if provider_cap not in {1, 2}:
+        raise ValueError(
+            "max_provider_invocations_per_tool_cell must be 1 or 2"
+        )
+    generation = GenerationParameters(**data.get("generation", {}))
+    if generation.max_retries != 0:
+        raise ValueError("External validation requires max_retries=0")
+    if generation.thinking != "disabled":
+        raise ValueError("External validation requires thinking=disabled")
     return ExternalValidationConfig(
         schema_version=SCHEMA_VERSION,
         experiment_id=str(data["experiment_id"]),
@@ -67,19 +76,21 @@ def load_external_validation_config(
         framework=str(data["framework"]),
         provider=str(data["provider"]),
         model=str(data["model"]),
-        seed=int(data.get("seed", 20260727)),
+        randomization_seed=int(
+            data.get("randomization_seed", 20260727)
+        ),
         retrieval_top_k=int(data.get("retrieval_top_k", 5)),
         memory_top_k=int(data.get("memory_top_k", 8)),
-        max_tool_invocations=max_tool_invocations,
+        max_provider_invocations_per_tool_cell=provider_cap,
         call_budget=int(data.get("call_budget", 500)),
         call_ledger_path=str(
             data.get(
                 "call_ledger_path",
-                "runs/studies/external-validation-v1.2-call-ledger.jsonl",
+                "runs/studies/external-validation-v1.2.1-call-ledger.jsonl",
             )
         ),
         privacy_mode=PrivacyMode(data.get("privacy_mode", "redacted")),
-        generation=GenerationParameters(**data.get("generation", {})),
+        generation=generation,
         task_ids=tuple(str(item) for item in data.get("task_ids", [])),
         source_path=source,
         config_hash=hashlib.sha256(raw).hexdigest(),

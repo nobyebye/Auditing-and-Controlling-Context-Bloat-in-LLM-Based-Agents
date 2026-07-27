@@ -41,10 +41,11 @@ retrieval-dominance flags across both cohorts. These invocation-level signals
 are operational diagnostics, not additional reference labels.
 
 Study B will replace the injected reference with the adjudicated decisions of
-two annotators. Its main RQ1 table reports binary task-macro precision, recall,
-and F1, subtype errors, localization accuracy, 95% task-cluster intervals, and
-the number of independently labelled tasks. Until those values are frozen, the
-defensible conclusion is:
+two human annotators. Its main RQ1 table reports context sensitivity,
+specificity, precision, and F1; task-macro segment precision, recall, and F1;
+token-weighted localization IoU; false-positive rate on human-negative tasks;
+95% task-cluster intervals; and the number of independently labelled tasks.
+Until those values are frozen, the defensible conclusion is:
 
 > The detector is internally consistent with the controlled perturbation
 > rules; accuracy and localization in natural traces remain to be established.
@@ -91,9 +92,11 @@ context bloat in real agents."
 
 The natural RQ2 analysis will compare detected and human-reference bloat ratios
 using Spearman correlation, mean absolute error, calibration slope, and
-Bland-Altman bias. The natural RQ3 table will add source-specific bootstrap
-intervals and workflow effect sizes. A source ranking will be stated only as:
-"within the sampled natural traces and construction policy."
+Bland-Altman bias. The natural RQ3 table will rank sources only by adjudicated
+REMOVE tokens divided by all eligible annotated tokens for that source. It
+will include source-specific task-cluster intervals and actual sample counts.
+A source ranking will be stated only as "within the sampled natural traces and
+construction policy."
 
 ## 5.3 Framework and Stress-Case Comparison
 
@@ -108,7 +111,7 @@ primary results.
 
 The close context values show that both integrations feed the same controlled
 construction into a shared auditing core. They do not prove framework
-equivalence. Schema 1.2 strengthens the instrumentation test by comparing a
+equivalence. Schema 1.2.1 strengthens the instrumentation test by comparing a
 framework-capture hash with the provider payload hash and by counting tool
 definitions as model-visible context.
 
@@ -134,8 +137,9 @@ establish external detection or measurement validity.
 Final answers to RQ1-RQ3 require all of the following Study B artifacts:
 
 1. Two clean real-provider runs covering the same 60 held-out task IDs.
-2. A validated schema-1.2 bundle with no payload mismatches or injected labels.
-3. Two complete blind annotation files and pre-adjudication agreement.
+2. A validated schema-1.2.1 bundle with no payload mismatches or injected
+   labels.
+3. Two complete human blind annotation files and pre-adjudication agreement.
 4. A resolved consensus label for every segment in all 120 final contexts.
 5. Task-cluster statistical output built from the immutable bundle and
    adjudication hashes.

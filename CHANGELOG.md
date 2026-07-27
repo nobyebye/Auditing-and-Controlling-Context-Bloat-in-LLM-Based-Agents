@@ -2,12 +2,13 @@
 
 All notable changes to this thesis artifact are tracked here.
 
-## 1.2.0 - Unreleased
+## 1.2.1 - Unreleased
 
 - Separated controlled injected labels, heuristic detections, independent
   human-reference annotations, and counterfactual outcomes.
-- Added a versioned model-request envelope and a redacted provider-request
-  record with canonical payload hashes.
+- Added a versioned model-request envelope with separate randomization,
+  replicate, and nullable provider seed fields, plus a redacted provider
+  request record with canonical payload hashes.
 - Added model-visible provenance segments for tool definitions, system
   instructions, and response formats.
 - Added a 12-task calibration and 60-task held-out external dataset sampled
@@ -15,14 +16,20 @@ All notable changes to this thesis artifact are tracked here.
 - Added deterministic redaction of credentials and direct identifiers before
   third-party task text is persisted or exported for annotation.
 - Added natural Custom ReAct and LangChain execution paths with a shared,
-  persistent 500-call budget and an OSF registration gate.
+  append-only 500-call ledger, two-phase OSF gates, provider-invocation caps,
+  ordered single-use retries, and hash-checked resumable execution.
 - Added fully overlapping, condition-blind context and mitigation-outcome
-  annotation packages with agreement and adjudication reports.
+  annotation workbooks with independent block order, session timing, agreement,
+  adjudication, and fatigue-trend reports.
 - Added counterfactual single-segment removal and a budget-matched
-  LLMLingua-2 comparison.
+  pinned LLMLingua-2 comparison using one-request final-context replay.
 - Replaced circular controlled-label measurement validation with independent
-  human-reference and counterfactual evidence builders.
-- Retained schema 1.1.0 as read-only input for the archived formal study.
+  human-reference and counterfactual evidence builders, task-cluster
+  resampling, uncertain-label sensitivity analyses, and a frozen RQ3 ranking
+  statistic.
+- Added a complete mock Study B/C E2E path without treating mock annotations as
+  human evidence.
+- Retained schemas 1.1.0 and 1.2.0 as read-only archive inputs.
 
 ## 1.1.0 - 2026-07-26
 

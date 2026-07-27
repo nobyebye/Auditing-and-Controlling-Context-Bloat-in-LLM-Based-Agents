@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import csv
 import json
+import random
 from pathlib import Path
 from typing import Iterable
 
@@ -11,6 +12,10 @@ from context_auditor.adapters.storage.jsonl import trace_from_dict
 from context_auditor.adapters.storage.runs import file_hash
 from context_auditor.adapters.storage.serialization import write_json_atomic
 from context_auditor.application.agreement import annotation_agreement
+from context_auditor.application.annotation_workbooks import (
+    read_annotation_workbooks,
+    write_annotation_workbook,
+)
 from context_auditor.application.external_annotations import (
     opaque_id,
     read_csv,
@@ -21,6 +26,9 @@ from context_auditor.domain.models import AuditTrace, SCHEMA_VERSION
 
 OUTCOME_DECISIONS = frozenset({"success", "failure", "uncertain"})
 OUTCOME_FIELDS = (
+    "block_id",
+    "block_started_at",
+    "block_completed_at",
     "output_key",
     "task_prompt",
     "expected_answer",
@@ -32,20 +40,31 @@ OUTCOME_FIELDS = (
 
 
 def export_outcome_annotation_packages(
-    traces_path: str | Path,
+    traces_path: str | Path | Iterable[str | Path],
     output_dir: str | Path,
     *,
     annotation_set_id: str,
+    evidence_tiers: tuple[str, ...] = ("counterfactual", "mitigation"),
+    configurations: tuple[str, ...] = (),
+    outputs_per_block: int = 24,
 ) -> Path:
-    source = Path(traces_path)
-    traces = load_trace_file(source)
+    sources = normalize_trace_paths(traces_path)
+    traces = [
+        trace
+        for source in sources
+        for trace in load_trace_file(source)
+    ]
     selected = [
         trace
         for trace in traces
-        if trace.evidence_tier == "mitigation" and trace.task_success is not None
+        if trace.evidence_tier in evidence_tiers
+        and trace.task_success is not None
+        and (
+            not configurations or trace.configuration in configurations
+        )
     ]
     if not selected:
-        raise ValueError("No Study C mitigation outputs were found")
+        raise ValueError("No matching task outputs were found")
     destination = Path(output_dir)
     if destination.exists():
         raise FileExistsError(f"Outcome annotation output exists: {destination}")
@@ -79,8 +98,38 @@ def export_outcome_annotation_packages(
             }
         )
     destination.mkdir(parents=True)
-    write_csv(destination / "reviewer_a.csv", OUTCOME_FIELDS, rows)
-    write_csv(destination / "reviewer_b.csv", OUTCOME_FIELDS, rows)
+    for reviewer in ("a", "b"):
+        shuffled = list(rows)
+        random.Random(f"{annotation_set_id}:{reviewer}").shuffle(shuffled)
+        ordered = []
+        blocks = []
+        for index in range(0, len(shuffled), outputs_per_block):
+            block_id = f"block_{index // outputs_per_block + 1:02d}"
+            block_rows = [
+                {
+                    **row,
+                    "block_id": block_id,
+                    "block_started_at": "",
+                    "block_completed_at": "",
+                }
+                for row in shuffled[index : index + outputs_per_block]
+            ]
+            ordered.extend(block_rows)
+            blocks.append((block_id, block_rows))
+        write_csv(
+            destination / f"reviewer_{reviewer}.csv",
+            OUTCOME_FIELDS,
+            ordered,
+        )
+        block_dir = destination / f"reviewer_{reviewer}_blocks"
+        for block_id, block_rows in blocks:
+            write_annotation_workbook(
+                block_dir / f"{block_id}.xlsx",
+                fields=OUTCOME_FIELDS,
+                rows=block_rows,
+                block_id=block_id,
+                decision_values=tuple(sorted(OUTCOME_DECISIONS)),
+            )
     write_csv(
         destination / "answer_key.csv",
         tuple(answer_key[0]),
@@ -91,8 +140,19 @@ def export_outcome_annotation_packages(
         {
             "schema_version": SCHEMA_VERSION,
             "annotation_set_id": annotation_set_id,
-            "source_trace_sha256": file_hash(source),
+            "source_trace_sha256": {
+                str(source): file_hash(source)
+                for source in sources
+            },
             "output_count": len(rows),
+            "evidence_tiers": list(evidence_tiers),
+            "configurations": list(configurations),
+            "outputs_per_block": outputs_per_block,
+            "reviewer_order_randomized_independently": True,
+            "session_rule": {
+                "maximum_blocks_per_session": 2,
+                "minimum_break_minutes": 10,
+            },
             "reviewer_overlap": "100%",
             "decision_values": sorted(OUTCOME_DECISIONS),
             "hidden_from_reviewers": [
@@ -117,8 +177,12 @@ def adjudicate_outcome_files(
     *,
     annotation_set_id: str,
 ) -> Path:
-    reviewer_a = completed_outcomes(read_csv(Path(reviewer_a_path)))
-    reviewer_b = completed_outcomes(read_csv(Path(reviewer_b_path)))
+    reviewer_a = completed_outcomes(
+        read_annotation_workbooks(reviewer_a_path)
+    )
+    reviewer_b = completed_outcomes(
+        read_annotation_workbooks(reviewer_b_path)
+    )
     answer_key = {
         row["output_key"]: row for row in read_csv(Path(answer_key_path))
     }
@@ -219,6 +283,7 @@ def outcome_rows_for_agreement(
             "segment_key": row["output_key"],
             "decision": decision_map[row["decision"]],
             "reasons": "",
+            "block_id": row.get("block_id", ""),
         }
         for row in rows
     ]
@@ -231,3 +296,48 @@ def load_trace_file(path: Path) -> list[AuditTrace]:
             for line in handle
             if line.strip()
         ]
+
+
+def normalize_trace_paths(
+    value: str | Path | Iterable[str | Path],
+) -> list[Path]:
+    if isinstance(value, (str, Path)):
+        paths = [Path(value)]
+    else:
+        paths = [Path(item) for item in value]
+    if not paths:
+        raise ValueError("At least one trace file is required")
+    missing = [path for path in paths if not path.is_file()]
+    if missing:
+        raise FileNotFoundError(f"Trace files are missing: {missing}")
+    return paths
+
+
+def build_outcome_validation_evidence(
+    traces_path: str | Path,
+    adjudication_path: str | Path,
+    answer_key_path: str | Path,
+    output_path: str | Path,
+) -> Path:
+    from context_auditor.application.study_c_evidence import scorer_validation
+
+    traces = load_trace_file(Path(traces_path))
+    consensus = load_outcome_consensus(adjudication_path, answer_key_path)
+    selected = [trace for trace in traces if trace.trace_id in consensus]
+    if set(consensus) != {trace.trace_id for trace in selected}:
+        raise ValueError("Outcome consensus refers to missing traces")
+    target = Path(output_path)
+    if target.exists():
+        raise FileExistsError(f"Outcome validation evidence exists: {target}")
+    write_json_atomic(
+        target,
+        {
+            "schema_version": SCHEMA_VERSION,
+            "human_reference_type": "double_reviewed_adjudicated_task_success",
+            "automatic_scorer_validation": scorer_validation(
+                selected,
+                consensus,
+            ),
+        },
+    )
+    return target

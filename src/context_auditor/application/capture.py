@@ -176,6 +176,9 @@ class CaptureContext:
                 if request.provider_request
                 else None
             ),
+            randomization_seed=envelope.randomization_seed,
+            replicate_id=envelope.replicate_id,
+            provider_seed=envelope.provider_seed,
             evidence_tier=request.evidence_tier,
             parent_trace_id=request.parent_trace_id,
             intervention=request.intervention,

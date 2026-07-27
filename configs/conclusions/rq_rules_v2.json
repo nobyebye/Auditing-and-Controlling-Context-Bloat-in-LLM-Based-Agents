@@ -1,14 +1,14 @@
 {
-  "schema_version": "1.2.0",
-  "rule_version": "rq-rules-v2.0.0",
+  "schema_version": "1.2.1",
+  "rule_version": "rq-analysis-v2.1.0",
   "rq1": {
-    "minimum_macro_f1": 0.7,
-    "minimum_localization_accuracy": 0.7,
-    "reference_requirement": "adjudicated_human_labels"
+    "reference_requirement": "adjudicated_human_labels",
+    "conclusion_mode": "effect_estimates_without_support_threshold",
+    "primary_uncertain_policy": "exclude"
   },
   "rq2": {
-    "minimum_spearman_rho": 0.7,
     "reference_requirement": "adjudicated_human_labels",
+    "counterfactual_evidence_is_separate": true,
     "secondary_metrics": [
       "mean_absolute_error",
       "calibration",
@@ -16,12 +16,14 @@
     ]
   },
   "rq3": {
-    "interpretation": "descriptive_within_study_only"
+    "interpretation": "descriptive_within_study_only",
+    "primary_ranking_statistic": "adjudicated_remove_tokens_over_all_eligible_annotated_tokens_by_source",
+    "causal_source_effect_claimed": false
   },
   "rq4": {
-    "minimum_token_reduction": 0.0,
     "noninferiority_margin": -0.05,
     "margin_interpretation": "at most one additional failure per twenty tasks",
+    "conclusion_generated_after_human_evidence_freeze": true,
     "sensitivity_margins": [
       -0.02,
       -0.05,

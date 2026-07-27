@@ -23,6 +23,7 @@ from context_auditor.application.external_annotations import (
 from context_auditor.application.external_evidence import BuildExternalEvidence
 from context_auditor.application.outcome_annotations import (
     adjudicate_outcome_files,
+    build_outcome_validation_evidence,
     export_outcome_annotation_packages,
 )
 from context_auditor.application.reporting import write_csv
@@ -168,11 +169,11 @@ def build_parser() -> argparse.ArgumentParser:
     )
     run_external_suite.add_argument(
         "--custom-config",
-        default="configs/experiments/external_custom_react_v1.2.json",
+        default="configs/experiments/external_custom_react_v1.2.1.json",
     )
     run_external_suite.add_argument(
         "--langchain-config",
-        default="configs/experiments/external_langchain_v1.2.json",
+        default="configs/experiments/external_langchain_v1.2.1.json",
     )
     run_external_suite.add_argument("--project-root", default=".")
     run_external_suite.add_argument("--confirm-real-cost", action="store_true")
@@ -223,7 +224,7 @@ def build_parser() -> argparse.ArgumentParser:
     study_c.add_argument("--project-root", default=".")
     study_c.add_argument(
         "--config",
-        default="configs/experiments/study_c_v1.2.json",
+        default="configs/experiments/study_c_v1.2.1.json",
     )
     study_c.add_argument("--bundle", required=True)
     study_c.add_argument("--adjudication", required=True)
@@ -234,11 +235,31 @@ def build_parser() -> argparse.ArgumentParser:
 
     outcome_annotations = subparsers.add_parser(
         "export-outcome-annotations",
-        help="Export condition-blind Study C mitigation outcome forms.",
+        help="Export condition-blind task-outcome review forms.",
     )
-    outcome_annotations.add_argument("--traces", required=True)
+    outcome_annotations.add_argument(
+        "--traces",
+        action="append",
+        required=True,
+        help="Trace JSONL path; repeat for multiple framework runs.",
+    )
     outcome_annotations.add_argument("--output", required=True)
     outcome_annotations.add_argument("--annotation-set-id", required=True)
+    outcome_annotations.add_argument(
+        "--evidence-tier",
+        action="append",
+        dest="evidence_tiers",
+    )
+    outcome_annotations.add_argument(
+        "--configuration",
+        action="append",
+        dest="configurations",
+    )
+    outcome_annotations.add_argument(
+        "--outputs-per-block",
+        type=int,
+        default=24,
+    )
 
     outcome_adjudication = subparsers.add_parser(
         "adjudicate-outcomes",
@@ -259,6 +280,15 @@ def build_parser() -> argparse.ArgumentParser:
     study_c_evidence.add_argument("--outcome-answer-key", required=True)
     study_c_evidence.add_argument("--output", required=True)
 
+    outcome_validation = subparsers.add_parser(
+        "build-outcome-validation",
+        help="Compare an automatic task scorer with adjudicated human outcomes.",
+    )
+    outcome_validation.add_argument("--traces", required=True)
+    outcome_validation.add_argument("--outcome-adjudication", required=True)
+    outcome_validation.add_argument("--outcome-answer-key", required=True)
+    outcome_validation.add_argument("--output", required=True)
+
     freeze_protocol = subparsers.add_parser(
         "freeze-external-protocol",
         help="Build the immutable upload package required before paid test calls.",
@@ -266,7 +296,12 @@ def build_parser() -> argparse.ArgumentParser:
     freeze_protocol.add_argument("--project-root", default=".")
     freeze_protocol.add_argument(
         "--output",
-        default="thesis/releases/osf_external_validation_protocol_v1.2.zip",
+        default="thesis/releases/osf_external_validation_protocol_v1.2.1.zip",
+    )
+    freeze_protocol.add_argument(
+        "--phase",
+        choices=("calibration", "test"),
+        default="calibration",
     )
     return parser
 
@@ -409,6 +444,12 @@ def main(argv: list[str] | None = None) -> int:
                 args.bundle,
                 args.output,
                 annotation_set_id=args.annotation_set_id,
+                evidence_tiers=tuple(
+                    args.evidence_tiers
+                    or ("counterfactual", "mitigation")
+                ),
+                configurations=tuple(args.configurations or ()),
+                outputs_per_block=args.outputs_per_block,
             )
         )
         return 0
@@ -469,6 +510,12 @@ def main(argv: list[str] | None = None) -> int:
                 args.traces,
                 args.output,
                 annotation_set_id=args.annotation_set_id,
+                evidence_tiers=tuple(
+                    args.evidence_tiers
+                    or ("counterfactual", "mitigation")
+                ),
+                configurations=tuple(args.configurations or ()),
+                outputs_per_block=args.outputs_per_block,
             )
         )
         return 0
@@ -493,9 +540,25 @@ def main(argv: list[str] | None = None) -> int:
             )
         )
         return 0
+    if args.command == "build-outcome-validation":
+        print(
+            build_outcome_validation_evidence(
+                args.traces,
+                args.outcome_adjudication,
+                args.outcome_answer_key,
+                args.output,
+            )
+        )
+        return 0
     if args.command == "freeze-external-protocol":
         root = Path(args.project_root).resolve()
-        print(freeze_protocol_package(root, root / args.output))
+        print(
+            freeze_protocol_package(
+                root,
+                root / args.output,
+                phase=args.phase,
+            )
+        )
         return 0
     return 1
 

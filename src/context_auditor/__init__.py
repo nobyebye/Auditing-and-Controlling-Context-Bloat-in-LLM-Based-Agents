@@ -4,6 +4,7 @@ from .domain.enums import PrivacyMode, RunStatus, SourceType
 from .domain.models import (
     AuditTrace,
     BloatFinding,
+    CallLedgerRecord,
     CaptureRequest,
     CounterfactualOutcome,
     CounterfactualVariant,
@@ -23,6 +24,7 @@ from .domain.models import (
 __all__ = [
     "AuditTrace",
     "BloatFinding",
+    "CallLedgerRecord",
     "CaptureRequest",
     "CounterfactualOutcome",
     "CounterfactualVariant",
@@ -42,4 +44,4 @@ __all__ = [
     "ToolDefinition",
 ]
 
-__version__ = "1.2.0"
+__version__ = "1.2.1"

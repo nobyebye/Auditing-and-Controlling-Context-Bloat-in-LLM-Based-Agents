@@ -7,8 +7,8 @@ from typing import Any, Mapping
 
 from .enums import PrivacyMode, RunStatus
 
-SCHEMA_VERSION = "1.2.0"
-READABLE_SCHEMA_VERSIONS = frozenset({"1.1.0", SCHEMA_VERSION})
+SCHEMA_VERSION = "1.2.1"
+READABLE_SCHEMA_VERSIONS = frozenset({"1.1.0", "1.2.0", SCHEMA_VERSION})
 
 
 @dataclass(frozen=True)
@@ -35,6 +35,9 @@ class ModelRequestEnvelope:
         default_factory=lambda: GenerationParameters()
     )
     response_format: Mapping[str, Any] = field(default_factory=dict)
+    randomization_seed: int | None = None
+    replicate_id: str | None = None
+    provider_seed: int | None = None
     metadata: Mapping[str, Any] = field(default_factory=dict)
 
 
@@ -92,6 +95,8 @@ class ProviderResponse:
     response_id: str | None = None
     request_record: ProviderRequestRecord | None = None
     tool_calls: tuple[ToolCall, ...] = ()
+    dispatch_error_type: str | None = None
+    http_status: int | None = None
 
 
 @dataclass(frozen=True)
@@ -99,7 +104,27 @@ class GenerationParameters:
     temperature: float = 0.0
     max_output_tokens: int = 256
     timeout_seconds: int = 90
-    max_retries: int = 3
+    max_retries: int = 0
+    thinking: str = "disabled"
+    tool_choice: str | None = None
+
+
+@dataclass(frozen=True)
+class CallLedgerRecord:
+    event: str
+    call_id: str
+    call_index: int
+    occurred_at: str
+    cell_id: str
+    task_id: str
+    framework: str
+    arm: str
+    invocation_index: int
+    request_sha256: str
+    status: str
+    retry_of: str | None = None
+    error_type: str | None = None
+    http_status: int | None = None
 
 
 @dataclass(frozen=True)
@@ -230,6 +255,9 @@ class AuditTrace:
     provider_request: ProviderRequestRecord | None = None
     framework_capture_hash: str | None = None
     provider_payload_hash: str | None = None
+    randomization_seed: int | None = None
+    replicate_id: str | None = None
+    provider_seed: int | None = None
     evidence_tier: str = "controlled"
     parent_trace_id: str | None = None
     intervention: Mapping[str, Any] = field(default_factory=dict)
@@ -279,3 +307,8 @@ class RunManifest:
     output_hashes: Mapping[str, str] = field(default_factory=dict)
     token_usage: ProviderUsage = field(default_factory=ProviderUsage)
     failure_reason: str | None = None
+    protocol_hash: str | None = None
+    source_bundle_hash: str | None = None
+    annotation_hash: str | None = None
+    dependency_hash: str | None = None
+    resume_count: int = 0

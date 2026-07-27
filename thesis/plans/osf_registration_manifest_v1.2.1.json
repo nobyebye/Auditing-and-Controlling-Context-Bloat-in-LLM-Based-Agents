@@ -1,0 +1,45 @@
+{
+  "protocol_version": "1.2.1",
+  "title": "Runtime Auditing of Context Bloat in LLM-Based Agents: Detection, Measurement, and Mitigation Evaluation",
+  "registered_commit": "",
+  "initial_required_files": [
+    "external_validation_protocol_v1.2.1.md",
+    "annotation_codebook_v1.2.1.md",
+    "../../configs/experiments/external_calibration_custom_react_v1.2.1.json",
+    "../../configs/experiments/external_calibration_langchain_v1.2.1.json",
+    "../../configs/experiments/external_custom_react_v1.2.1.json",
+    "../../configs/experiments/external_langchain_v1.2.1.json",
+    "../../configs/experiments/study_c_v1.2.1.json",
+    "../../configs/conclusions/rq_rules_v2.json",
+    "../../configs/schemas/external-validation.schema.json",
+    "../../configs/schemas/study-c.schema.json",
+    "../../data/datasets/external_validation/v1/dataset_manifest.json",
+    "../../pyproject.toml"
+  ],
+  "addendum_required_files": [
+    "external_validation_protocol_v1.2.1.md",
+    "annotation_codebook_v1.2.1.md",
+    "../../configs/experiments/external_custom_react_v1.2.1.json",
+    "../../configs/experiments/external_langchain_v1.2.1.json",
+    "../../configs/experiments/study_c_v1.2.1.json",
+    "../../configs/conclusions/rq_rules_v2.json",
+    "../../configs/schemas/external-validation.schema.json",
+    "../../configs/schemas/study-c.schema.json",
+    "../../data/datasets/external_validation/v1/dataset_manifest.json",
+    "../../pyproject.toml"
+  ],
+  "initial_registration": {
+    "registration_status": "not_registered",
+    "registration_url": "",
+    "registered_at": "",
+    "calibration_calls_allowed": false,
+    "file_sha256": {}
+  },
+  "calibration_addendum": {
+    "registration_status": "not_registered",
+    "registration_url": "",
+    "registered_at": "",
+    "heldout_calls_allowed": false,
+    "file_sha256": {}
+  }
+}

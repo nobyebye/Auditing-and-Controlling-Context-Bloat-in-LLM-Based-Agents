@@ -1,6 +1,6 @@
 # Abstract
 
-**Status:** Draft v0.4. Study B and Study C real-model results are pending.
+**Status:** Draft v0.5. Study B and Study C real-model results are pending.
 
 LLM-based agents construct model-visible context at runtime from system
 instructions, user messages, retrieved documents, conversational memory, tool
@@ -27,8 +27,8 @@ Study B adds 60 held-out public tasks, 120 natural final contexts, and
 full-overlap double-blind segment annotation. Study C adds paired
 counterfactual deletion and a budget-matched comparison between
 provenance-aware mitigation and LLMLingua-2. The Study B and Study C software
-has passed mock end-to-end validation; paid test execution remains gated by an
-external protocol registration.
+has passed mock end-to-end validation; real calibration and held-out execution
+remain gated by the initial registration and calibration addendum.
 
 In Study A, the mitigation reduced context tokens by 48.85% on average (95% CI
 [42.67%, 55.31%]). Task success changed by -6.11 percentage points (95% CI

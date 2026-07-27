@@ -139,7 +139,7 @@ localize independently annotated context bloat in natural LLM-agent traces?**
 
 RQ1 concerns both classification and location. Each heuristic signal must map
 to a specific model-visible segment. Its primary reference is the adjudicated
-judgement of two annotators who do not see framework identity, provenance
+judgement of two human annotators who do not see framework identity, provenance
 labels, detector output, or model answer. Study A remains a software
 consistency check; external accuracy is estimated only from Study B.
 
@@ -151,7 +151,7 @@ human-reference bloat ratio and whether a segment judged removable can in fact
 be deleted without lowering task performance. Agreement is reported using
 correlation, absolute error, calibration, and Bland-Altman bias. The
 counterfactual test is deliberately stricter than a label: deletion must
-preserve performance in both frozen repetitions.
+preserve performance in both independent provider replicates.
 
 **RQ3: What bloat sources and patterns are observed across retrieval, memory,
 and tool workflows under controlled and naturalistic conditions?**

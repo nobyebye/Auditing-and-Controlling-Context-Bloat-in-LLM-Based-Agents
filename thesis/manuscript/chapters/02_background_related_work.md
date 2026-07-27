@@ -23,6 +23,13 @@ to incorporate its result into subsequent token prediction
 [@schick2023toolformer]. Both approaches demonstrate why tool outputs are not
 merely external side effects. They become textual evidence that can influence
 later model behavior and therefore belong to the model-visible context.
+ToolLLM scales this interaction to a large API collection and couples tool
+selection with multi-step search, illustrating how function definitions and
+intermediate observations can become substantial request components
+[@qin2024toolllm]. AgentBench evaluates agents across interactive environments
+and reports long-horizon reasoning and instruction-following failures
+[@liu2024agentbench]. Together, these systems motivate auditing both the
+content accumulated by an execution loop and the task result produced from it.
 
 Retrieval-augmented generation introduces another major context source. The
 original RAG formulation combines a parametric generator with documents
@@ -111,6 +118,10 @@ retrieval utility are not equivalent. In the present thesis,
 low-query-relevance retrieval is one controlled bloat pattern, while source
 provenance makes it possible to measure its contribution separately from
 memory or tool output.
+ARES adds a complementary lesson: automated RAG evaluation benefits from a
+small independent human reference rather than relying only on synthetic judge
+data [@saadfalcon2024ares]. This supports the present separation between
+heuristic indicators and adjudicated human labels.
 
 Several lines of work reduce context before inference. RECOMP trains
 compressors for retrieved documents and supports selective augmentation,
@@ -124,6 +135,12 @@ the position of retained information [@jiang2023longllmlingua]. Jha et al.
 compare prompt-compression families and show that extractive selection,
 summarization, and token-level pruning have different quality and efficiency
 trade-offs [@jha2024promptcompression].
+Gist tokens represent a model-trained alternative that compresses reusable
+instructions into a small latent prefix [@mu2023gist]. RAPTOR constructs
+hierarchical summaries for retrieval across long documents
+[@sarthi2024raptor]. These methods broaden context management beyond lexical
+deletion, while also making clear that compression architecture and runtime
+source auditing answer different questions.
 
 LLMLingua-2 replaces the earlier coarse-to-fine pipeline with a
 data-distilled token-classification approach and reports gains in compression
@@ -134,6 +151,13 @@ also depends on information preservation: evaluation should examine whether a
 shortened request retains task-relevant information rather than treating
 compression rate as a sufficient outcome [@lajewska2025information]. This
 motivates the token-budget-matched and utility-aware comparison in Study C.
+ContextCite estimates which context parts influence a generated statement and
+demonstrates context pruning as one downstream application
+[@cohenwang2024contextcite]. ProCut likewise prunes prompt segments through
+attribution estimation and evaluates both reduction and task performance
+[@xu2025procut]. These attribution-based methods are especially close to the
+counterfactual motivation of this thesis, but they do not replace independent
+segment annotation or provenance capture at the agent request boundary.
 
 This compression literature is closely related to mitigation, but its
 objective is not identical to runtime auditing. Compression methods generally
@@ -284,8 +308,8 @@ multi-turn and multi-step settings [@patil2025bfcl]. These datasets were not
 designed specifically for context bloat, which is useful here: their natural
 agent traces can be annotated independently of the heuristic detector.
 
-The thesis responds with a framework-independent provenance schema exercised
-through two adapters, client-side request capture, separated evidence
+The thesis responds with a framework-independent schema exercised through two
+controlled execution paths, client-side request capture, separated evidence
 namespaces, source-level metrics, a controlled perturbation benchmark,
 independently annotated natural traces, and paired counterfactual and
 compression analyses. The contribution is not a claim to solve context

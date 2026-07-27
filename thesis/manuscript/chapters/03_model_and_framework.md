@@ -239,8 +239,8 @@ workflow, dataset version, split, analysis cohort, repetition, seed, invocation
 index, generation parameters, and configuration hash. The resulting trace adds
 a unique trace identifier, timestamp, request envelope, provider request
 record, segments, metrics, risk flags, evidence-tier labels, usage, latency,
-task output, score, and mitigation decisions. Schema 1.2.0 is the current
-writer. Schema 1.1.0 remains read-only for the immutable Study A archive.
+task output, score, and mitigation decisions. Schema 1.2.1 is the current
+writer. Schemas 1.1.0 and 1.2.0 remain read-only for archived evidence.
 
 Traces are appended to `traces/invocations.jsonl`. Derived invocation and task
 tables are written as CSV, while summaries and RQ evidence use JSON. Every

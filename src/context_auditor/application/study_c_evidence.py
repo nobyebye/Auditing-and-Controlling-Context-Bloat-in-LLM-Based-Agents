@@ -34,7 +34,17 @@ def build_study_c_evidence(
     if destination.exists():
         raise FileExistsError(f"Study C evidence output exists: {destination}")
     destination.mkdir(parents=True)
-    counterfactual = evaluate_counterfactuals(traces)
+    selected = [
+        trace
+        for trace in traces
+        if trace.evidence_tier in {"counterfactual", "mitigation"}
+    ]
+    if set(human_outcomes) != {trace.trace_id for trace in selected}:
+        raise ValueError(
+            "Human outcomes must cover all Study C counterfactual and "
+            "mitigation traces"
+        )
+    counterfactual = evaluate_counterfactuals(traces, human_outcomes)
     mitigation = evaluate_mitigation_arms(traces, human_outcomes)
     evidence = {
         "schema_version": SCHEMA_VERSION,
@@ -42,6 +52,10 @@ def build_study_c_evidence(
         "analysis_unit": "task_id",
         "counterfactual": counterfactual,
         "mitigation": mitigation,
+        "automatic_scorer_validation": scorer_validation(
+            selected,
+            human_outcomes,
+        ),
         "rq4_interpretation": interpret_rq4(mitigation),
     }
     write_json_atomic(destination / "study_c_evidence.json", evidence)
@@ -60,7 +74,10 @@ def build_study_c_evidence(
     return destination
 
 
-def evaluate_counterfactuals(traces: list[AuditTrace]) -> dict:
+def evaluate_counterfactuals(
+    traces: list[AuditTrace],
+    human_outcomes: dict[str, bool],
+) -> dict:
     selected = [
         trace for trace in traces if trace.evidence_tier == "counterfactual"
     ]
@@ -83,20 +100,21 @@ def evaluate_counterfactuals(traces: list[AuditTrace]) -> dict:
         required = {
             "counterfactual_baseline",
             "remove_human_candidate",
-            "remove_matched_necessary",
+            "remove_matched_keep",
         }
         if any(set(arms) != required for arms in repetitions.values()):
             continue
         complete += 1
-        candidate_ok = all(
-            arms["remove_human_candidate"].task_success
-            and trace_score(arms["remove_human_candidate"])
-            >= trace_score(arms["counterfactual_baseline"])
+        baseline_ok = all(
+            human_outcomes[arms["counterfactual_baseline"].trace_id]
             for arms in repetitions.values()
         )
-        necessary_hurt = any(
-            trace_score(arms["remove_matched_necessary"])
-            < trace_score(arms["counterfactual_baseline"])
+        candidate_ok = baseline_ok and all(
+            human_outcomes[arms["remove_human_candidate"].trace_id]
+            for arms in repetitions.values()
+        )
+        necessary_hurt = baseline_ok and any(
+            not human_outcomes[arms["remove_matched_keep"].trace_id]
             for arms in repetitions.values()
         )
         candidate_preserved += int(candidate_ok)
@@ -113,9 +131,11 @@ def evaluate_counterfactuals(traces: list[AuditTrace]) -> dict:
             necessary_degraded / complete if complete else None
         ),
         "definition": (
-            "A candidate is removable only when both repetitions succeed and "
-            "do not score below their paired unmodified baseline."
+            "A candidate is removable only when both human-adjudicated "
+            "baseline replicates succeed and both candidate-removal "
+            "replicates preserve success."
         ),
+        "scope": "conditional_on_adjudicated_remove_candidates",
     }
 
 
@@ -126,8 +146,6 @@ def evaluate_mitigation_arms(
     selected = [
         trace for trace in traces if trace.evidence_tier == "mitigation"
     ]
-    if set(human_outcomes) != {trace.trace_id for trace in selected}:
-        raise ValueError("Human outcomes must cover every mitigation trace")
     keyed: dict[tuple[str, str], dict[str, AuditTrace]] = defaultdict(dict)
     for trace in selected:
         keyed[(trace.task_id, trace.framework)][trace.configuration] = trace
@@ -147,6 +165,10 @@ def evaluate_mitigation_arms(
             "task_count": len({trace.task_id for trace in arm_traces}),
             "mean_context_tokens": mean(
                 float(trace.metrics.get("total_tokens", 0))
+                for trace in arm_traces
+            ),
+            "mean_provider_input_tokens": mean(
+                float(trace.provider_usage.input_tokens or 0)
                 for trace in arm_traces
             ),
             "mean_cost_usd": mean(
@@ -262,6 +284,82 @@ def paired_arm_comparison(
     }
 
 
+def scorer_validation(
+    traces: list[AuditTrace],
+    human_outcomes: dict[str, bool],
+) -> dict:
+    def summarize(items: list[AuditTrace]) -> dict:
+        tp = sum(
+            bool(trace.task_success) and human_outcomes[trace.trace_id]
+            for trace in items
+        )
+        tn = sum(
+            not bool(trace.task_success) and not human_outcomes[trace.trace_id]
+            for trace in items
+        )
+        fp = sum(
+            bool(trace.task_success) and not human_outcomes[trace.trace_id]
+            for trace in items
+        )
+        fn = sum(
+            not bool(trace.task_success) and human_outcomes[trace.trace_id]
+            for trace in items
+        )
+        total = tp + tn + fp + fn
+        precision = tp / (tp + fp) if tp + fp else 0.0
+        recall = tp / (tp + fn) if tp + fn else 0.0
+        specificity = tn / (tn + fp) if tn + fp else 0.0
+        accuracy = (tp + tn) / total if total else None
+        f1 = (
+            2 * precision * recall / (precision + recall)
+            if precision + recall
+            else 0.0
+        )
+        observed = accuracy or 0.0
+        automatic_positive = (tp + fp) / total if total else 0.0
+        human_positive = (tp + fn) / total if total else 0.0
+        chance = (
+            automatic_positive * human_positive
+            + (1 - automatic_positive) * (1 - human_positive)
+        )
+        kappa = (
+            (observed - chance) / (1 - chance)
+            if total and chance < 1
+            else None
+        )
+        return {
+            "trace_count": total,
+            "true_positive": tp,
+            "true_negative": tn,
+            "false_positive": fp,
+            "false_negative": fn,
+            "accuracy": accuracy,
+            "precision": precision,
+            "recall": recall,
+            "specificity": specificity,
+            "f1": f1,
+            "cohen_kappa": kappa,
+        }
+
+    workflows = sorted({trace.workflow_family for trace in traces})
+    arms = sorted({trace.configuration for trace in traces})
+    return {
+        "overall": summarize(traces),
+        "by_workflow": {
+            workflow: summarize(
+                [trace for trace in traces if trace.workflow_family == workflow]
+            )
+            for workflow in workflows
+        },
+        "by_arm": {
+            arm: summarize(
+                [trace for trace in traces if trace.configuration == arm]
+            )
+            for arm in arms
+        },
+    }
+
+
 def fit_task_clustered_gee(
     observations: list[tuple[str, int, int]],
 ) -> dict:
@@ -277,7 +375,7 @@ def fit_task_clustered_gee(
     groups = [task for task, _treated, _success in observations]
     try:
         with warnings.catch_warnings():
-            warnings.simplefilter("ignore", RuntimeWarning)
+            warnings.simplefilter("ignore")
             result = sm.GEE(
                 endog,
                 exog,

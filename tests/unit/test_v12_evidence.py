@@ -2,6 +2,7 @@ import csv
 import json
 import tempfile
 import unittest
+from dataclasses import replace
 from pathlib import Path
 
 from context_auditor.adapters.common import DefaultIdGenerator, RegexTokenizer, UtcClock
@@ -14,6 +15,9 @@ from context_auditor.application.capture import CaptureContext
 from context_auditor.application.counterfactual import build_counterfactual_variant
 from context_auditor.application.external_annotations import (
     import_context_annotation_file,
+)
+from context_auditor.application.external_statistics import (
+    build_study_b_statistics,
 )
 from context_auditor.application.segmentation import segment_messages
 from context_auditor.domain.enums import PrivacyMode
@@ -220,11 +224,74 @@ class V12EvidenceTests(unittest.TestCase):
 
     def test_persistent_call_budget_refuses_call_501(self):
         with tempfile.TemporaryDirectory() as temporary:
-            budget = PersistentCallBudget(Path(temporary) / "ledger.jsonl", limit=2)
-            self.assertEqual(budget.reserve(), 1)
-            self.assertEqual(budget.reserve(), 2)
+            budget = PersistentCallBudget(
+                Path(temporary) / "ledger.jsonl",
+                limit=2,
+                primary_limit=2,
+            )
+            request = ModelRequestEnvelope(
+                messages=(Message("user", "question"),),
+                metadata={
+                    "cell_id": "cell",
+                    "task_id": "task",
+                    "framework": "custom-react",
+                    "arm": "unmodified",
+                    "provider_invocation_index": 0,
+                },
+            )
+            self.assertEqual(budget.reserve(request).call_index, 1)
+            self.assertEqual(budget.reserve(request).call_index, 2)
             with self.assertRaises(RuntimeError):
-                budget.reserve()
+                budget.reserve(request)
+
+    def test_manual_retries_are_single_use_and_ledger_ordered(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            budget = PersistentCallBudget(
+                Path(temporary) / "ledger.jsonl",
+                limit=6,
+                primary_limit=4,
+                retry_limit=2,
+            )
+            request = ModelRequestEnvelope(
+                messages=(Message("user", "question"),),
+                metadata={
+                    "cell_id": "cell-1",
+                    "task_id": "task-1",
+                    "framework": "custom-react",
+                    "arm": "unmodified",
+                    "provider_invocation_index": 0,
+                },
+            )
+            first = budget.reserve(request)
+            budget.fail(first, TimeoutError("timed out"))
+            second_request = ModelRequestEnvelope(
+                messages=(Message("user", "question two"),),
+                metadata={
+                    **request.metadata,
+                    "cell_id": "cell-2",
+                    "task_id": "task-2",
+                },
+            )
+            second = budget.reserve(second_request)
+            budget.fail(second, TimeoutError("timed out"))
+            out_of_order = ModelRequestEnvelope(
+                messages=second_request.messages,
+                metadata={**second_request.metadata, "retry_of": second.call_id},
+            )
+            with self.assertRaises(ValueError):
+                budget.reserve(out_of_order)
+            first_retry = ModelRequestEnvelope(
+                messages=request.messages,
+                metadata={**request.metadata, "retry_of": first.call_id},
+            )
+            retry = budget.reserve(first_retry)
+            budget.fail(retry, TimeoutError("timed out again"))
+            with self.assertRaises(ValueError):
+                budget.reserve(first_retry)
+            self.assertEqual(
+                [item["call_id"] for item in budget.retryable_failures()],
+                [second.call_id],
+            )
 
     def test_protocol_freeze_keeps_paid_calls_blocked_until_registration(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -234,18 +301,28 @@ class V12EvidenceTests(unittest.TestCase):
             plans.mkdir(parents=True)
             frozen_input = plans / "protocol.md"
             frozen_input.write_text("frozen protocol\n", encoding="utf-8")
-            manifest_path = plans / "osf_registration_manifest_v1.2.json"
+            manifest_path = plans / "osf_registration_manifest_v1.2.1.json"
             manifest_path.write_text(
                 json.dumps(
                     {
-                        "protocol_version": "1.2.0",
-                        "registration_status": "not_registered",
-                        "registration_url": "",
-                        "registered_at": "",
-                        "paid_test_calls_allowed": False,
+                        "protocol_version": "1.2.1",
                         "registered_commit": "",
-                        "file_sha256": {},
-                        "required_files": ["protocol.md"],
+                        "initial_required_files": ["protocol.md"],
+                        "addendum_required_files": ["protocol.md"],
+                        "initial_registration": {
+                            "registration_status": "not_registered",
+                            "registration_url": "",
+                            "registered_at": "",
+                            "calibration_calls_allowed": False,
+                            "file_sha256": {},
+                        },
+                        "calibration_addendum": {
+                            "registration_status": "not_registered",
+                            "registration_url": "",
+                            "registered_at": "",
+                            "heldout_calls_allowed": False,
+                            "file_sha256": {},
+                        },
                     }
                 ),
                 encoding="utf-8",
@@ -253,26 +330,33 @@ class V12EvidenceTests(unittest.TestCase):
             package = freeze_protocol_package(
                 root,
                 releases / "protocol.zip",
+                phase="calibration",
             )
             self.assertTrue(package.is_file())
             frozen = json.loads(manifest_path.read_text(encoding="utf-8"))
             self.assertEqual(
-                frozen["registration_status"],
+                frozen["initial_registration"]["registration_status"],
                 "ready_for_registration",
             )
-            self.assertFalse(frozen["paid_test_calls_allowed"])
+            self.assertFalse(
+                frozen["initial_registration"]["calibration_calls_allowed"]
+            )
             with self.assertRaises(RuntimeError):
-                validate_protocol_registration(root)
+                validate_protocol_registration(root, phase="calibration")
 
-            frozen["registration_status"] = "registered"
-            frozen["registration_url"] = "https://osf.io/example/"
-            frozen["registered_at"] = "2026-07-27T12:00:00Z"
-            frozen["paid_test_calls_allowed"] = True
+            frozen["initial_registration"]["registration_status"] = "registered"
+            frozen["initial_registration"][
+                "registration_url"
+            ] = "https://osf.io/example/"
+            frozen["initial_registration"][
+                "registered_at"
+            ] = "2026-07-27T12:00:00Z"
+            frozen["initial_registration"]["calibration_calls_allowed"] = True
             manifest_path.write_text(
                 json.dumps(frozen),
                 encoding="utf-8",
             )
-            result = validate_protocol_registration(root)
+            result = validate_protocol_registration(root, phase="calibration")
             self.assertTrue(result["valid"])
             self.assertEqual(result["file_count"], 1)
 
@@ -294,9 +378,12 @@ class V12EvidenceTests(unittest.TestCase):
             messages,
             target_tokens=1,
         )
-        self.assertEqual(compressed[0].content, "keep system")
-        self.assertEqual(compressed[1].content, "compressed retrieval")
-        self.assertEqual(compressed[2].content, "keep user")
+        self.assertEqual(compressed.messages[0].content, "keep system")
+        self.assertEqual(
+            compressed.messages[1].content,
+            "compressed retrieval",
+        )
+        self.assertEqual(compressed.messages[2].content, "keep user")
 
     def test_bfcl_python_style_calls_are_parsed(self):
         self.assertEqual(
@@ -352,6 +439,46 @@ class V12EvidenceTests(unittest.TestCase):
         self.assertNotIn("secret-value", rendered)
         self.assertNotIn("user@example.com", rendered)
         self.assertIn("[REDACTED]", rendered)
+
+    def test_study_b_statistics_keep_uncertain_and_token_sources_prespecified(self):
+        traces = [
+            make_study_b_trace(
+                "task-1",
+                "custom-react",
+                remove_tokens=3,
+                keep_tokens=1,
+                uncertain_tokens=2,
+            ),
+            make_study_b_trace(
+                "task-1",
+                "langchain",
+                remove_tokens=2,
+                keep_tokens=4,
+                uncertain_tokens=0,
+            ),
+            make_study_b_trace(
+                "task-2",
+                "custom-react",
+                remove_tokens=1,
+                keep_tokens=9,
+                uncertain_tokens=0,
+            ),
+        ]
+        result = build_study_b_statistics(traces)
+        primary = result["by_policy"]["primary"]
+        sensitivity = result["by_policy"]["uncertain_as_remove"]
+        source = primary["rq3_source_patterns"]["ranking"][0]
+        self.assertEqual(source["source"], "retrieval")
+        self.assertAlmostEqual(
+            source["human_reference_bloat_token_ratio"],
+            6 / 20,
+        )
+        self.assertAlmostEqual(
+            sensitivity["rq3_source_patterns"]["ranking"][0][
+                "human_reference_bloat_token_ratio"
+            ],
+            8 / 22,
+        )
 
 
 def make_capture_request(
@@ -447,6 +574,77 @@ def make_counterfactual_trace() -> AuditTrace:
                 adjudicated=True,
             ),
         ),
+    )
+
+
+def make_study_b_trace(
+    task_id: str,
+    framework: str,
+    *,
+    remove_tokens: int,
+    keep_tokens: int,
+    uncertain_tokens: int,
+) -> AuditTrace:
+    base = make_counterfactual_trace()
+    segments = [
+        replace(
+            base.segments[0],
+            segment_id="remove",
+            token_count=remove_tokens,
+            content_hash=f"{task_id}-{framework}-remove",
+        ),
+        replace(
+            base.segments[0],
+            segment_id="keep",
+            ordinal=1,
+            token_count=keep_tokens,
+            content_hash=f"{task_id}-{framework}-keep",
+        ),
+    ]
+    annotations = [
+        ReferenceAnnotation(
+            segment_id="remove",
+            annotator_id="consensus",
+            decision="remove",
+            adjudicated=True,
+        ),
+        ReferenceAnnotation(
+            segment_id="keep",
+            annotator_id="consensus",
+            decision="keep",
+            adjudicated=True,
+        ),
+    ]
+    if uncertain_tokens:
+        segments.append(
+            replace(
+                base.segments[0],
+                segment_id="uncertain",
+                ordinal=2,
+                token_count=uncertain_tokens,
+                content_hash=f"{task_id}-{framework}-uncertain",
+            )
+        )
+        annotations.append(
+            ReferenceAnnotation(
+                segment_id="uncertain",
+                annotator_id="consensus",
+                decision="uncertain",
+                adjudicated=True,
+            )
+        )
+    return replace(
+        base,
+        schema_version="1.2.1",
+        trace_id=f"{task_id}-{framework}",
+        task_id=task_id,
+        framework=framework,
+        task_success=True,
+        evidence_tier="natural",
+        dataset_split="test",
+        segments=tuple(segments),
+        reference_annotations=tuple(annotations),
+        detected_labels={"remove": ("heuristic",)},
     )
 
 

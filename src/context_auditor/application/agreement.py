@@ -33,6 +33,16 @@ def annotation_agreement(
     reason_pairs = [
         (primary_reason(left[key]), primary_reason(right[key])) for key in shared
     ]
+    block_disagreement: dict[str, list[float]] = {}
+    for key in shared:
+        for reviewer, row in (
+            ("reviewer_a", left[key]),
+            ("reviewer_b", right[key]),
+        ):
+            block = row.get("block_id", "unassigned") or "unassigned"
+            block_disagreement.setdefault(f"{reviewer}:{block}", []).append(
+                float(left[key]["decision"] != right[key]["decision"])
+            )
     return {
         "shared_annotation_count": len(shared),
         "percent_agreement": observed,
@@ -41,6 +51,11 @@ def annotation_agreement(
         "krippendorff_alpha_nominal": nominal_alpha(pairs),
         "reason_krippendorff_alpha_nominal": nominal_alpha(reason_pairs),
         "decision_counts": dict(sorted(pooled.items())),
+        "disagreement_rate_by_reviewer_block": {
+            key: mean(values)
+            for key, values in sorted(block_disagreement.items())
+        },
+        "fatigue_disagreement_trend": fatigue_trends(block_disagreement),
     }
 
 
@@ -84,3 +99,39 @@ def nominal_alpha(pairs: list[tuple[str, str]]) -> float | None:
     if expected_disagreement == 0:
         return 1.0
     return 1.0 - observed_disagreement / expected_disagreement
+
+
+def fatigue_trends(
+    block_disagreement: dict[str, list[float]],
+) -> dict[str, dict[str, float | int | None]]:
+    by_reviewer: dict[str, list[tuple[int, float]]] = {}
+    for key, values in block_disagreement.items():
+        reviewer, block = key.split(":", 1)
+        digits = "".join(character for character in block if character.isdigit())
+        if not digits:
+            continue
+        by_reviewer.setdefault(reviewer, []).append(
+            (int(digits), mean(values))
+        )
+    result = {}
+    for reviewer, points in sorted(by_reviewer.items()):
+        ordered = sorted(points)
+        x_values = [float(item[0]) for item in ordered]
+        y_values = [item[1] for item in ordered]
+        x_mean = mean(x_values)
+        y_mean = mean(y_values)
+        denominator = sum((value - x_mean) ** 2 for value in x_values)
+        slope = (
+            sum(
+                (x_value - x_mean) * (y_value - y_mean)
+                for x_value, y_value in zip(x_values, y_values)
+            )
+            / denominator
+            if denominator
+            else None
+        )
+        result[reviewer] = {
+            "block_count": len(ordered),
+            "disagreement_rate_slope_per_block": slope,
+        }
+    return result
