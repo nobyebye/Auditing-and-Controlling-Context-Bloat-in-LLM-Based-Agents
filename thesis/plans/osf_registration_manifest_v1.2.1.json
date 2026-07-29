@@ -54,8 +54,8 @@
       "dependency_snapshot_v1.2.1.json": "383be3234e832280fb74a04a8f1fa16f2f829a153582da6fa98239c268e0ed4d",
       "external_validation_protocol_v1.2.1.md": "079b5901e6f2f5ea746bd4818088a1ef74c5c039e9d6e1dd06899c245ef955ed"
     },
-    "github_release_commit": "",
-    "github_release_tag": "",
+    "github_release_commit": "4ef1d7a3706293e7f8a2bab33982ece0007d01be",
+    "github_release_tag": "v1.2.1-calibration-method-clarification",
     "predecessor_registration_url": "https://osf.io/ue4vw/overview",
     "protocol_package": "thesis/releases/osf_calibration_method_clarification_v1.2.1.zip",
     "protocol_package_sha256": "766038618948b6a2dc1e3c6b281585ee2af5b44f21a14b058d676608d85cbbae",
