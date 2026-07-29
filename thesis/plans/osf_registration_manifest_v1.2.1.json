@@ -69,9 +69,9 @@
     "predecessor_registration_url": "https://osf.io/a75wd/overview",
     "protocol_package": "thesis/releases/osf_calibration_implementation_correction_v1.2.1.zip",
     "protocol_package_sha256": "06271c045ddf6e3ca0dfb58002888759b71f489b019eafa52e58efcafb30c870",
-    "registered_at": "",
-    "registration_status": "ready_for_registration",
-    "registration_url": ""
+    "registered_at": "2026-07-29T13:21:01.267341Z",
+    "registration_status": "registered",
+    "registration_url": "https://osf.io/ehf6x/overview"
   },
   "calibration_method_clarification": {
     "calibration_calls_allowed": true,
