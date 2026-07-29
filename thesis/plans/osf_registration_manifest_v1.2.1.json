@@ -64,8 +64,8 @@
       "dependency_snapshot_v1.2.1.json": "383be3234e832280fb74a04a8f1fa16f2f829a153582da6fa98239c268e0ed4d",
       "external_validation_protocol_v1.2.1.md": "079b5901e6f2f5ea746bd4818088a1ef74c5c039e9d6e1dd06899c245ef955ed"
     },
-    "github_release_commit": "",
-    "github_release_tag": "",
+    "github_release_commit": "a6519b9c42cea6b4b5921845fd7cf6a42d4c0e24",
+    "github_release_tag": "v1.2.1-calibration-implementation-correction",
     "predecessor_registration_url": "https://osf.io/a75wd/overview",
     "protocol_package": "thesis/releases/osf_calibration_implementation_correction_v1.2.1.zip",
     "protocol_package_sha256": "06271c045ddf6e3ca0dfb58002888759b71f489b019eafa52e58efcafb30c870",
