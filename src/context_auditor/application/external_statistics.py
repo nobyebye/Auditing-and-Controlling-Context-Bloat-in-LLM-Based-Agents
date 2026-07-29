@@ -54,6 +54,73 @@ def build_study_b_statistics(traces: list[AuditTrace]) -> dict:
     }
 
 
+def compare_source_rankings(
+    study_a_ratios: dict[str, float],
+    study_b_ranking: list[dict],
+) -> dict:
+    study_b_ratios = {
+        str(item["source"]): float(
+            item["human_reference_bloat_token_ratio"]
+        )
+        for item in study_b_ranking
+    }
+    return kendall_tau_b(study_a_ratios, study_b_ratios)
+
+
+def kendall_tau_b(
+    left: dict[str, float],
+    right: dict[str, float],
+) -> dict:
+    common = sorted(set(left) & set(right))
+    concordant = 0
+    discordant = 0
+    ties_left = 0
+    ties_right = 0
+    ties_both = 0
+    for index, first in enumerate(common):
+        for second in common[index + 1 :]:
+            left_sign = comparison_sign(left[first] - left[second])
+            right_sign = comparison_sign(right[first] - right[second])
+            if left_sign == 0 and right_sign == 0:
+                ties_both += 1
+            elif left_sign == 0:
+                ties_left += 1
+            elif right_sign == 0:
+                ties_right += 1
+            elif left_sign == right_sign:
+                concordant += 1
+            else:
+                discordant += 1
+    denominator = math.sqrt(
+        (concordant + discordant + ties_left)
+        * (concordant + discordant + ties_right)
+    )
+    tau = (
+        (concordant - discordant) / denominator
+        if denominator
+        else None
+    )
+    return {
+        "common_sources": common,
+        "common_source_count": len(common),
+        "kendall_tau_b": tau,
+        "concordant_pairs": concordant,
+        "discordant_pairs": discordant,
+        "ties_in_study_a_only": ties_left,
+        "ties_in_study_b_only": ties_right,
+        "ties_in_both": ties_both,
+        "scope": "ranking_comparison_only_absolute_ratios_not_compared",
+    }
+
+
+def comparison_sign(value: float) -> int:
+    if value > 0:
+        return 1
+    if value < 0:
+        return -1
+    return 0
+
+
 def evaluate_rq1(traces: list[AuditTrace], policy: str) -> dict:
     context_rows = []
     by_task: dict[str, list[tuple[int, int, int, int]]] = defaultdict(list)

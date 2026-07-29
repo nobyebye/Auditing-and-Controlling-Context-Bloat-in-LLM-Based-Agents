@@ -122,9 +122,9 @@ The external dataset contains 12 calibration tasks and 60 held-out tasks:
 
 Calibration contains four tasks per workflow. Source version, selected IDs,
 download time, licence notes, sampling seed, and SHA-256 hashes are stored in
-the dataset manifest. The same 60 held-out task IDs are executed through
-LangChain and Custom ReAct, producing 120 final contexts. No synthetic bloat is
-injected.
+the dataset manifest. The same 60 held-out task IDs are attempted through
+LangChain and Custom ReAct, giving 120 task-framework cells and up to 120
+successfully captured final contexts. No synthetic bloat is injected.
 
 ### Human annotation
 
@@ -196,9 +196,9 @@ the provenance-aware arm. The allowed difference is
 `max(2 tokens, 2 percent)`. All 60 contexts must pass local budget and
 protected-content preflight before the first mitigation request.
 
-All 288 Study C outputs are independently scored by both human reviewers in
-condition-blind blocks of 24. Human adjudicated task success is primary;
-automatic scoring is secondary.
+All successfully generated Study C outputs, up to 288, are independently
+scored by both human reviewers in condition-blind blocks of 24. Human
+adjudicated task success is primary; automatic scoring is secondary.
 
 ## Frozen analysis
 

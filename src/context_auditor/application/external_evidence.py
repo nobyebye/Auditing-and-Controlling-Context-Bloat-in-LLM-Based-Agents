@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 from context_auditor.adapters.storage.runs import file_hash
@@ -16,6 +17,7 @@ from context_auditor.application.external_annotations import (
 )
 from context_auditor.application.external_statistics import (
     build_study_b_statistics,
+    compare_source_rankings,
 )
 from context_auditor.domain.models import SCHEMA_VERSION
 
@@ -66,6 +68,13 @@ class BuildExternalEvidence:
                 + ", ".join(incomplete[:10])
             )
         statistics = build_study_b_statistics(final_natural)
+        rules_path = (
+            self.project_root
+            / "configs"
+            / "conclusions"
+            / "rq_rules_v2.json"
+        )
+        rules = json.loads(rules_path.read_text(encoding="utf-8"))
         summary = {
             "schema_version": SCHEMA_VERSION,
             "study": "B",
@@ -105,6 +114,10 @@ class BuildExternalEvidence:
                 "RQ3": {
                     "evidence_type": "descriptive_natural_trace",
                     "metrics": primary["rq3_source_patterns"],
+                    "study_a_vs_study_b_ranking": compare_source_rankings(
+                        rules["rq3"]["study_a_injected_source_ratios"],
+                        primary["rq3_source_patterns"]["ranking"],
+                    ),
                 },
                 "RQ4": {
                     "evidence_type": "not_evaluated_in_study_b",

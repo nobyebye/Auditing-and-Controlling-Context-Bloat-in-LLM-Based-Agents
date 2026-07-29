@@ -160,6 +160,16 @@ def evaluate_mitigation_arms(
     by_arm = {}
     for arm in sorted(required):
         arm_traces = [arms[arm] for arms in keyed.values()]
+        costs = [
+            float(trace.provider_usage.cost_usd)
+            for trace in arm_traces
+            if trace.provider_usage.cost_usd is not None
+        ]
+        latencies = [
+            float(trace.latency_ms)
+            for trace in arm_traces
+            if trace.latency_ms is not None
+        ]
         by_arm[arm] = {
             "trace_count": len(arm_traces),
             "task_count": len({trace.task_id for trace in arm_traces}),
@@ -171,13 +181,10 @@ def evaluate_mitigation_arms(
                 float(trace.provider_usage.input_tokens or 0)
                 for trace in arm_traces
             ),
-            "mean_cost_usd": mean(
-                float(trace.provider_usage.cost_usd or 0.0)
-                for trace in arm_traces
-            ),
-            "mean_latency_ms": mean(
-                float(trace.latency_ms or 0.0) for trace in arm_traces
-            ),
+            "mean_cost_usd": mean(costs) if costs else None,
+            "cost_observation_count": len(costs),
+            "mean_latency_ms": mean(latencies) if latencies else None,
+            "latency_observation_count": len(latencies),
             "automatic_success_rate": mean(
                 float(bool(trace.task_success)) for trace in arm_traces
             ),
@@ -228,14 +235,19 @@ def paired_arm_comparison(
         values["token_ratio"].append(ratio)
         values["human_success"].append(human_difference)
         values["automatic_success"].append(automatic_difference)
-        values["cost"].append(
-            float(baseline.provider_usage.cost_usd or 0.0)
-            - float(treated.provider_usage.cost_usd or 0.0)
-        )
-        values["latency"].append(
-            float(baseline.latency_ms or 0.0)
-            - float(treated.latency_ms or 0.0)
-        )
+        if (
+            baseline.provider_usage.cost_usd is not None
+            and treated.provider_usage.cost_usd is not None
+        ):
+            values["cost"].append(
+                float(baseline.provider_usage.cost_usd)
+                - float(treated.provider_usage.cost_usd)
+            )
+        if baseline.latency_ms is not None and treated.latency_ms is not None:
+            values["latency"].append(
+                float(baseline.latency_ms)
+                - float(treated.latency_ms)
+            )
         raw_success.extend(
             [
                 (task_id, 0, int(human_outcomes[baseline.trace_id])),
@@ -243,7 +255,11 @@ def paired_arm_comparison(
             ]
         )
     task_values = {
-        name: [mean(values[name]) for values in by_task.values()]
+        name: [
+            mean(values[name])
+            for values in by_task.values()
+            if values.get(name)
+        ]
         for name in (
             "token_reduction",
             "token_ratio",
@@ -272,8 +288,14 @@ def paired_arm_comparison(
         "automatic_success_difference_ci95": bootstrap_mean_interval(
             task_values["automatic_success"]
         ),
-        "mean_cost_reduction_usd": mean(task_values["cost"]),
-        "mean_latency_reduction_ms": mean(task_values["latency"]),
+        "mean_cost_reduction_usd": optional_mean(task_values["cost"]),
+        "cost_reduction_ci95": bootstrap_mean_interval(task_values["cost"]),
+        "cost_task_count": len(task_values["cost"]),
+        "mean_latency_reduction_ms": optional_mean(task_values["latency"]),
+        "latency_reduction_ci95": bootstrap_mean_interval(
+            task_values["latency"]
+        ),
+        "latency_task_count": len(task_values["latency"]),
         "noninferiority_sensitivity": {
             str(margin): (
                 human_ci is not None and human_ci[0] >= margin
@@ -423,6 +445,10 @@ def interpret_rq4(mitigation: dict) -> dict:
         "human_success_difference_ci95": ci,
         "noninferiority_margin": -0.05,
     }
+
+
+def optional_mean(values: list[float]) -> float | None:
+    return mean(values) if values else None
 
 
 def trace_score(trace: AuditTrace) -> float:

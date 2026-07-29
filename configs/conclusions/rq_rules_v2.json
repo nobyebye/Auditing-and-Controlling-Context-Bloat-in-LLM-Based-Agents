@@ -18,7 +18,13 @@
   "rq3": {
     "interpretation": "descriptive_within_study_only",
     "primary_ranking_statistic": "adjudicated_remove_tokens_over_all_eligible_annotated_tokens_by_source",
-    "causal_source_effect_claimed": false
+    "causal_source_effect_claimed": false,
+    "study_a_injected_source_ratios": {
+      "tool": 0.5,
+      "retrieval": 0.48684219638078857,
+      "memory": 0.4684914971510473
+    },
+    "cross_study_comparison": "ranking_only_kendall_tau_b"
   },
   "rq4": {
     "noninferiority_margin": -0.05,

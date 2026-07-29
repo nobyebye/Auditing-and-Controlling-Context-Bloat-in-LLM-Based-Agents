@@ -18,8 +18,12 @@ from context_auditor.application.external_annotations import (
 )
 from context_auditor.application.external_statistics import (
     build_study_b_statistics,
+    compare_source_rankings,
 )
 from context_auditor.application.segmentation import segment_messages
+from context_auditor.application.study_c_evidence import (
+    evaluate_mitigation_arms,
+)
 from context_auditor.domain.enums import PrivacyMode
 from context_auditor.domain.models import (
     AuditTrace,
@@ -27,6 +31,7 @@ from context_auditor.domain.models import (
     Message,
     ModelRequestEnvelope,
     ProviderRequestRecord,
+    ProviderUsage,
     ReferenceAnnotation,
     TextSegment,
 )
@@ -479,6 +484,65 @@ class V12EvidenceTests(unittest.TestCase):
             ],
             8 / 22,
         )
+
+    def test_kendall_tau_b_compares_only_common_source_rankings(self):
+        result = compare_source_rankings(
+            {"tool": 0.5, "retrieval": 0.48, "memory": 0.46},
+            [
+                {
+                    "source": "tool",
+                    "human_reference_bloat_token_ratio": 0.4,
+                },
+                {
+                    "source": "retrieval",
+                    "human_reference_bloat_token_ratio": 0.3,
+                },
+                {
+                    "source": "memory",
+                    "human_reference_bloat_token_ratio": 0.2,
+                },
+                {
+                    "source": "framework",
+                    "human_reference_bloat_token_ratio": 0.1,
+                },
+            ],
+        )
+        self.assertEqual(result["common_source_count"], 3)
+        self.assertEqual(result["kendall_tau_b"], 1.0)
+
+    def test_missing_cost_and_latency_remain_unavailable(self):
+        traces = []
+        outcomes = {}
+        for arm in (
+            "unmodified",
+            "provenance_aware",
+            "llmlingua2_budget_matched",
+        ):
+            trace = replace(
+                make_counterfactual_trace(),
+                trace_id=f"trace-{arm}",
+                configuration=arm,
+                evidence_tier="mitigation",
+                task_success=True,
+                metrics={"total_tokens": 10},
+                provider_usage=ProviderUsage(
+                    input_tokens=10,
+                    output_tokens=1,
+                    total_tokens=11,
+                    cost_usd=None,
+                ),
+                latency_ms=None,
+            )
+            traces.append(trace)
+            outcomes[trace.trace_id] = True
+        result = evaluate_mitigation_arms(traces, outcomes)
+        self.assertIsNone(result["by_arm"]["unmodified"]["mean_cost_usd"])
+        self.assertIsNone(result["by_arm"]["unmodified"]["mean_latency_ms"])
+        comparison = result["versus_unmodified"]["provenance_aware"]
+        self.assertIsNone(comparison["mean_cost_reduction_usd"])
+        self.assertIsNone(comparison["mean_latency_reduction_ms"])
+        self.assertEqual(comparison["cost_task_count"], 0)
+        self.assertEqual(comparison["latency_task_count"], 0)
 
 
 def make_capture_request(
