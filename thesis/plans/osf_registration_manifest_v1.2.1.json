@@ -21,7 +21,7 @@
   "initial_registration": {
     "calibration_calls_allowed": false,
     "file_sha256": {
-      "../../configs/conclusions/rq_rules_v2.json": "fcf6636f921ad8c1bdbb859a1398669b341bbd225e22f93b010460db9908a930",
+      "../../configs/conclusions/rq_rules_v2.json": "b67159c6576343df46332828895708271accf3148ebb13603b111c1c2b4ad850",
       "../../configs/experiments/external_calibration_custom_react_v1.2.1.json": "4819c6332702523a2fb296c17463b55cc863dbda6bec362084c6098756d247e9",
       "../../configs/experiments/external_calibration_langchain_v1.2.1.json": "27d5ceecfb60bee110af8510b4cc7f53b85f8202f92d5723042ebbccd92936e7",
       "../../configs/experiments/external_custom_react_v1.2.1.json": "17fa6d31f85833370ada39ee122e6e20b0d94f4df7aae065319293e45707a940",
@@ -32,11 +32,11 @@
       "../../data/datasets/external_validation/v1/dataset_manifest.json": "34c9360c7fc82a299a438d384cf512bcbb18fee180db2a6b8b690c3976f3844a",
       "../../pyproject.toml": "15e6d4dc4671dec1573c0a419a708edbce0a15d30e423534d90b6609b37fd0e9",
       "annotation_codebook_v1.2.1.md": "58db07ea4ed592b2927b012cd08fa7e180237510365d71722fcf8b78468d23b4",
-      "external_validation_protocol_v1.2.1.md": "645455ee8d3f131c137f74c9aba847bf8530e1de0f2d5c1f5169040dc405d637"
+      "external_validation_protocol_v1.2.1.md": "079b5901e6f2f5ea746bd4818088a1ef74c5c039e9d6e1dd06899c245ef955ed"
     },
-    "note": "Upload this package to an immutable OSF registration, then record the URL and timestamp and explicitly enable the corresponding calls.",
-    "protocol_package": "thesis/releases/osf_external_validation_protocol_v1.2.1.zip",
-    "protocol_package_sha256": "e18643ba3d46394838402d90fcd41a9cddc1e2cc01ef02a8fb50c67003aefcbd",
+    "note": "Upload this package to an immutable OSF registration, then record the externally computed archive SHA-256, URL, and timestamp in the project manifest before explicitly enabling the corresponding calls.",
+    "protocol_package": "thesis/releases/osf_external_validation_protocol_v1.2.1-r1.zip",
+    "protocol_package_sha256": "d74c6ab6ecbfe135c9757297a8120efd14c5f3c16bfae35cf018c2cd6c2232d0",
     "registered_at": "",
     "registration_status": "ready_for_registration",
     "registration_url": ""
@@ -56,6 +56,6 @@
     "../../pyproject.toml"
   ],
   "protocol_version": "1.2.1",
-  "registered_commit": "590f6ac825cf5c4c25fea629e6c430030d06fc75",
+  "registered_commit": "6d2f5025e46f19a4b5a749854b5fafe457776dac",
   "title": "Runtime Auditing of Context Bloat in LLM-Based Agents: Detection, Measurement, and Mitigation Evaluation"
 }
