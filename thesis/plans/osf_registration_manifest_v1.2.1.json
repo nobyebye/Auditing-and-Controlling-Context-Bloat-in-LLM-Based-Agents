@@ -59,9 +59,9 @@
     "predecessor_registration_url": "https://osf.io/ue4vw/overview",
     "protocol_package": "thesis/releases/osf_calibration_method_clarification_v1.2.1.zip",
     "protocol_package_sha256": "766038618948b6a2dc1e3c6b281585ee2af5b44f21a14b058d676608d85cbbae",
-    "registered_at": "",
-    "registration_status": "ready_for_registration",
-    "registration_url": ""
+    "registered_at": "2026-07-29T11:26:03.667530Z",
+    "registration_status": "pending_approval",
+    "registration_url": "https://osf.io/a75wd/overview"
   },
   "clarification_required_files": [
     "calibration_method_clarification_v1.2.1.md",
