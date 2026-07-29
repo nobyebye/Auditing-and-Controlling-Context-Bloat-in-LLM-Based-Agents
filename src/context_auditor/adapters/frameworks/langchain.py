@@ -5,7 +5,7 @@ from __future__ import annotations
 import importlib.util
 from typing import Any, Callable
 
-from context_auditor.domain.models import AuditTrace, CaptureRequest, Message
+from context_auditor.domain.models import AuditTrace, CaptureRequest, Message, ToolCall
 
 if importlib.util.find_spec("langchain_core") is not None:
     from langchain_core.callbacks import BaseCallbackHandler
@@ -36,10 +36,21 @@ class LangChainContextAdapter:
             raise TypeError(f"Unsupported LangChain message: {type(message).__name__}")
         additional_kwargs = getattr(message, "additional_kwargs", {}) or {}
         metadata = {"raw_type": type(message).__name__, **dict(additional_kwargs)}
+        raw_tool_calls = getattr(message, "tool_calls", ()) or ()
         return Message(
             role=normalize_langchain_role(str(role)),
             content=str(content),
+            name=getattr(message, "name", None),
             metadata=metadata,
+            tool_call_id=getattr(message, "tool_call_id", None),
+            tool_calls=tuple(
+                ToolCall(
+                    call_id=str(item.get("id", "")),
+                    name=str(item.get("name", "")),
+                    arguments=dict(item.get("args", {})),
+                )
+                for item in raw_tool_calls
+            ),
         )
 
 

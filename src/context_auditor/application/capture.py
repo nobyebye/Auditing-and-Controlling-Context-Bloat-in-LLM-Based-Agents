@@ -13,6 +13,7 @@ from context_auditor.domain.models import (
     Message,
     ModelRequestEnvelope,
     SCHEMA_VERSION,
+    ToolCall,
     ToolDefinition,
 )
 from context_auditor.domain.text import store_text
@@ -264,7 +265,18 @@ def redact_envelope(
     return replace(
         envelope,
         messages=tuple(
-            replace(message, content=store_text(message.content, request.privacy_mode))
+            replace(
+                message,
+                content=store_text(message.content, request.privacy_mode),
+                tool_calls=tuple(
+                    ToolCall(
+                        call_id=call.call_id,
+                        name=call.name,
+                        arguments=redact_mapping(call.arguments, request),
+                    )
+                    for call in message.tool_calls
+                ),
+            )
             for message in envelope.messages
         ),
         system_instructions=tuple(

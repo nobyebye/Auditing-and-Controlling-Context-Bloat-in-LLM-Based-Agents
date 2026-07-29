@@ -21,16 +21,19 @@ OSF_REGISTRATION_RE = re.compile(
 EVIDENCE_BLOCKS = {
     "initial_registration": "initial_required_files",
     "calibration_method_clarification": "clarification_required_files",
+    "calibration_implementation_correction": "correction_required_files",
     "calibration_addendum": "addendum_required_files",
 }
 PHASE_CHAINS = {
     "calibration": (
         "initial_registration",
         "calibration_method_clarification",
+        "calibration_implementation_correction",
     ),
     "test": (
         "initial_registration",
         "calibration_method_clarification",
+        "calibration_implementation_correction",
         "calibration_addendum",
     ),
 }
@@ -38,6 +41,7 @@ FREEZE_PHASES = {
     "initial": "initial_registration",
     "calibration": "initial_registration",
     "clarification": "calibration_method_clarification",
+    "correction": "calibration_implementation_correction",
     "addendum": "calibration_addendum",
     "test": "calibration_addendum",
 }
@@ -333,9 +337,16 @@ def freeze_protocol_package(
 def _predecessor_url(data: dict, block_name: str) -> str:
     if block_name == "calibration_method_clarification":
         return str(data.get("initial_registration", {}).get("registration_url", ""))
-    if block_name == "calibration_addendum":
+    if block_name == "calibration_implementation_correction":
         return str(
             data.get("calibration_method_clarification", {}).get(
+                "registration_url",
+                "",
+            )
+        )
+    if block_name == "calibration_addendum":
+        return str(
+            data.get("calibration_implementation_correction", {}).get(
                 "registration_url",
                 "",
             )

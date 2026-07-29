@@ -121,6 +121,7 @@ def build_tool_follow_up_request(
             "assistant",
             assistant_content or "[tool call]",
             metadata={"source_type": "generated_trace"},
+            tool_calls=tuple(tool_calls),
         ),
     ]
     for call in tool_calls:
@@ -133,6 +134,7 @@ def build_tool_follow_up_request(
                     "source_type": "tool",
                     "source_id": call.call_id or call.name,
                 },
+                tool_call_id=call.call_id,
             )
         )
     follow_up_messages.append(

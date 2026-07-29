@@ -186,13 +186,25 @@ def to_langchain_messages(messages: tuple) -> list:
             )
         elif message.role == "assistant":
             converted.append(
-                AIMessage(content=message.content, additional_kwargs=additional_kwargs)
+                AIMessage(
+                    content=message.content,
+                    additional_kwargs=additional_kwargs,
+                    tool_calls=[
+                        {
+                            "id": call.call_id,
+                            "name": call.name,
+                            "args": dict(call.arguments),
+                            "type": "tool_call",
+                        }
+                        for call in message.tool_calls
+                    ],
+                )
             )
         elif message.role == "tool":
             converted.append(
                 ToolMessage(
                     content=message.content,
-                    tool_call_id="controlled-tool-call",
+                    tool_call_id=message.tool_call_id or "controlled-tool-call",
                     additional_kwargs=additional_kwargs,
                 )
             )

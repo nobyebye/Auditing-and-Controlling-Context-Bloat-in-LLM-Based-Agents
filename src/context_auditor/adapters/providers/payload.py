@@ -19,10 +19,7 @@ def build_openai_payload(
     envelope: ModelRequestEnvelope,
     model: str,
 ) -> dict[str, Any]:
-    messages = [
-        {"role": normalize_role(item.role), "content": item.content}
-        for item in envelope.messages
-    ]
+    messages = [openai_message(item) for item in envelope.messages]
     if envelope.system_instructions:
         messages = [
             {"role": "system", "content": instruction}
@@ -55,6 +52,35 @@ def build_openai_payload(
     if envelope.provider_seed is not None:
         payload["seed"] = envelope.provider_seed
     return payload
+
+
+def openai_message(item) -> dict[str, Any]:
+    role = normalize_role(item.role)
+    message: dict[str, Any] = {"role": role, "content": item.content}
+    if item.name and role != "tool":
+        message["name"] = item.name
+    if role == "assistant" and item.tool_calls:
+        message["tool_calls"] = [
+            {
+                "id": call.call_id,
+                "type": "function",
+                "function": {
+                    "name": call.name,
+                    "arguments": json.dumps(
+                        dict(call.arguments),
+                        ensure_ascii=False,
+                        sort_keys=True,
+                        separators=(",", ":"),
+                    ),
+                },
+            }
+            for call in item.tool_calls
+        ]
+    if role == "tool":
+        if not item.tool_call_id:
+            raise ValueError("Tool messages require tool_call_id")
+        message["tool_call_id"] = item.tool_call_id
+    return message
 
 
 def canonical_payload_bytes(payload: Mapping[str, Any]) -> bytes:

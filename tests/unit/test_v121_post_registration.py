@@ -132,9 +132,11 @@ class PostRegistrationTests(unittest.TestCase):
                         "protocol_version": "1.2.1",
                         "initial_required_files": ["protocol.md"],
                         "clarification_required_files": ["protocol.md"],
+                        "correction_required_files": ["protocol.md"],
                         "addendum_required_files": ["protocol.md"],
                         "initial_registration": {},
                         "calibration_method_clarification": {},
+                        "calibration_implementation_correction": {},
                         "calibration_addendum": {},
                     }
                 ),
@@ -191,11 +193,36 @@ class PostRegistrationTests(unittest.TestCase):
                 }
             )
             manifest.write_text(json.dumps(data), encoding="utf-8")
+
+            git(root, "add", ".")
+            git(root, "commit", "-m", "record clarification registration")
+            correction_package = freeze_protocol_package(
+                root,
+                releases / "correction.zip",
+                phase="correction",
+            )
+            git(root, "add", ".")
+            git(root, "commit", "-m", "correction package")
+            correction_commit = git(root, "rev-parse", "HEAD")
+            git(root, "tag", "correction-release")
+            data = json.loads(manifest.read_text(encoding="utf-8"))
+            data["calibration_implementation_correction"].update(
+                {
+                    "registration_status": "registered",
+                    "registration_url": "https://osf.io/corr1/overview",
+                    "registered_at": "2026-07-30T11:00:00+03:00",
+                    "github_release_tag": "correction-release",
+                    "github_release_commit": correction_commit,
+                    "calibration_calls_allowed": False,
+                }
+            )
+            manifest.write_text(json.dumps(data), encoding="utf-8")
             result = validate_protocol_registration(root, phase="calibration")
             self.assertTrue(result["derived_calls_allowed"])
-            self.assertEqual(len(result["evidence_chain"]), 2)
+            self.assertEqual(len(result["evidence_chain"]), 3)
             self.assertTrue(initial_package.is_file())
             self.assertTrue(clarification_package.is_file())
+            self.assertTrue(correction_package.is_file())
 
             protocol.write_text("tampered\n", encoding="utf-8")
             with self.assertRaisesRegex(RuntimeError, "runtime file changed"):

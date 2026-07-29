@@ -17,6 +17,8 @@ class Message:
     content: str
     name: str | None = None
     metadata: Mapping[str, Any] = field(default_factory=dict)
+    tool_call_id: str | None = None
+    tool_calls: tuple["ToolCall", ...] = ()
 
 
 @dataclass(frozen=True)

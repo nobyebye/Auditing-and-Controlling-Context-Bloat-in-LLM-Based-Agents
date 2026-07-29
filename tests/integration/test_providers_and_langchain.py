@@ -12,12 +12,15 @@ from context_auditor.adapters.frameworks import (
 )
 from context_auditor.adapters.providers import DeepSeekProvider, MockProvider
 from context_auditor.adapters.providers.deepseek import estimate_cost_usd
+from context_auditor.adapters.providers.payload import build_openai_payload
 from context_auditor.domain.models import (
     Message,
     ModelRequestEnvelope,
     ProviderUsage,
+    ToolCall,
     ToolDefinition,
 )
+from context_auditor.experiments.external_workflow import build_tool_follow_up_request
 
 
 class ProviderTests(unittest.TestCase):
@@ -99,6 +102,52 @@ class ProviderTests(unittest.TestCase):
             hashlib.sha256(captured["body"]).hexdigest(),
         )
 
+    def test_tool_follow_up_serializes_required_provider_fields(self):
+        task = {
+            "task_id": "tool-1",
+            "workflow_family": "multi_step_tool",
+            "tool_results": {"calculator": {"value": 4}},
+        }
+        initial = ModelRequestEnvelope(
+            messages=(Message("user", "calculate"),),
+            tools=(
+                ToolDefinition(
+                    name="calculator",
+                    description="Calculate.",
+                    parameters={"type": "object"},
+                ),
+            ),
+        )
+        follow_up = build_tool_follow_up_request(
+            initial,
+            task=task,
+            framework="custom-react",
+            tool_calls=(
+                ToolCall(
+                    call_id="call-1",
+                    name="calculator",
+                    arguments={"expression": "2+2"},
+                ),
+            ),
+            assistant_content="I will calculate that.",
+        )
+        payload = build_openai_payload(follow_up, "deepseek-v4-flash")
+        assistant = payload["messages"][1]
+        tool = payload["messages"][2]
+        self.assertEqual(assistant["tool_calls"][0]["id"], "call-1")
+        self.assertEqual(
+            assistant["tool_calls"][0]["function"]["arguments"],
+            '{"expression":"2+2"}',
+        )
+        self.assertEqual(tool["tool_call_id"], "call-1")
+
+    def test_tool_message_without_call_id_is_rejected(self):
+        with self.assertRaisesRegex(ValueError, "tool_call_id"):
+            build_openai_payload(
+                ModelRequestEnvelope((Message("tool", "result"),)),
+                "deepseek-v4-flash",
+            )
+
 
 @unittest.skipUnless(langchain_available(), "langchain-core not installed")
 class LangChainIntegrationTests(unittest.TestCase):
@@ -113,6 +162,32 @@ class LangChainIntegrationTests(unittest.TestCase):
     def test_rejects_unknown_objects(self):
         with self.assertRaises(TypeError):
             LangChainContextAdapter().convert([object()])
+
+    def test_tool_messages_round_trip_required_provider_fields(self):
+        from langchain_core.messages import AIMessage, ToolMessage
+
+        converted = LangChainContextAdapter().convert(
+            [
+                AIMessage(
+                    content="",
+                    tool_calls=[
+                        {
+                            "id": "call-1",
+                            "name": "calculator",
+                            "args": {"expression": "2+2"},
+                            "type": "tool_call",
+                        }
+                    ],
+                ),
+                ToolMessage(content="4", tool_call_id="call-1"),
+            ]
+        )
+        payload = build_openai_payload(
+            ModelRequestEnvelope(converted),
+            "deepseek-v4-flash",
+        )
+        self.assertEqual(payload["messages"][0]["tool_calls"][0]["id"], "call-1")
+        self.assertEqual(payload["messages"][1]["tool_call_id"], "call-1")
 
     def test_callback_captures_real_message_batch(self):
         from langchain_core.messages import HumanMessage

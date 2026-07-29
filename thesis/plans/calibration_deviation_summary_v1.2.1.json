@@ -1,0 +1,69 @@
+{
+  "calibration_analysis_performed": false,
+  "completed_requests": 12,
+  "dataset_hash": "2ffcca243fb189511d4e83149c9135bd4696d7e002032e8f92b862ac168c26a4",
+  "failed_requests": [
+    {
+      "arm": "natural_unmodified",
+      "call_id": "call-0010-5152e778",
+      "call_index": 10,
+      "error_type": "HTTPError",
+      "framework": "custom-react",
+      "http_status": 400,
+      "invocation_index": 1,
+      "occurred_at": "2026-07-29T12:22:42.435017Z",
+      "request_sha256": "59ecf2502ba28ac42e2401c55117e5d957b22dfcba030596e1e3b6fb8d0fb6a1",
+      "task_id": "bfcl-multi_turn_base_80"
+    },
+    {
+      "arm": "natural_unmodified",
+      "call_id": "call-0012-6647ccfa",
+      "call_index": 12,
+      "error_type": "HTTPError",
+      "framework": "custom-react",
+      "http_status": 400,
+      "invocation_index": 1,
+      "occurred_at": "2026-07-29T12:22:47.566525Z",
+      "request_sha256": "385e51d00bbd584555322a0e8bc004102fed0647f83a48988ee1b314e6a9baa6",
+      "task_id": "bfcl-multi_turn_base_57"
+    },
+    {
+      "arm": "natural_unmodified",
+      "call_id": "call-0014-4f65c550",
+      "call_index": 14,
+      "error_type": "HTTPError",
+      "framework": "custom-react",
+      "http_status": 400,
+      "invocation_index": 1,
+      "occurred_at": "2026-07-29T12:22:51.526463Z",
+      "request_sha256": "df4c00c6b73e527c48d48ed4c2ebf759fc92ce5bc88c184c9cceb587c816ef48",
+      "task_id": "bfcl-multi_turn_base_138"
+    },
+    {
+      "arm": "natural_unmodified",
+      "call_id": "call-0016-9f05169e",
+      "call_index": 16,
+      "error_type": "HTTPError",
+      "framework": "custom-react",
+      "http_status": 400,
+      "invocation_index": 1,
+      "occurred_at": "2026-07-29T12:22:56.262709Z",
+      "request_sha256": "c69369a805c957898b1d92e780a4a12330389ae1624f87e227083d02f60349b7",
+      "task_id": "bfcl-multi_turn_base_157"
+    }
+  ],
+  "first_real_request_at": "2026-07-29T12:22:04.487069Z",
+  "git_commit": "e47e29cc7a7cff81ffa5d56f1328757b35d3a987",
+  "heldout_requests_dispatched": 0,
+  "ledger_sha256_after_stop": "7266bbbec0b0ddf0822a64d620eda6ba4716127cf69719cc5b38240ae0027ff2",
+  "manual_retries_dispatched": 0,
+  "provider": "deepseek",
+  "provider_model": "deepseek-v4-flash",
+  "root_cause": "Assistant tool_calls and tool-message tool_call_id fields were omitted from the second provider payload.",
+  "run_id": "20260729T122142Z__custom-react__deepseek-v4-flash__v1__e47e29cc",
+  "run_manifest_sha256": "40c89f8995e103e66ac49f674cf7a6791aace21d350b6d260b96d1888e6873f5",
+  "status": "stopped_before_langchain_calibration",
+  "total_requests_dispatched": 16,
+  "trace_count": 16,
+  "traces_sha256": "8d84692454f25da1d5b9f5106a2645f3bb78c7d4094ecc6ba56d319bad71e5a8"
+}

@@ -19,6 +19,7 @@ from context_auditor.domain.models import (
     ReferenceAnnotation,
     ScoringResult,
     TextSegment,
+    ToolCall,
     ToolDefinition,
 )
 
@@ -83,7 +84,9 @@ def trace_from_dict(data: dict) -> AuditTrace:
         invocation_index=int(data["invocation_index"]),
         config_hash=data["config_hash"],
         privacy_mode=data["privacy_mode"],
-        messages=tuple(Message(**item) for item in data.get("messages", [])),
+        messages=tuple(
+            message_from_dict(item) for item in data.get("messages", [])
+        ),
         segments=tuple(TextSegment(**item) for item in data.get("segments", [])),
         metrics=data.get("metrics", {}),
         request_envelope=envelope,
@@ -142,12 +145,26 @@ def trace_from_dict(data: dict) -> AuditTrace:
     )
 
 
+def message_from_dict(data: dict) -> Message:
+    return Message(
+        **{
+            **data,
+            "tool_calls": tuple(
+                ToolCall(**item) if isinstance(item, dict) else item
+                for item in data.get("tool_calls", ())
+            ),
+        }
+    )
+
+
 def envelope_from_dict(data: dict | None) -> ModelRequestEnvelope | None:
     if not data:
         return None
     generation = data.get("generation_parameters")
     return ModelRequestEnvelope(
-        messages=tuple(Message(**item) for item in data.get("messages", [])),
+        messages=tuple(
+            message_from_dict(item) for item in data.get("messages", [])
+        ),
         system_instructions=tuple(data.get("system_instructions", [])),
         tools=tuple(ToolDefinition(**item) for item in data.get("tools", [])),
         generation_parameters=(

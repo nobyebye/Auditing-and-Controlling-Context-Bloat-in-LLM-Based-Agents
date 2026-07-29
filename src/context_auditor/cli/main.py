@@ -339,7 +339,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     freeze_protocol.add_argument(
         "--phase",
-        choices=("initial", "clarification", "addendum"),
+        choices=("initial", "clarification", "correction", "addendum"),
         default="clarification",
     )
     return parser
