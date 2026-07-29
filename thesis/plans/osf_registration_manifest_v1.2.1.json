@@ -24,7 +24,7 @@
     "registration_url": ""
   },
   "calibration_method_clarification": {
-    "calibration_calls_allowed": false,
+    "calibration_calls_allowed": true,
     "file_sha256": {
       "../../configs/experiments/external_calibration_custom_react_v1.2.1.json": "26c3e665c0014a8420cd6cbe80d2b78a96d0b0fb43c0abd215250ae67e9d10ee",
       "../../configs/experiments/external_calibration_langchain_v1.2.1.json": "9d0d22430003e6faf452a3fea92efbfc479ff68c491dcd664d4bb900321b84e8",
@@ -60,7 +60,7 @@
     "protocol_package": "thesis/releases/osf_calibration_method_clarification_v1.2.1.zip",
     "protocol_package_sha256": "766038618948b6a2dc1e3c6b281585ee2af5b44f21a14b058d676608d85cbbae",
     "registered_at": "2026-07-29T11:26:03.667530Z",
-    "registration_status": "pending_approval",
+    "registration_status": "registered",
     "registration_url": "https://osf.io/a75wd/overview"
   },
   "clarification_required_files": [
