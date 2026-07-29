@@ -111,6 +111,13 @@ def freeze_protocol_package(
         hashes[relative] = hashlib.sha256(path.read_bytes()).hexdigest()
     if not files:
         raise ValueError(f"Protocol manifest has no {phase} required files")
+    target = Path(output_path)
+    if target.exists():
+        raise FileExistsError(f"Protocol package already exists: {target}")
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target_reference = str(
+        target.resolve().relative_to(root.resolve())
+    ).replace("\\", "/")
     block = {
         **data.get(definition["block"], {}),
         "registration_status": "ready_for_registration",
@@ -118,16 +125,16 @@ def freeze_protocol_package(
         "registered_at": "",
         definition["allow"]: False,
         "file_sha256": hashes,
+        "protocol_package": target_reference,
+        "protocol_package_sha256": None,
         "note": (
             "Upload this package to an immutable OSF registration, then record "
-            "the URL and timestamp and explicitly enable the corresponding calls."
+            "the externally computed archive SHA-256, URL, and timestamp in "
+            "the project manifest before explicitly enabling the corresponding "
+            "calls."
         ),
     }
     frozen = {**data, definition["block"]: block}
-    target = Path(output_path)
-    if target.exists():
-        raise FileExistsError(f"Protocol package already exists: {target}")
-    target.parent.mkdir(parents=True, exist_ok=True)
     with zipfile.ZipFile(target, "x", compression=zipfile.ZIP_DEFLATED) as archive:
         for relative, path in sorted(files.items()):
             archive.write(path, "inputs/" + Path(relative).name)
@@ -135,9 +142,6 @@ def freeze_protocol_package(
             "registration_manifest.json",
             json.dumps(frozen, indent=2, sort_keys=True) + "\n",
         )
-    block["protocol_package"] = str(
-        target.resolve().relative_to(root.resolve())
-    ).replace("\\", "/")
     block["protocol_package_sha256"] = hashlib.sha256(
         target.read_bytes()
     ).hexdigest()

@@ -2,6 +2,7 @@ import csv
 import json
 import tempfile
 import unittest
+import zipfile
 from dataclasses import replace
 from pathlib import Path
 
@@ -345,6 +346,18 @@ class V12EvidenceTests(unittest.TestCase):
             )
             self.assertFalse(
                 frozen["initial_registration"]["calibration_calls_allowed"]
+            )
+            with zipfile.ZipFile(package) as archive:
+                packaged_manifest = json.loads(
+                    archive.read("registration_manifest.json")
+                )
+            packaged_block = packaged_manifest["initial_registration"]
+            self.assertEqual(
+                packaged_block["protocol_package"],
+                "thesis/releases/protocol.zip",
+            )
+            self.assertIsNone(
+                packaged_block["protocol_package_sha256"]
             )
             with self.assertRaises(RuntimeError):
                 validate_protocol_registration(root, phase="calibration")
