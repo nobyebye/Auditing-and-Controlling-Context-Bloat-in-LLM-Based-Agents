@@ -3,9 +3,8 @@
 This document maps every answer to the corresponding OSF registration
 question. Text under **Paste this answer** can be copied directly into OSF.
 
-Important: do not submit the registration until the implementation/package
-alignment checks at the end of this document have been completed and the final
-release URL, Git commit, and archive SHA-256 have been inserted.
+The implementation/package alignment checks at the end of this document have
+been completed. Use the corrected R1 archive and identifiers recorded below.
 
 ## Metadata
 
@@ -518,9 +517,9 @@ The runtime-auditing system records the final client-side serialized provider re
 Calibration may begin only after this registration has been made public and its immutable registration URL and timestamp have been recorded in the study manifest. Held-out Study B/C execution remains blocked until a public post-calibration OSF addendum records the already-frozen dataset-split hash and freezes the calibrated detection thresholds, final annotation codebook, and dependency hashes. The initial registration will not be modified to incorporate calibration decisions. Any subsequent protocol deviation will be timestamped, justified, and reported separately from the preregistered analyses.
 
 The corresponding corrected protocol freeze is archived at:
-[FINAL_GITHUB_RELEASE_URL]
+https://github.com/nobyebye/Auditing-and-Controlling-Context-Bloat-in-LLM-Based-Agents/releases/tag/v1.2.1-protocol-freeze-r1
 
-The frozen Git commit is [FINAL_GIT_COMMIT]. The SHA-256 checksum of the attached protocol archive is [FINAL_ARCHIVE_SHA256].
+The frozen source commit is 6d2f5025e46f19a4b5a749854b5fafe457776dac. The packaging commit associated with the release tag is 763e46e26d6e87485da17f617e381f2b12a886de. The SHA-256 checksum of the attached protocol archive is d74c6ab6ecbfe135c9757297a8120efd14c5f3c16bfae35cf018c2cd6c2232d0.
 ```
 
 ## Optional Upload Fields
@@ -531,7 +530,8 @@ be uploaded repeatedly.
 
 ## Pre-Submission Engineering Checks
 
-The following checks must pass before replacing the placeholders above:
+The following checks were completed before publishing the corrected R1
+package:
 
 1. Missing provider cost and latency remain unavailable and are never coerced
    to zero.
@@ -540,8 +540,8 @@ The following checks must pass before replacing the placeholders above:
    reduce the number of generated contexts or outputs.
 4. The corrected package passes the complete mock E2E and Python test suite.
 5. The corrected archive is generated from a clean frozen commit.
-6. The new GitHub release URL, commit, and SHA-256 are copied into the OSF
-   answer and registration manifest.
+6. The new GitHub release URL, source commit, packaging commit, and SHA-256 are
+   copied into the OSF answer and registration manifest.
 7. The three corrected attachments are visible in the OSF draft.
-8. The initial registration remains unsubmitted until all placeholders have
-   been replaced.
+8. The initial registration remains unsubmitted until the OSF draft has been
+   updated with these corrected answers and attachments.
