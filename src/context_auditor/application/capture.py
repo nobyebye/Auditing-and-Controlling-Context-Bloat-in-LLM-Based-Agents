@@ -55,7 +55,10 @@ class CaptureContext:
             self.tokenizer,
             request.privacy_mode,
         )
-        metrics = compute_metrics(segments)
+        metrics = compute_metrics(
+            segments,
+            near_duplicate_threshold=self.near_duplicate_threshold,
+        )
         user_query = next(
             (message.content for message in reversed(request.messages) if message.role == "user"),
             "",

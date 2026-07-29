@@ -25,6 +25,10 @@ class ExternalValidationConfig:
     retrieval_top_k: int
     memory_top_k: int
     max_provider_invocations_per_tool_cell: int
+    near_duplicate_threshold: float
+    relevance_threshold: float
+    verbose_tool_token_threshold: int
+    source_dominance_threshold: float
     call_budget: int
     call_ledger_path: str
     privacy_mode: PrivacyMode
@@ -51,6 +55,10 @@ def load_external_validation_config(
         "framework",
         "provider",
         "model",
+        "near_duplicate_threshold",
+        "relevance_threshold",
+        "verbose_tool_token_threshold",
+        "source_dominance_threshold",
     }
     missing = sorted(required - data.keys())
     if missing:
@@ -67,6 +75,24 @@ def load_external_validation_config(
         raise ValueError("External validation requires max_retries=0")
     if generation.thinking != "disabled":
         raise ValueError("External validation requires thinking=disabled")
+    near_duplicate_threshold = float(
+        data.get("near_duplicate_threshold", 0.80)
+    )
+    relevance_threshold = float(data.get("relevance_threshold", 0.05))
+    verbose_tool_token_threshold = int(
+        data.get("verbose_tool_token_threshold", 80)
+    )
+    source_dominance_threshold = float(
+        data.get("source_dominance_threshold", 0.65)
+    )
+    if not 0.0 <= near_duplicate_threshold <= 1.0:
+        raise ValueError("near_duplicate_threshold must be between 0 and 1")
+    if not 0.0 <= relevance_threshold <= 1.0:
+        raise ValueError("relevance_threshold must be between 0 and 1")
+    if verbose_tool_token_threshold < 1:
+        raise ValueError("verbose_tool_token_threshold must be positive")
+    if not 0.0 <= source_dominance_threshold <= 1.0:
+        raise ValueError("source_dominance_threshold must be between 0 and 1")
     return ExternalValidationConfig(
         schema_version=SCHEMA_VERSION,
         experiment_id=str(data["experiment_id"]),
@@ -82,6 +108,10 @@ def load_external_validation_config(
         retrieval_top_k=int(data.get("retrieval_top_k", 5)),
         memory_top_k=int(data.get("memory_top_k", 8)),
         max_provider_invocations_per_tool_cell=provider_cap,
+        near_duplicate_threshold=near_duplicate_threshold,
+        relevance_threshold=relevance_threshold,
+        verbose_tool_token_threshold=verbose_tool_token_threshold,
+        source_dominance_threshold=source_dominance_threshold,
         call_budget=int(data.get("call_budget", 500)),
         call_ledger_path=str(
             data.get(

@@ -7,7 +7,7 @@ import hashlib
 import json
 import random
 import zipfile
-from dataclasses import replace
+from dataclasses import asdict, replace
 from pathlib import Path
 from typing import Iterable
 
@@ -59,26 +59,40 @@ def export_context_annotation_packages(
     bundle_path: str | Path,
     output_dir: str | Path,
     *,
+    project_root: str | Path,
     annotation_set_id: str,
-    include_splits: tuple[str, ...] = ("test",),
+    include_split: str,
 ) -> Path:
+    if include_split not in {"calibration", "test"}:
+        raise ValueError("include_split must be calibration or test")
+    from context_auditor.experiments.protocol_lock import (
+        validate_protocol_registration,
+    )
+
+    validate_protocol_registration(project_root, phase=include_split)
     bundle = Path(bundle_path)
     validate_study_bundle(bundle)
     destination = Path(output_dir)
     if destination.exists():
         raise FileExistsError(f"Annotation output already exists: {destination}")
     traces, manifest = load_bundle(bundle)
+    observed_splits = {trace.dataset_split for trace in traces}
+    if observed_splits != {include_split}:
+        raise ValueError(
+            "Annotation bundle split does not match --include-split: "
+            f"expected={include_split}, observed={sorted(observed_splits)}"
+        )
     selected = [
         trace
         for trace in traces
         if trace.task_success is not None
-        and trace.dataset_split in include_splits
+        and trace.dataset_split == include_split
         and trace.evidence_tier == "natural"
     ]
     if not selected:
         raise ValueError("The bundle has no final natural-evidence traces")
     rows: list[dict[str, object]] = []
-    answer_key: list[dict[str, object]] = []
+    annotation_linkage: list[dict[str, object]] = []
     for trace in sorted(
         selected,
         key=lambda item: (item.task_id, item.framework, item.trace_id),
@@ -107,7 +121,7 @@ def export_context_annotation_packages(
                     "notes": "",
                 }
             )
-            answer_key.append(
+            annotation_linkage.append(
                 {
                     "sample_id": sample_id,
                     "segment_key": segment_key,
@@ -118,12 +132,34 @@ def export_context_annotation_packages(
                     "segment_id": segment.segment_id,
                     "source_type": segment.source_type,
                     "token_count": segment.token_count,
-                    "detected_labels": ";".join(
-                        trace.detected_labels.get(segment.segment_id, ())
-                    ),
                 }
             )
     destination.mkdir(parents=True)
+    context_bundle_path = destination / "context_bundle.jsonl"
+    with context_bundle_path.open("x", encoding="utf-8", newline="\n") as handle:
+        for trace in sorted(
+            selected,
+            key=lambda item: (item.task_id, item.framework, item.trace_id),
+        ):
+            handle.write(
+                json.dumps(
+                    {
+                        "schema_version": SCHEMA_VERSION,
+                        "trace_id": trace.trace_id,
+                        "task_id": trace.task_id,
+                        "framework": trace.framework,
+                        "workflow_family": trace.workflow_family,
+                        "dataset_split": trace.dataset_split,
+                        "query": user_prompt(trace),
+                        "segments": [
+                            asdict(segment) for segment in trace.segments
+                        ],
+                    },
+                    ensure_ascii=False,
+                    sort_keys=True,
+                )
+                + "\n"
+            )
     reviewer_rows = {}
     for reviewer in ("a", "b"):
         ordered, blocks = randomized_context_blocks(
@@ -148,9 +184,9 @@ def export_context_annotation_packages(
                 decision_values=tuple(sorted(VALID_DECISIONS)),
             )
     write_csv(
-        destination / "answer_key.csv",
-        tuple(answer_key[0]),
-        answer_key,
+        destination / "annotation_linkage.csv",
+        tuple(annotation_linkage[0]),
+        annotation_linkage,
     )
     write_json_atomic(
         destination / "annotation_manifest.json",
@@ -159,6 +195,7 @@ def export_context_annotation_packages(
             "annotation_set_id": annotation_set_id,
             "source_study_id": manifest["study_id"],
             "source_bundle_sha256": file_hash(bundle),
+            "context_bundle_sha256": file_hash(context_bundle_path),
             "trace_count": len(selected),
             "segment_count": len(rows),
             "reviewer_overlap": "100%",
@@ -168,7 +205,7 @@ def export_context_annotation_packages(
                 "maximum_blocks_per_session": 2,
                 "minimum_break_minutes": 10,
             },
-            "include_splits": list(include_splits),
+            "include_split": include_split,
             "decision_values": sorted(VALID_DECISIONS),
             "reason_values": sorted(ANNOTATION_REASONS),
             "hidden_from_reviewers": [
@@ -177,7 +214,6 @@ def export_context_annotation_packages(
                 "framework",
                 "workflow_family",
                 "source_type",
-                "detected_labels",
                 "task_output",
                 "task_success",
             ],
@@ -189,14 +225,17 @@ def export_context_annotation_packages(
 def adjudicate_annotation_files(
     reviewer_a_path: str | Path,
     reviewer_b_path: str | Path,
-    answer_key_path: str | Path,
+    annotation_linkage_path: str | Path,
     output_dir: str | Path,
     *,
     annotation_set_id: str,
 ) -> Path:
     reviewer_a = read_annotation_workbooks(reviewer_a_path)
     reviewer_b = read_annotation_workbooks(reviewer_b_path)
-    answer_key = {row["segment_key"]: row for row in read_csv(Path(answer_key_path))}
+    annotation_linkage = {
+        row["segment_key"]: row
+        for row in read_csv(Path(annotation_linkage_path))
+    }
     agreement = annotation_agreement(reviewer_a, reviewer_b)
     left = completed_by_key(reviewer_a)
     right = completed_by_key(reviewer_b)
@@ -208,7 +247,7 @@ def adjudicate_annotation_files(
     destination.mkdir(parents=True)
     rows: list[dict[str, object]] = []
     for segment_key in sorted(left):
-        if segment_key not in answer_key:
+        if segment_key not in annotation_linkage:
             raise ValueError(f"Unknown segment key: {segment_key}")
         a = left[segment_key]
         b = right[segment_key]
@@ -248,7 +287,7 @@ def adjudicate_annotation_files(
 
 def import_context_annotation_file(
     reviewer_path: str | Path,
-    answer_key_path: str | Path,
+    annotation_linkage_path: str | Path,
     output_dir: str | Path,
     *,
     annotation_set_id: str,
@@ -256,7 +295,7 @@ def import_context_annotation_file(
 ) -> Path:
     """Validate and freeze one completed blinded reviewer file."""
     source = Path(reviewer_path)
-    answer_path = Path(answer_key_path)
+    linkage_path = Path(annotation_linkage_path)
     rows = read_annotation_workbooks(source)
     if not rows:
         raise ValueError("The reviewer file is empty")
@@ -274,18 +313,21 @@ def import_context_annotation_file(
     completed = completed_by_key(rows)
     if len(completed) != len(rows):
         raise ValueError("The reviewer file contains duplicate segment keys")
-    answer_key = {
-        row["segment_key"]: row for row in read_csv(answer_path)
+    annotation_linkage = {
+        row["segment_key"]: row for row in read_csv(linkage_path)
     }
-    if set(completed) != set(answer_key):
-        missing = sorted(set(answer_key) - set(completed))
-        unexpected = sorted(set(completed) - set(answer_key))
+    if set(completed) != set(annotation_linkage):
+        missing = sorted(set(annotation_linkage) - set(completed))
+        unexpected = sorted(set(completed) - set(annotation_linkage))
         raise ValueError(
-            "Reviewer coverage does not match the answer key: "
+            "Reviewer coverage does not match the annotation linkage: "
             f"missing={len(missing)}, unexpected={len(unexpected)}"
         )
     for segment_key, row in completed.items():
-        if row.get("sample_id", "") != answer_key[segment_key].get("sample_id", ""):
+        if (
+            row.get("sample_id", "")
+            != annotation_linkage[segment_key].get("sample_id", "")
+        ):
             raise ValueError(f"Sample ID mismatch for {segment_key}")
         reasons = normalized_reasons(row)
         invalid = sorted(set(reasons) - ANNOTATION_REASONS)
@@ -307,7 +349,7 @@ def import_context_annotation_file(
             "reviewer_id": reviewer_id,
             "annotation_count": len(completed),
             "source_sha256": annotation_input_hash(source),
-            "answer_key_sha256": file_hash(answer_path),
+            "annotation_linkage_sha256": file_hash(linkage_path),
             "imported_sha256": file_hash(imported_path),
             "validation": {
                 "complete_coverage": True,
@@ -323,11 +365,14 @@ def import_context_annotation_file(
 def attach_adjudicated_annotations(
     traces: Iterable[AuditTrace],
     adjudication_path: str | Path,
-    answer_key_path: str | Path,
+    annotation_linkage_path: str | Path,
     *,
     annotation_set_id: str,
 ) -> list[AuditTrace]:
-    answer_key = {row["segment_key"]: row for row in read_csv(Path(answer_key_path))}
+    annotation_linkage = {
+        row["segment_key"]: row
+        for row in read_csv(Path(annotation_linkage_path))
+    }
     annotations_by_trace: dict[str, list[ReferenceAnnotation]] = {}
     for row in read_csv(Path(adjudication_path)):
         decision = row.get("adjudicated_decision", "").strip().lower()
@@ -335,7 +380,7 @@ def attach_adjudicated_annotations(
             raise ValueError(
                 f"Unresolved or invalid adjudication for {row.get('segment_key')}"
             )
-        key = answer_key.get(row["segment_key"])
+        key = annotation_linkage.get(row["segment_key"])
         if key is None:
             raise ValueError(f"Unknown adjudicated segment key: {row['segment_key']}")
         reasons = tuple(

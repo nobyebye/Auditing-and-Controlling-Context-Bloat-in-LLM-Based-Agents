@@ -1,0 +1,33 @@
+{
+  "captured_for": "calibration-method clarification",
+  "device_policy": {
+    "llmlingua2_device": "cpu",
+    "llmlingua2_dtype": "float32"
+  },
+  "installed_environment": {
+    "context-bloat-auditor_distribution": "1.0.0",
+    "langchain-core": "1.5.1",
+    "llmlingua": null,
+    "openpyxl": "3.1.5",
+    "pytest": "8.4.2",
+    "statsmodels": "0.14.5",
+    "tokenizers": "0.22.1",
+    "torch": "2.9.0",
+    "transformers": "4.56.2"
+  },
+  "notes": [
+    "The source project version is authoritative for this editable checkout.",
+    "LLMLingua is not required for calibration and was not installed at clarification freeze time.",
+    "The locked LLMLingua dependency must be installed and re-frozen in the calibration addendum before Study C."
+  ],
+  "platform": "Windows-11-10.0.26200-SP0",
+  "project_source_version": "1.2.1",
+  "pyproject_sha256": "15e6d4dc4671dec1573c0a419a708edbce0a15d30e423534d90b6609b37fd0e9",
+  "python": "3.12.8",
+  "study_c_locked_dependencies": {
+    "llmlingua": "0.2.2",
+    "tokenizers": "0.22.1",
+    "torch": "2.9.0",
+    "transformers": "4.56.2"
+  }
+}

@@ -148,7 +148,7 @@ class RunStudyC:
         *,
         bundle_path: str | Path,
         adjudication_path: str | Path,
-        answer_key_path: str | Path,
+        annotation_linkage_path: str | Path,
         annotation_set_id: str,
         run_id: str | None = None,
     ) -> Path:
@@ -184,7 +184,7 @@ class RunStudyC:
         annotated = attach_adjudicated_annotations(
             traces,
             adjudication_path,
-            answer_key_path,
+            annotation_linkage_path,
             annotation_set_id=annotation_set_id,
         )
         eligible = [
@@ -229,7 +229,7 @@ class RunStudyC:
         source_bundle_hash = file_hash(Path(bundle_path))
         annotation_hash = hash_text(
             file_hash(Path(adjudication_path))
-            + file_hash(Path(answer_key_path))
+            + file_hash(Path(annotation_linkage_path))
             + annotation_set_id
         )
         dataset_hash = source_manifest.get(
@@ -361,7 +361,9 @@ class RunStudyC:
                 "annotation_set_id": annotation_set_id,
                 "source_bundle_sha256": source_bundle_hash,
                 "adjudication_sha256": file_hash(Path(adjudication_path)),
-                "answer_key_sha256": file_hash(Path(answer_key_path)),
+                "annotation_linkage_sha256": file_hash(
+                    Path(annotation_linkage_path)
+                ),
                 "source_study_id": source_manifest["study_id"],
                 "llmlingua_model": config.llmlingua_model,
                 "llmlingua_model_revision": config.llmlingua_model_revision,
@@ -800,11 +802,31 @@ def score_replay(trace: AuditTrace, response: ProviderResponse) -> ScoringResult
             normalized_expected="",
             details={"error_type": response.dispatch_error_type},
         )
-    if trace.workflow_family == "multi_step_tool":
-        success = bool(response.content.strip())
+    if response.tool_calls:
         return ScoringResult(
-            success=success,
-            score=1.0 if success else 0.0,
+            success=False,
+            score=0.0,
+            method="unexpected_tool_call_intention_to_treat",
+            normalized_output=response.content.strip(),
+            normalized_expected="single_completion_without_tool_call",
+            details={
+                "tool_call_count": len(response.tool_calls),
+                "failure_reason": "tool_call_violation",
+            },
+        )
+    if not response.content.strip():
+        return ScoringResult(
+            success=False,
+            score=0.0,
+            method="empty_output_intention_to_treat",
+            normalized_output="",
+            normalized_expected="nonempty_completion",
+            details={"failure_reason": "empty_output"},
+        )
+    if trace.workflow_family == "multi_step_tool":
+        return ScoringResult(
+            success=True,
+            score=1.0,
             method="provider_completed_nonempty_tool_final_replay",
             normalized_output=response.content.strip(),
             normalized_expected="human_review_required",

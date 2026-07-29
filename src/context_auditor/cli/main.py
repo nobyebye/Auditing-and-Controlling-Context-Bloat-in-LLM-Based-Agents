@@ -15,6 +15,10 @@ from context_auditor.adapters.storage.serialization import write_json_atomic
 from context_auditor.application import CaptureContext
 from context_auditor.application.annotations import export_blind_review_package
 from context_auditor.application.comparison import CompareFrameworks
+from context_auditor.application.detector_calibration import (
+    apply_selected_thresholds,
+    calibrate_detector,
+)
 from context_auditor.application.external_annotations import (
     adjudicate_annotation_files,
     export_context_annotation_packages,
@@ -184,14 +188,23 @@ def build_parser() -> argparse.ArgumentParser:
     )
     context_annotations.add_argument("--bundle", required=True)
     context_annotations.add_argument("--output", required=True)
+    context_annotations.add_argument("--project-root", default=".")
     context_annotations.add_argument("--annotation-set-id", required=True)
+    context_annotations.add_argument(
+        "--include-split",
+        choices=("calibration", "test"),
+        required=True,
+    )
 
     import_context_annotations = subparsers.add_parser(
         "import-context-annotations",
         help="Validate and freeze one completed blinded context review.",
     )
     import_context_annotations.add_argument("--reviewer", required=True)
-    import_context_annotations.add_argument("--answer-key", required=True)
+    import_context_annotations.add_argument(
+        "--annotation-linkage",
+        required=True,
+    )
     import_context_annotations.add_argument("--output", required=True)
     import_context_annotations.add_argument("--annotation-set-id", required=True)
     import_context_annotations.add_argument("--reviewer-id", required=True)
@@ -202,9 +215,34 @@ def build_parser() -> argparse.ArgumentParser:
     )
     adjudicate.add_argument("--reviewer-a", required=True)
     adjudicate.add_argument("--reviewer-b", required=True)
-    adjudicate.add_argument("--answer-key", required=True)
+    adjudicate.add_argument("--annotation-linkage", required=True)
     adjudicate.add_argument("--output", required=True)
     adjudicate.add_argument("--annotation-set-id", required=True)
+
+    calibrate = subparsers.add_parser(
+        "calibrate-detector",
+        help="Select heuristic thresholds from calibration-only human labels.",
+    )
+    calibrate.add_argument("--context-bundle", required=True)
+    calibrate.add_argument("--reviewer-a", required=True)
+    calibrate.add_argument("--reviewer-b", required=True)
+    calibrate.add_argument("--adjudication", required=True)
+    calibrate.add_argument("--annotation-linkage", required=True)
+    calibrate.add_argument("--output", required=True)
+    calibrate.add_argument("--annotation-set-id", required=True)
+
+    apply_thresholds = subparsers.add_parser(
+        "apply-calibrated-thresholds",
+        help="Apply frozen calibration thresholds to held-out configs.",
+    )
+    apply_thresholds.add_argument("--selected-thresholds", required=True)
+    apply_thresholds.add_argument(
+        "--config",
+        action="append",
+        required=True,
+        help="Held-out config path; repeat for both execution paths.",
+    )
+    apply_thresholds.add_argument("--audit-output", required=True)
 
     external_evidence = subparsers.add_parser(
         "build-external-evidence",
@@ -213,7 +251,7 @@ def build_parser() -> argparse.ArgumentParser:
     external_evidence.add_argument("--project-root", default=".")
     external_evidence.add_argument("--bundle", required=True)
     external_evidence.add_argument("--adjudication", required=True)
-    external_evidence.add_argument("--answer-key", required=True)
+    external_evidence.add_argument("--annotation-linkage", required=True)
     external_evidence.add_argument("--output", required=True)
     external_evidence.add_argument("--annotation-set-id", required=True)
 
@@ -228,7 +266,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     study_c.add_argument("--bundle", required=True)
     study_c.add_argument("--adjudication", required=True)
-    study_c.add_argument("--answer-key", required=True)
+    study_c.add_argument("--annotation-linkage", required=True)
     study_c.add_argument("--annotation-set-id", required=True)
     study_c.add_argument("--run-id")
     study_c.add_argument("--confirm-real-cost", action="store_true")
@@ -276,6 +314,7 @@ def build_parser() -> argparse.ArgumentParser:
         help="Build counterfactual and RQ4 evidence after outcome adjudication.",
     )
     study_c_evidence.add_argument("--traces", required=True)
+    study_c_evidence.add_argument("--ledger", required=True)
     study_c_evidence.add_argument("--outcome-adjudication", required=True)
     study_c_evidence.add_argument("--outcome-answer-key", required=True)
     study_c_evidence.add_argument("--output", required=True)
@@ -300,8 +339,8 @@ def build_parser() -> argparse.ArgumentParser:
     )
     freeze_protocol.add_argument(
         "--phase",
-        choices=("calibration", "test"),
-        default="calibration",
+        choices=("initial", "clarification", "addendum"),
+        default="clarification",
     )
     return parser
 
@@ -439,17 +478,14 @@ def main(argv: list[str] | None = None) -> int:
             print(RunExternalValidation(root).execute(config))
         return 0
     if args.command == "export-context-annotations":
+        root = Path(args.project_root).resolve()
         print(
             export_context_annotation_packages(
                 args.bundle,
                 args.output,
+                project_root=root,
                 annotation_set_id=args.annotation_set_id,
-                evidence_tiers=tuple(
-                    args.evidence_tiers
-                    or ("counterfactual", "mitigation")
-                ),
-                configurations=tuple(args.configurations or ()),
-                outputs_per_block=args.outputs_per_block,
+                include_split=args.include_split,
             )
         )
         return 0
@@ -457,7 +493,7 @@ def main(argv: list[str] | None = None) -> int:
         print(
             import_context_annotation_file(
                 args.reviewer,
-                args.answer_key,
+                args.annotation_linkage,
                 args.output,
                 annotation_set_id=args.annotation_set_id,
                 reviewer_id=args.reviewer_id,
@@ -469,9 +505,31 @@ def main(argv: list[str] | None = None) -> int:
             adjudicate_annotation_files(
                 args.reviewer_a,
                 args.reviewer_b,
-                args.answer_key,
+                args.annotation_linkage,
                 args.output,
                 annotation_set_id=args.annotation_set_id,
+            )
+        )
+        return 0
+    if args.command == "calibrate-detector":
+        print(
+            calibrate_detector(
+                args.context_bundle,
+                args.reviewer_a,
+                args.reviewer_b,
+                args.adjudication,
+                args.annotation_linkage,
+                args.output,
+                annotation_set_id=args.annotation_set_id,
+            )
+        )
+        return 0
+    if args.command == "apply-calibrated-thresholds":
+        print(
+            apply_selected_thresholds(
+                args.selected_thresholds,
+                args.config,
+                args.audit_output,
             )
         )
         return 0
@@ -481,7 +539,7 @@ def main(argv: list[str] | None = None) -> int:
             BuildExternalEvidence(root).execute(
                 args.bundle,
                 args.adjudication,
-                args.answer_key,
+                args.annotation_linkage,
                 args.output,
                 annotation_set_id=args.annotation_set_id,
             )
@@ -498,7 +556,7 @@ def main(argv: list[str] | None = None) -> int:
                 config,
                 bundle_path=args.bundle,
                 adjudication_path=args.adjudication,
-                answer_key_path=args.answer_key,
+                annotation_linkage_path=args.annotation_linkage,
                 annotation_set_id=args.annotation_set_id,
                 run_id=args.run_id,
             )
@@ -534,6 +592,7 @@ def main(argv: list[str] | None = None) -> int:
         print(
             build_study_c_evidence(
                 args.traces,
+                args.ledger,
                 args.outcome_adjudication,
                 args.outcome_answer_key,
                 args.output,

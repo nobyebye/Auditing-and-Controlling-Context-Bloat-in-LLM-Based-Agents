@@ -216,6 +216,10 @@ class RunExternalValidation:
             self.tokenizer,
             UtcClock(),
             DefaultIdGenerator(),
+            source_dominance_threshold=config.source_dominance_threshold,
+            near_duplicate_threshold=config.near_duplicate_threshold,
+            relevance_threshold=config.relevance_threshold,
+            verbose_tool_token_threshold=config.verbose_tool_token_threshold,
         )
         langchain = (
             LangChainRuntime(provider) if config.framework == "langchain" else None

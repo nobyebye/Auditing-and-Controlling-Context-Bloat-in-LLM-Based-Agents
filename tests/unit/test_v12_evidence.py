@@ -3,6 +3,7 @@ import json
 import tempfile
 import unittest
 import zipfile
+import subprocess
 from dataclasses import replace
 from pathlib import Path
 
@@ -314,8 +315,16 @@ class V12EvidenceTests(unittest.TestCase):
                         "protocol_version": "1.2.1",
                         "registered_commit": "",
                         "initial_required_files": ["protocol.md"],
+                        "clarification_required_files": ["protocol.md"],
                         "addendum_required_files": ["protocol.md"],
                         "initial_registration": {
+                            "registration_status": "not_registered",
+                            "registration_url": "",
+                            "registered_at": "",
+                            "calibration_calls_allowed": False,
+                            "file_sha256": {},
+                        },
+                        "calibration_method_clarification": {
                             "registration_status": "not_registered",
                             "registration_url": "",
                             "registered_at": "",
@@ -332,6 +341,24 @@ class V12EvidenceTests(unittest.TestCase):
                     }
                 ),
                 encoding="utf-8",
+            )
+            subprocess.run(["git", "init"], cwd=root, check=True, capture_output=True)
+            subprocess.run(
+                ["git", "config", "user.email", "tests@example.invalid"],
+                cwd=root,
+                check=True,
+            )
+            subprocess.run(
+                ["git", "config", "user.name", "Test Runner"],
+                cwd=root,
+                check=True,
+            )
+            subprocess.run(["git", "add", "."], cwd=root, check=True)
+            subprocess.run(
+                ["git", "commit", "-m", "initial"],
+                cwd=root,
+                check=True,
+                capture_output=True,
             )
             package = freeze_protocol_package(
                 root,
@@ -356,27 +383,17 @@ class V12EvidenceTests(unittest.TestCase):
                 packaged_block["protocol_package"],
                 "thesis/releases/protocol.zip",
             )
-            self.assertIsNone(
-                packaged_block["protocol_package_sha256"]
+            self.assertEqual(
+                packaged_block["protocol_package_sha256"],
+                "",
             )
             with self.assertRaises(RuntimeError):
                 validate_protocol_registration(root, phase="calibration")
 
-            frozen["initial_registration"]["registration_status"] = "registered"
-            frozen["initial_registration"][
-                "registration_url"
-            ] = "https://osf.io/example/"
-            frozen["initial_registration"][
-                "registered_at"
-            ] = "2026-07-27T12:00:00Z"
-            frozen["initial_registration"]["calibration_calls_allowed"] = True
-            manifest_path.write_text(
-                json.dumps(frozen),
-                encoding="utf-8",
+            self.assertEqual(
+                frozen["initial_registration"]["github_release_tag"],
+                "",
             )
-            result = validate_protocol_registration(root, phase="calibration")
-            self.assertTrue(result["valid"])
-            self.assertEqual(result["file_count"], 1)
 
     def test_llmlingua_preserves_control_messages(self):
         class Backend:

@@ -72,7 +72,7 @@ def localize_segments(
                 if segment.relevance_score is not None
                 else query_overlap_ratio(segment.text, query)
             )
-            if relevance < relevance_threshold:
+            if relevance <= relevance_threshold:
                 findings.append(
                     BloatFinding(
                         segment.segment_id,

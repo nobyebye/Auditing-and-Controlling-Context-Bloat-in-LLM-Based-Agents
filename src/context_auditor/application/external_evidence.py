@@ -30,7 +30,7 @@ class BuildExternalEvidence:
         self,
         bundle_path: str | Path,
         adjudication_path: str | Path,
-        answer_key_path: str | Path,
+        annotation_linkage_path: str | Path,
         output_dir: str | Path,
         *,
         annotation_set_id: str,
@@ -44,7 +44,7 @@ class BuildExternalEvidence:
         annotated = attach_adjudicated_annotations(
             traces,
             adjudication_path,
-            answer_key_path,
+            annotation_linkage_path,
             annotation_set_id=annotation_set_id,
         )
         final_natural = [
@@ -145,7 +145,9 @@ class BuildExternalEvidence:
                 "reference_type": "adjudicated_human_labels",
                 "source_bundle_sha256": file_hash(Path(bundle_path)),
                 "adjudication_sha256": file_hash(Path(adjudication_path)),
-                "answer_key_sha256": file_hash(Path(answer_key_path)),
+                "annotation_linkage_sha256": file_hash(
+                    Path(annotation_linkage_path)
+                ),
             },
         )
         annotation_path = destination / "reference_annotations.jsonl"

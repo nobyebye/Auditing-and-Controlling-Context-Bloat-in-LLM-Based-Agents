@@ -5,6 +5,7 @@ import unittest
 import csv
 from dataclasses import replace
 from pathlib import Path
+from unittest.mock import patch
 
 from context_auditor.adapters.providers import (
     DeterministicCompressionBackend,
@@ -106,24 +107,31 @@ class ExternalValidationE2ETests(unittest.TestCase):
                 runs,
                 root / "runs" / "studies" / "mock-study-b.zip",
             )
-            package = export_context_annotation_packages(
-                bundle,
-                root / "annotations" / "study-b",
-                annotation_set_id="mock-study-b-v1",
-            )
+            with patch(
+                "context_auditor.experiments.protocol_lock."
+                "validate_protocol_registration",
+                return_value={"valid": True},
+            ):
+                package = export_context_annotation_packages(
+                    bundle,
+                    root / "annotations" / "study-b",
+                    project_root=root,
+                    annotation_set_id="mock-study-b-v1",
+                    include_split="test",
+                )
             complete_mock_segment_reviews(package / "reviewer_a.csv")
             complete_mock_segment_reviews(package / "reviewer_b.csv")
             adjudication = adjudicate_annotation_files(
                 package / "reviewer_a.csv",
                 package / "reviewer_b.csv",
-                package / "answer_key.csv",
+                package / "annotation_linkage.csv",
                 root / "annotations" / "study-b-consensus",
                 annotation_set_id="mock-study-b-v1",
             )
             evidence = BuildExternalEvidence(root).execute(
                 bundle,
                 adjudication / "adjudication.csv",
-                package / "answer_key.csv",
+                package / "annotation_linkage.csv",
                 root / "evidence" / "study-b",
                 annotation_set_id="mock-study-b-v1",
             )
@@ -145,7 +153,7 @@ class ExternalValidationE2ETests(unittest.TestCase):
                 study_c_config,
                 bundle_path=bundle,
                 adjudication_path=adjudication / "adjudication.csv",
-                answer_key_path=package / "answer_key.csv",
+                annotation_linkage_path=package / "annotation_linkage.csv",
                 annotation_set_id="mock-study-b-v1",
             )
             summary = json.loads(
@@ -172,6 +180,12 @@ class ExternalValidationE2ETests(unittest.TestCase):
             )
             study_c_evidence = build_study_c_evidence(
                 study_c_run / "traces" / "invocations.jsonl",
+                (
+                    root
+                    / "runs"
+                    / "studies"
+                    / "external-validation-v1.2.1-mock-ledger.jsonl"
+                ),
                 outcome_adjudication / "adjudication.csv",
                 outcomes / "answer_key.csv",
                 root / "evidence" / "study-c",

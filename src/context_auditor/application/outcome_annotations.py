@@ -58,7 +58,7 @@ def export_outcome_annotation_packages(
         trace
         for trace in traces
         if trace.evidence_tier in evidence_tiers
-        and trace.task_success is not None
+        and rateable_outcome(trace)
         and (
             not configurations or trace.configuration in configurations
         )
@@ -145,6 +145,15 @@ def export_outcome_annotation_packages(
                 for source in sources
             },
             "output_count": len(rows),
+            "unrateable_trace_count": sum(
+                trace.evidence_tier in evidence_tiers
+                and not rateable_outcome(trace)
+                and (
+                    not configurations
+                    or trace.configuration in configurations
+                )
+                for trace in traces
+            ),
             "evidence_tiers": list(evidence_tiers),
             "configurations": list(configurations),
             "outputs_per_block": outputs_per_block,
@@ -167,6 +176,23 @@ def export_outcome_annotation_packages(
         },
     )
     return destination
+
+
+def rateable_outcome(trace: AuditTrace) -> bool:
+    if not (trace.task_output or "").strip():
+        return False
+    if trace.intervention.get("dispatch_error_type"):
+        return False
+    if trace.scoring is None:
+        return False
+    failure_reason = str(trace.scoring.details.get("failure_reason", ""))
+    if failure_reason in {
+        "tool_call_violation",
+        "parse_failure",
+        "empty_output",
+    }:
+        return False
+    return True
 
 
 def adjudicate_outcome_files(

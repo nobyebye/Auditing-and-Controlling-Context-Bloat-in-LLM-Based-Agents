@@ -101,10 +101,11 @@ Schema 1.2.1 adds two independent evidence stages:
   provenance-aware mitigation with an equal-budget LLMLingua-2 arm. Mitigation
   outcomes receive a separate condition-blind human review.
 
-Real calibration and held-out runs have separate OSF gates in
+Real calibration and held-out runs use a three-stage OSF evidence chain in
 `thesis/plans/osf_registration_manifest_v1.2.1.json`. The initial registration
-must enable calibration; a post-calibration addendum must freeze the final
-codebook and detector settings before held-out calls.
+and a prospective calibration-method clarification must both validate before
+calibration. A post-calibration addendum must then freeze the final codebook,
+detector settings, configs, and dependency hashes before held-out calls.
 
 Prepare and calibrate the external dataset without provider cost:
 
@@ -114,16 +115,23 @@ context-auditor prepare-external-dataset `
   --longmemeval data/sources/longmemeval_s_cleaned.json `
   --bfcl data/sources/bfcl_v4_multi_turn_base_first_two.jsonl
 
-context-auditor freeze-external-protocol --phase calibration
+context-auditor freeze-external-protocol `
+  --phase clarification `
+  --output thesis/releases/osf_calibration_method_clarification_v1.2.1.zip
 ```
 
-Upload the generated ZIP to an immutable OSF registration, record its URL and
-timestamp, and enable calibration. Run four calibration tasks per workflow
-through both frameworks, then register the frozen codebook and detector
-addendum. Only then may Study B/C use the held-out split. Study C performs at
-most 108 counterfactual requests and exactly 180 single-request mitigation
-replays. The shared ledger reserves 480 primary requests and 20 ordered manual
-retries, and refuses request 501 before dispatch. The frozen design is in
+Upload the clarification ZIP to an immutable public OSF registration and
+record its URL, timestamp, package hash, release tag, and release commit.
+Authorization is derived from cryptographic validation; editable boolean flags
+do not open the gate. Run four calibration tasks per workflow through both
+frameworks, export annotations with an explicit
+`--include-split calibration`, and select thresholds with
+`calibrate-detector`. Register the frozen codebook and calibration addendum
+before using `--include-split test` or issuing held-out calls. Study C performs
+at most 108 counterfactual requests and exactly 180 single-request mitigation
+replays. Its primary ITT table retains every dispatched request. The shared
+ledger reserves 480 primary requests and 20 ordered manual retries, and refuses
+request 501 before dispatch. The frozen design is in
 [external_validation_protocol_v1.2.1.md](thesis/plans/external_validation_protocol_v1.2.1.md).
 
 ## Run Artifacts

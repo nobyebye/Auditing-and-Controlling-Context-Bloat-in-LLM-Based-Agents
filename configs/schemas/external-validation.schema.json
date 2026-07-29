@@ -10,7 +10,11 @@
     "dataset_version",
     "framework",
     "provider",
-    "model"
+    "model",
+    "near_duplicate_threshold",
+    "relevance_threshold",
+    "verbose_tool_token_threshold",
+    "source_dominance_threshold"
   ],
   "properties": {
     "schema_version": {"const": "1.2.1"},
@@ -27,6 +31,25 @@
       "type": "integer",
       "minimum": 1,
       "maximum": 2
+    },
+    "near_duplicate_threshold": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "relevance_threshold": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "verbose_tool_token_threshold": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "source_dominance_threshold": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
     },
     "privacy_mode": {"enum": ["redacted", "hash-only", "full"]}
   },
